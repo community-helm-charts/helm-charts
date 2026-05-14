@@ -1,0 +1,15 @@
+{{- $namespace := include "common.names.namespace" . }}
+Redis can be reached inside the cluster at:
+
+  {{ include "redis.fullname" . }}.{{ $namespace }}.svc.{{ .Values.clusterDomain }}:{{ include "redis.service.port" . }}
+
+{{- if .Values.auth.enabled }}
+
+To connect from inside the cluster:
+
+  export REDISCLI_AUTH=$(kubectl get secret --namespace {{ $namespace }} {{ include "redis.secretName" . }} -o jsonpath="{.data.{{ include "redis.passwordKey" . }}}" | base64 -d)
+  kubectl run {{ include "redis.fullname" . }}-client --rm --tty -i --restart='Never' --namespace {{ $namespace }} --image {{ include "redis.image" . }} --env="REDISCLI_AUTH=$REDISCLI_AUTH" --command -- redis-cli --host {{ include "redis.fullname" . }} --port {{ include "redis.service.port" . }} ping
+{{- else }}
+
+Authentication is disabled for this release.
+{{- end }}

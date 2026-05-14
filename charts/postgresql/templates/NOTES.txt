@@ -1,0 +1,18 @@
+{{- $namespace := include "common.names.namespace" . }}
+{{- $customUser := include "postgresql.username" . | trim }}
+PostgreSQL can be reached inside the cluster at:
+
+  {{ include "postgresql.fullname" . }}.{{ $namespace }}.svc.{{ .Values.clusterDomain }}:{{ include "postgresql.service.port" . }}
+
+{{- if not .Values.auth.trustAuthentication }}
+{{- $user := $customUser }}
+{{- $database := default "postgres" (include "postgresql.database" .) }}
+
+To connect from inside the cluster:
+
+  export POSTGRES_PASSWORD=$(kubectl get secret --namespace {{ $namespace }} {{ include "postgresql.secretName" . }} -o jsonpath="{.data.{{ include "postgresql.passwordKey" . }}}" | base64 -d)
+  kubectl run {{ include "postgresql.fullname" . }}-client --rm --tty -i --restart='Never' --namespace {{ $namespace }} --image {{ include "postgresql.image" . }} --env="PGPASSWORD=$POSTGRES_PASSWORD" --command -- psql --host {{ include "postgresql.fullname" . }} -U {{ $user }} -d {{ $database }} -p {{ include "postgresql.service.port" . }}
+{{- else }}
+
+This release is using trust authentication because auth.enablePostgresUser=false and no custom user is configured.
+{{- end }}

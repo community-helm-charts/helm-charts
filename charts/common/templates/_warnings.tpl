@@ -1,0 +1,105 @@
+{{/* vim: set filetype=mustache: */}}
+{{/*
+Warning about using rolling tag.
+Usage:
+{{ include "common.warnings.rollingTag" .Values.path.to.the.imageRoot }}
+*/}}
+{{- define "common.warnings.rollingTag" -}}
+
+{{- if eq (.tag | toString) "latest" }}
+WARNING: Rolling tag detected ({{ .repository }}:{{ .tag }}). Use an explicit version tag or digest in production.
+{{- end }}
+{{- end -}}
+
+{{/*
+Warning about replaced images from the original.
+Usage:
+{{ include "common.warnings.modifiedImages" (dict "images" (list .Values.path.to.the.imageRoot) "context" $) }}
+*/}}
+{{- define "common.warnings.modifiedImages" -}}
+{{- $annotations := default (dict) .context.Chart.Annotations -}}
+{{- $originalImages := default "" (get $annotations "images") -}}
+{{- if $originalImages -}}
+{{- $affectedImages := list -}}
+{{- range .images -}}
+  {{- $tag := .tag | toString -}}
+  {{- $fullImageName := printf "%s/%s:%s" .registry .repository $tag -}}
+  {{- if not (contains $fullImageName $originalImages) }}
+    {{- $affectedImages = append $affectedImages $fullImageName -}}
+  {{- end -}}
+{{- end -}}
+{{- if gt (len $affectedImages) 0 }}
+
+SECURITY WARNING: Container images have been overridden from the chart defaults. Verify that each replacement image is compatible with this chart before using it in production.
+
+Overridden images:
+{{- range $affectedImages }}
+  - {{ . }}
+{{- end }}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Warning about not setting the resource object in all deployments.
+Usage:
+{{ include "common.warnings.resources" (dict "sections" (list "path1" "path2") context $) }}
+Example:
+{{- include "common.warnings.resources" (dict "sections" (list "csiProvider.provider" "server" "volumePermissions" "") "context" $) }}
+The list in the example assumes that the following values exist:
+  - csiProvider.provider.resources
+  - server.resources
+  - volumePermissions.resources
+  - resources
+*/}}
+{{- define "common.warnings.resources" -}}
+{{- $values := .context.Values -}}
+{{- $printMessage := false -}}
+{{ $affectedSections := list -}}
+{{- range .sections -}}
+  {{- if eq . "" -}}
+    {{/* Case where the resources section is at the root (one main deployment in the chart) */}}
+    {{- if not (index $values "resources") -}}
+    {{- $affectedSections = append $affectedSections "resources" -}}
+    {{- $printMessage = true -}}
+    {{- end -}}
+  {{- else -}}
+    {{/* Case where the are multiple resources sections (more than one main deployment in the chart) */}}
+    {{- $keys := split "." . -}}
+    {{/* We iterate through the different levels until arriving to the resource section. Example: a.b.c.resources */}}
+    {{- $section := $values -}}
+    {{- range $keys -}}
+      {{- $section = index $section . -}}
+    {{- end -}}
+    {{- if not (index $section "resources") -}}
+      {{/* If the section has enabled=false or replicaCount=0, do not include it */}}
+      {{- if and (hasKey $section "enabled") -}}
+        {{- if index $section "enabled" -}}
+          {{/* enabled=true */}}
+          {{- $affectedSections = append $affectedSections (printf "%s.resources" .) -}}
+          {{- $printMessage = true -}}
+        {{- end -}}
+      {{- else if and (hasKey $section "replicaCount")  -}}
+        {{/* We need a casting to int because number 0 is not treated as an int by default */}}
+        {{- if (gt (index $section "replicaCount" | int) 0) -}}
+          {{/* replicaCount > 0 */}}
+          {{- $affectedSections = append $affectedSections (printf "%s.resources" .) -}}
+          {{- $printMessage = true -}}
+        {{- end -}}
+      {{- else -}}
+        {{/* Default case, add it to the affected sections */}}
+        {{- $affectedSections = append $affectedSections (printf "%s.resources" .) -}}
+        {{- $printMessage = true -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- if $printMessage }}
+
+WARNING: There are "resources" sections in the chart not set. Using "resourcesPreset" is not recommended for production. For production installations, please set the following values according to your workload needs:
+{{- range $affectedSections }}
+  - {{ . }}
+{{- end }}
++info https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+{{- end -}}
+{{- end -}}

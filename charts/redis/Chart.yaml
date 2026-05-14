@@ -1,0 +1,26 @@
+annotations:
+  images: |
+    - name: redis
+      image: docker.io/library/redis:8.2.1-alpine
+  licenses: Apache-2.0
+apiVersion: v2
+appVersion: 8.2.1
+dependencies:
+- name: common
+  repository: oci://ghcr.io/community-helm-charts
+  tags:
+  - community-common
+  version: 0.0.0
+description: A simple single-instance Redis Helm chart using the Docker Official Redis image.
+home: https://github.com/community-helm-charts/helm-charts
+keywords:
+- redis
+- keyvalue
+- database
+maintainers:
+- name: community-helm-charts
+  url: https://github.com/community-helm-charts/helm-charts
+name: redis
+sources:
+- https://github.com/community-helm-charts/helm-charts/tree/main/charts/redis
+version: 0.0.0

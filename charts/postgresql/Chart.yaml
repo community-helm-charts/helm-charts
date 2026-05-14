@@ -1,0 +1,27 @@
+annotations:
+  images: |
+    - name: postgresql
+      image: docker.io/library/postgres:18.3-alpine
+  licenses: Apache-2.0
+apiVersion: v2
+appVersion: "18.3"
+dependencies:
+- name: common
+  repository: oci://ghcr.io/community-helm-charts
+  tags:
+  - community-common
+  version: 0.0.0
+description: A simple single-instance PostgreSQL Helm chart using the Docker Official PostgreSQL image.
+home: https://github.com/community-helm-charts/helm-charts
+keywords:
+- postgresql
+- postgres
+- database
+- sql
+maintainers:
+- name: community-helm-charts
+  url: https://github.com/community-helm-charts/helm-charts
+name: postgresql
+sources:
+- https://github.com/community-helm-charts/helm-charts/tree/main/charts/postgresql
+version: 0.0.0

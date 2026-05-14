@@ -1,0 +1,84 @@
+name: CI
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - ".github/workflows/ci.yml"
+      - "charts/**"
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  CHART_NAMESPACE: community-helm-charts
+  HELM_VERSION: v3.16.4
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v5
+        with:
+          version: ${{ env.HELM_VERSION }}
+
+      - name: Log in to the Container registry
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login "${REGISTRY}" \
+            --username "${{ github.actor }}" \
+            --password-stdin
+
+      - name: Lint Helm charts
+        run: |
+          set -euo pipefail
+
+          mapfile -t chart_dirs < <(find charts -mindepth 1 -maxdepth 1 -type d | sort)
+          helm lint "${chart_dirs[@]}"
+
+      - name: Package Helm charts
+        run: |
+          set -euo pipefail
+
+          mkdir -p dist
+
+          common_package="$(helm package charts/common --destination dist | awk '{print $NF}')"
+
+          mapfile -t chart_dirs < <(find charts -mindepth 1 -maxdepth 1 -type d | sort)
+          for chart_dir in "${chart_dirs[@]}"; do
+            chart_name="$(basename "${chart_dir}")"
+            if [[ "${chart_name}" == "common" ]]; then
+              continue
+            fi
+
+            mkdir -p "${chart_dir}/charts"
+            rm -f "${chart_dir}"/charts/common-*.tgz
+            cp "${common_package}" "${chart_dir}/charts/"
+
+            helm package "${chart_dir}" --destination dist
+          done
+
+      - name: Push Helm charts
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+
+          chart_repository="oci://${REGISTRY}/${CHART_NAMESPACE}"
+
+          for package in dist/*.tgz; do
+            chart_name="$(helm show chart "${package}" | awk -F': *' '$1 == "name" { print $2; exit }')"
+            chart_version="$(helm show chart "${package}" | awk -F': *' '$1 == "version" { print $2; exit }')"
+            chart_ref="${chart_repository}/${chart_name}"
+
+            if helm show chart "${chart_ref}" --version "${chart_version}" >/dev/null 2>&1; then
+              echo "::notice title=Skip ${chart_name}::${chart_name} ${chart_version} already exists in ${chart_repository}"
+              continue
+            fi
+
+            helm push "${package}" "${chart_repository}"
+          done

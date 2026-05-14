@@ -1,0 +1,20 @@
+annotations:
+  licenses: Apache-2.0
+apiVersion: v2
+# Please make sure that version and appVersion are always the same.
+appVersion: 0.0.0
+description: A library Helm chart for shared template helpers. This chart is not deployable by itself.
+home: https://github.com/community-helm-charts/helm-charts
+keywords:
+  - common
+  - helper
+  - template
+  - function
+maintainers:
+  - name: community-helm-charts
+    url: https://github.com/community-helm-charts/helm-charts
+name: common
+sources:
+  - https://github.com/community-helm-charts/helm-charts/tree/main/charts/common
+type: library
+version: 0.0.0

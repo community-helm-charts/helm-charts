@@ -1,0 +1,150 @@
+global:
+  imageRegistry: ""
+  imagePullSecrets: []
+  defaultStorageClass: ""
+  storageClass: ""
+
+kubeVersion: ""
+nameOverride: ""
+fullnameOverride: ""
+namespaceOverride: ""
+clusterDomain: cluster.local
+commonLabels: {}
+commonAnnotations: {}
+secretAnnotations: {}
+extraDeploy: []
+
+image:
+  registry: docker.io
+  repository: library/redis
+  tag: 8.2.1-alpine
+  digest: ""
+  pullPolicy: IfNotPresent
+  pullSecrets: []
+
+auth:
+  enabled: true
+  password: ""
+  existingSecret: ""
+  secretKeys:
+    passwordKey: password
+  usePasswordFiles: true
+
+containerPorts:
+  redis: 6379
+
+service:
+  enabled: true
+  type: ClusterIP
+  ports:
+    redis: 6379
+  nodePorts:
+    redis: ""
+  clusterIP: ""
+  annotations: {}
+  labels: {}
+  loadBalancerClass: ""
+  loadBalancerIP: ""
+  loadBalancerSourceRanges: []
+  externalTrafficPolicy: Cluster
+  sessionAffinity: None
+  sessionAffinityConfig: {}
+  extraPorts: []
+
+headlessService:
+  annotations: {}
+
+persistence:
+  enabled: true
+  volumeName: data
+  mountPath: /data
+  subPath: ""
+  storageClass: ""
+  accessModes:
+    - ReadWriteOnce
+  size: 8Gi
+  annotations: {}
+  labels: {}
+  selector: {}
+  dataSource: {}
+  existingClaim: ""
+
+configuration: ""
+existingConfigmap: ""
+
+command: []
+args: []
+extraEnvVars: []
+extraEnvVarsCM: ""
+extraEnvVarsSecret: ""
+extraVolumes: []
+extraVolumeMounts: []
+initContainers: []
+sidecars: []
+
+podLabels: {}
+podAnnotations: {}
+podSecurityContext:
+  enabled: false
+  fsGroupChangePolicy: Always
+  sysctls: []
+  supplementalGroups: []
+  fsGroup: 999
+containerSecurityContext:
+  enabled: false
+  runAsUser: 999
+  runAsGroup: 999
+  runAsNonRoot: true
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  seccompProfile:
+    type: RuntimeDefault
+
+resourcesPreset: none
+resources: {}
+
+startupProbe:
+  enabled: true
+  initialDelaySeconds: 10
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 30
+  successThreshold: 1
+livenessProbe:
+  enabled: true
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 6
+  successThreshold: 1
+readinessProbe:
+  enabled: true
+  initialDelaySeconds: 5
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 6
+  successThreshold: 1
+customStartupProbe: {}
+customLivenessProbe: {}
+customReadinessProbe: {}
+
+updateStrategy:
+  type: RollingUpdate
+priorityClassName: ""
+schedulerName: ""
+terminationGracePeriodSeconds: ""
+hostAliases: []
+affinity: {}
+nodeSelector: {}
+tolerations: []
+topologySpreadConstraints: []
+
+serviceAccount:
+  create: true
+  name: ""
+  automountServiceAccountToken: false
+  annotations: {}
+
+automountServiceAccountToken: false

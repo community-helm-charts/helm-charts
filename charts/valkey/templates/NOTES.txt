@@ -1,0 +1,15 @@
+{{- $namespace := include "common.names.namespace" . }}
+Valkey can be reached inside the cluster at:
+
+  {{ include "valkey.fullname" . }}.{{ $namespace }}.svc.{{ .Values.clusterDomain }}:{{ include "valkey.service.port" . }}
+
+{{- if .Values.auth.enabled }}
+
+To connect from inside the cluster:
+
+  export VALKEY_PASSWORD=$(kubectl get secret --namespace {{ $namespace }} {{ include "valkey.secretName" . }} -o jsonpath="{.data.{{ include "valkey.passwordKey" . }}}" | base64 -d)
+  kubectl run {{ include "valkey.fullname" . }}-client --rm --tty -i --restart='Never' --namespace {{ $namespace }} --image {{ include "valkey.image" . }} --command -- valkey-cli --host {{ include "valkey.fullname" . }} --port {{ include "valkey.service.port" . }} -a "$VALKEY_PASSWORD" ping
+{{- else }}
+
+Authentication is disabled for this release.
+{{- end }}

@@ -84,9 +84,7 @@ spec:
                 set -- "$@" /etc/redis/redis.conf
               fi
               password=""
-              if [ -n "${REDIS_PASSWORD_FILE:-}" ]; then
-                password="$(cat "$REDIS_PASSWORD_FILE")"
-              elif [ -n "${REDIS_PASSWORD:-}" ]; then
+              if [ -n "${REDIS_PASSWORD:-}" ]; then
                 password="$REDIS_PASSWORD"
               fi
               if [ -n "$password" ]; then
@@ -96,16 +94,11 @@ spec:
           {{- end }}
           env:
             {{- if .Values.auth.enabled }}
-            {{- if .Values.auth.usePasswordFiles }}
-            - name: REDIS_PASSWORD_FILE
-              value: {{ printf "/run/secrets/redis/%s" (include "redis.passwordKey" .) | quote }}
-            {{- else }}
             - name: REDIS_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: {{ include "redis.secretName" . }}
                   key: {{ include "redis.passwordKey" . }}
-            {{- end }}
             {{- end }}
             {{- if .Values.extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .Values.extraEnvVars "context" $) | nindent 12 }}
@@ -151,11 +144,6 @@ spec:
           resources: {{- include "common.resources.preset" (dict "type" .Values.resourcesPreset) | nindent 12 }}
           {{- end }}
           volumeMounts:
-            {{- if and .Values.auth.enabled .Values.auth.usePasswordFiles }}
-            - name: redis-password
-              mountPath: /run/secrets/redis
-              readOnly: true
-            {{- end }}
             {{- if (include "redis.hasConfiguration" .) }}
             - name: redis-configuration
               mountPath: /etc/redis
@@ -173,11 +161,6 @@ spec:
         {{- include "common.tplvalues.render" (dict "value" .Values.sidecars "context" $) | nindent 8 }}
         {{- end }}
       volumes:
-        {{- if and .Values.auth.enabled .Values.auth.usePasswordFiles }}
-        - name: redis-password
-          secret:
-            secretName: {{ include "redis.secretName" . }}
-        {{- end }}
         {{- if (include "redis.hasConfiguration" .) }}
         - name: redis-configuration
           configMap:

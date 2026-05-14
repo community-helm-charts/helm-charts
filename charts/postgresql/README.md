@@ -110,7 +110,6 @@ initdb:
 | `auth.database` | Initial database name | `""` |
 | `auth.existingSecret` | Existing Secret containing the password | `""` |
 | `auth.secretKeys.passwordKey` | Password key in the Secret | `password` |
-| `auth.usePasswordFiles` | Use `POSTGRES_PASSWORD_FILE` instead of `POSTGRES_PASSWORD` | `true` |
 | `auth.trustAuthentication` | Enable trust authentication and skip password Secret creation | `false` |
 | `service.enabled` | Create the main Service | `true` |
 | `service.type` | Service type | `ClusterIP` |

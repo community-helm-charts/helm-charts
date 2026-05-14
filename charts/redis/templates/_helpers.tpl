@@ -63,9 +63,7 @@ true
 - -ec
 - |
   password=""
-  if [ -n "${REDIS_PASSWORD_FILE:-}" ]; then
-    password="$(cat "$REDIS_PASSWORD_FILE")"
-  elif [ -n "${REDIS_PASSWORD:-}" ]; then
+  if [ -n "${REDIS_PASSWORD:-}" ]; then
     password="$REDIS_PASSWORD"
   fi
   if [ -n "$password" ]; then

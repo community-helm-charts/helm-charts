@@ -84,9 +84,7 @@ spec:
                 set -- "$@" /etc/valkey/valkey.conf
               fi
               password=""
-              if [ -n "${VALKEY_PASSWORD_FILE:-}" ]; then
-                password="$(cat "$VALKEY_PASSWORD_FILE")"
-              elif [ -n "${VALKEY_PASSWORD:-}" ]; then
+              if [ -n "${VALKEY_PASSWORD:-}" ]; then
                 password="$VALKEY_PASSWORD"
               fi
               if [ -n "$password" ]; then
@@ -96,16 +94,11 @@ spec:
           {{- end }}
           env:
             {{- if .Values.auth.enabled }}
-            {{- if .Values.auth.usePasswordFiles }}
-            - name: VALKEY_PASSWORD_FILE
-              value: {{ printf "/run/secrets/valkey/%s" (include "valkey.passwordKey" .) | quote }}
-            {{- else }}
             - name: VALKEY_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: {{ include "valkey.secretName" . }}
                   key: {{ include "valkey.passwordKey" . }}
-            {{- end }}
             {{- end }}
             {{- if .Values.extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .Values.extraEnvVars "context" $) | nindent 12 }}
@@ -151,11 +144,6 @@ spec:
           resources: {{- include "common.resources.preset" (dict "type" .Values.resourcesPreset) | nindent 12 }}
           {{- end }}
           volumeMounts:
-            {{- if and .Values.auth.enabled .Values.auth.usePasswordFiles }}
-            - name: valkey-password
-              mountPath: /run/secrets/valkey
-              readOnly: true
-            {{- end }}
             {{- if (include "valkey.hasConfiguration" .) }}
             - name: valkey-configuration
               mountPath: /etc/valkey
@@ -173,11 +161,6 @@ spec:
         {{- include "common.tplvalues.render" (dict "value" .Values.sidecars "context" $) | nindent 8 }}
         {{- end }}
       volumes:
-        {{- if and .Values.auth.enabled .Values.auth.usePasswordFiles }}
-        - name: valkey-password
-          secret:
-            secretName: {{ include "valkey.secretName" . }}
-        {{- end }}
         {{- if (include "valkey.hasConfiguration" .) }}
         - name: valkey-configuration
           configMap:

@@ -42,7 +42,6 @@ auth:
   existingSecret: ""
   secretKeys:
     passwordKey: password
-  usePasswordFiles: true
 
 containerPorts:
   postgresql: 5432

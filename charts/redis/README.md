@@ -93,7 +93,6 @@ existingConfigmap: my-redis-config
 | `auth.password` | Redis password; generated when empty | `""` |
 | `auth.existingSecret` | Existing Secret containing the password | `""` |
 | `auth.secretKeys.passwordKey` | Password key in the Secret | `password` |
-| `auth.usePasswordFiles` | Mount the password as a file | `true` |
 | `service.type` | Service type | `ClusterIP` |
 | `service.ports.redis` | Service port | `6379` |
 | `containerPorts.redis` | Container port | `6379` |

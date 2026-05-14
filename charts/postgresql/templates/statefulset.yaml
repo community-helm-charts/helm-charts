@@ -82,16 +82,11 @@ spec:
             - name: POSTGRES_HOST_AUTH_METHOD
               value: trust
             {{- else }}
-            {{- if .Values.auth.usePasswordFiles }}
-            - name: POSTGRES_PASSWORD_FILE
-              value: {{ printf "/run/secrets/postgresql/%s" (include "postgresql.passwordKey" .) | quote }}
-            {{- else }}
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: {{ include "postgresql.secretName" . }}
                   key: {{ include "postgresql.passwordKey" . }}
-            {{- end }}
             {{- end }}
             {{- if (include "postgresql.database" .) }}
             - name: POSTGRES_DB
@@ -149,11 +144,6 @@ spec:
           resources: {{- include "common.resources.preset" (dict "type" .Values.resourcesPreset) | nindent 12 }}
           {{- end }}
           volumeMounts:
-            {{- if and .Values.auth.usePasswordFiles (not .Values.auth.trustAuthentication) }}
-            - name: postgresql-password
-              mountPath: /run/secrets/postgresql
-              readOnly: true
-            {{- end }}
             {{- if (include "postgresql.hasInitdbScripts" .) }}
             - name: custom-initdb
               mountPath: /docker-entrypoint-initdb.d
@@ -171,11 +161,6 @@ spec:
         {{- include "common.tplvalues.render" (dict "value" .Values.sidecars "context" $) | nindent 8 }}
         {{- end }}
       volumes:
-        {{- if and .Values.auth.usePasswordFiles (not .Values.auth.trustAuthentication) }}
-        - name: postgresql-password
-          secret:
-            secretName: {{ include "postgresql.secretName" . }}
-        {{- end }}
         {{- if (include "postgresql.hasInitdbScripts" .) }}
         - name: custom-initdb
           projected:

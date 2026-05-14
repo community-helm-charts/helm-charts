@@ -28,7 +28,6 @@ auth:
   existingSecret: ""
   secretKeys:
     passwordKey: password
-  usePasswordFiles: true
 
 containerPorts:
   valkey: 6379

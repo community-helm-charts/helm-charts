@@ -63,9 +63,7 @@ true
 - -ec
 - |
   password=""
-  if [ -n "${VALKEY_PASSWORD_FILE:-}" ]; then
-    password="$(cat "$VALKEY_PASSWORD_FILE")"
-  elif [ -n "${VALKEY_PASSWORD:-}" ]; then
+  if [ -n "${VALKEY_PASSWORD:-}" ]; then
     password="$VALKEY_PASSWORD"
   fi
   if [ -n "$password" ]; then

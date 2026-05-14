@@ -93,7 +93,6 @@ existingConfigmap: my-valkey-config
 | `auth.password` | Valkey password; generated when empty | `""` |
 | `auth.existingSecret` | Existing Secret containing the password | `""` |
 | `auth.secretKeys.passwordKey` | Password key in the Secret | `password` |
-| `auth.usePasswordFiles` | Mount the password as a file | `true` |
 | `service.type` | Service type | `ClusterIP` |
 | `service.ports.valkey` | Service port | `6379` |
 | `containerPorts.valkey` | Container port | `6379` |

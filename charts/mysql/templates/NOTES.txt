@@ -1,0 +1,9 @@
+{{- $namespace := include "common.names.namespace" . }}
+MySQL can be reached inside the cluster at:
+
+  {{ include "mysql.fullname" . }}.{{ $namespace }}.svc.{{ .Values.clusterDomain }}:{{ include "mysql.service.port" . }}
+
+To connect as root from inside the cluster:
+
+  export MYSQL_ROOT_PASSWORD=$(kubectl get secret --namespace {{ $namespace }} {{ include "mysql.secretName" . }} -o jsonpath="{.data.{{ include "mysql.rootPasswordKey" . }}}" | base64 -d)
+  kubectl run {{ include "mysql.fullname" . }}-client --rm --tty -i --restart='Never' --namespace {{ $namespace }} --image {{ include "mysql.image" . }} --env="MYSQL_PWD=$MYSQL_ROOT_PASSWORD" --command -- mysql --host {{ include "mysql.fullname" . }} --user root --port {{ include "mysql.service.port" . }}

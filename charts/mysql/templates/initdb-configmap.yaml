@@ -1,0 +1,17 @@
+{{- if and .Values.initdb.scripts (not .Values.initdb.scriptsConfigMap) }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "mysql.initdbScriptsConfigMapName" . }}
+  namespace: {{ include "common.names.namespace" . | quote }}
+  labels: {{- include "common.labels.standard" (dict "customLabels" .Values.commonLabels "context" $) | nindent 4 }}
+    app.kubernetes.io/component: mysql
+  {{- if .Values.commonAnnotations }}
+  annotations: {{- include "common.tplvalues.render" (dict "value" .Values.commonAnnotations "context" $) | nindent 4 }}
+  {{- end }}
+data:
+  {{- range $name, $content := .Values.initdb.scripts }}
+  {{ $name }}: |
+    {{- include "common.tplvalues.render" (dict "value" $content "context" $) | nindent 4 }}
+  {{- end }}
+{{- end }}

@@ -1,0 +1,24 @@
+annotations:
+  images: |
+    - name: mysql
+      image: docker.io/library/mysql:8.4.9
+  licenses: Apache-2.0
+apiVersion: v2
+appVersion: 8.4.9
+dependencies:
+- name: common
+  repository: oci://ghcr.io/community-helm-charts
+  version: 0.x.x
+description: A simple single-instance MySQL Helm chart using the Docker Official MySQL image.
+home: https://github.com/community-helm-charts/helm-charts
+keywords:
+- mysql
+- database
+- sql
+maintainers:
+- name: community-helm-charts
+  url: https://github.com/community-helm-charts/helm-charts
+name: mysql
+sources:
+- https://github.com/community-helm-charts/helm-charts/tree/main/charts/mysql
+version: 0.0.0

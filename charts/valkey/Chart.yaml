@@ -8,9 +8,7 @@ appVersion: 8.1.3
 dependencies:
 - name: common
   repository: oci://ghcr.io/community-helm-charts
-  tags:
-  - community-common
-  version: 0.0.0
+  version: 0.x.x
 description: A simple single-instance Valkey Helm chart using the official Valkey image.
 home: https://github.com/community-helm-charts/helm-charts
 keywords:

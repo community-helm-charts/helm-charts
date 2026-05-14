@@ -21,4 +21,4 @@ maintainers:
 name: mysql
 sources:
 - https://github.com/community-helm-charts/helm-charts/tree/main/charts/mysql
-version: 1.0.0
+version: 1.1.0

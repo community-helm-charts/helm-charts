@@ -24,3 +24,5 @@
 img/
 # Changelog
 CHANGELOG.md
+# Dependency lock files
+Chart.lock

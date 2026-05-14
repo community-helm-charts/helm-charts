@@ -72,6 +72,41 @@ jobs:
           git commit -m "chore: bump chart versions"
           git push origin HEAD:main
 
+      - name: Vendor local chart dependencies
+        if: steps.versioner.outputs.has_changes == 'true'
+        env:
+          CHANGED_CHARTS: ${{ steps.versioner.outputs.changed_charts }}
+        run: |
+          set -euo pipefail
+
+          IFS=',' read -r -a charts <<< "${CHANGED_CHARTS}"
+
+          needs_common=false
+          for chart in "${charts[@]}"; do
+            if [[ "${chart}" != "common" ]]; then
+              needs_common=true
+              break
+            fi
+          done
+
+          if [[ "${needs_common}" != "true" ]]; then
+            exit 0
+          fi
+
+          mkdir -p /tmp/common-chart-package
+          common_package="$(helm package charts/common --destination /tmp/common-chart-package | awk '{print $NF}')"
+
+          for chart in "${charts[@]}"; do
+            if [[ "${chart}" == "common" ]]; then
+              continue
+            fi
+
+            chart_dir="charts/${chart}"
+            mkdir -p "${chart_dir}/charts"
+            rm -rf "${chart_dir}/charts"/*
+            cp "${common_package}" "${chart_dir}/charts/"
+          done
+
       - name: Log in to the Container registry
         if: steps.versioner.outputs.has_changes == 'true'
         run: |
@@ -101,21 +136,11 @@ jobs:
         run: |
           set -euo pipefail
 
-          mkdir -p dist /tmp/common-chart-package
-          common_package="$(helm package charts/common --destination /tmp/common-chart-package | awk '{print $NF}')"
+          mkdir -p dist
 
           IFS=',' read -r -a charts <<< "${CHANGED_CHARTS}"
           for chart_name in "${charts[@]}"; do
             chart_dir="charts/${chart_name}"
-            if [[ "${chart_name}" == "common" ]]; then
-              helm package "${chart_dir}" --destination dist
-              continue
-            fi
-
-            mkdir -p "${chart_dir}/charts"
-            rm -f "${chart_dir}"/charts/common-*.tgz
-            cp "${common_package}" "${chart_dir}/charts/"
-
             helm package "${chart_dir}" --destination dist
           done
 

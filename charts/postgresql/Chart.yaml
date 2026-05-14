@@ -22,4 +22,4 @@ maintainers:
 name: postgresql
 sources:
 - https://github.com/community-helm-charts/helm-charts/tree/main/charts/postgresql
-version: 0.0.2
+version: 1.0.0

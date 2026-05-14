@@ -35,7 +35,11 @@
 {{- end -}}
 
 {{- define "postgresql.passwordKey" -}}
-{{- coalesce .Values.global.postgresql.auth.secretKeys.passwordKey .Values.auth.secretKeys.passwordKey "password" -}}
+{{- if or .Values.global.postgresql.auth.existingSecret .Values.auth.existingSecret -}}
+{{- coalesce .Values.global.postgresql.auth.existingSecretPasswordKey .Values.auth.existingSecretPasswordKey "postgresql-password" -}}
+{{- else -}}
+postgresql-password
+{{- end -}}
 {{- end -}}
 
 {{- define "postgresql.createSecret" -}}

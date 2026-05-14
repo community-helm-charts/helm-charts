@@ -33,7 +33,7 @@ From inside the cluster:
 ```console
 kubectl run my-postgres-client --rm --tty -i --restart='Never' \
   --image docker.io/library/postgres:18.3-alpine \
-  --env="PGPASSWORD=$(kubectl get secret my-postgres-postgresql -o jsonpath='{.data.password}' | base64 -d)" \
+  --env="PGPASSWORD=$(kubectl get secret my-postgres-postgresql -o jsonpath='{.data.postgresql-password}' | base64 -d)" \
   --command -- psql \
   --host my-postgres-postgresql \
   --username postgres \
@@ -60,12 +60,12 @@ helm install my-postgres oci://ghcr.io/community-helm-charts/postgresql \
 
 ## Credentials
 
-By default, the chart creates a Secret named after the release, using the key `password`.
+By default, the chart creates a Secret named after the release, using the key `postgresql-password`.
 
 Use an existing Secret:
 
 ```console
-kubectl create secret generic my-postgres-auth --from-literal=password='change-me'
+kubectl create secret generic my-postgres-auth --from-literal=postgresql-password='change-me'
 
 helm install my-postgres oci://ghcr.io/community-helm-charts/postgresql \
   --set auth.existingSecret=my-postgres-auth
@@ -109,7 +109,7 @@ initdb:
 | `auth.password` | Password for `auth.username`; generated when empty | `""` |
 | `auth.database` | Initial database name | `""` |
 | `auth.existingSecret` | Existing Secret containing the password | `""` |
-| `auth.secretKeys.passwordKey` | Password key in the Secret | `password` |
+| `auth.existingSecretPasswordKey` | Password key in the existing Secret | `postgresql-password` |
 | `auth.trustAuthentication` | Enable trust authentication and skip password Secret creation | `false` |
 | `service.enabled` | Create the main Service | `true` |
 | `service.type` | Service type | `ClusterIP` |

@@ -10,8 +10,7 @@ global:
       password: ""
       database: ""
       existingSecret: ""
-      secretKeys:
-        passwordKey: ""
+      existingSecretPasswordKey: postgresql-password
     service:
       ports:
         postgresql: ""
@@ -40,8 +39,7 @@ auth:
   password: ""
   database: ""
   existingSecret: ""
-  secretKeys:
-    passwordKey: password
+  existingSecretPasswordKey: postgresql-password
 
 containerPorts:
   postgresql: 5432

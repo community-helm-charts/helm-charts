@@ -28,9 +28,8 @@ auth:
   password: ""
   database: ""
   existingSecret: ""
-  secretKeys:
-    rootPasswordKey: root-password
-    passwordKey: password
+  existingSecretRootPasswordKey: mysql-root-password
+  existingSecretPasswordKey: mysql-password
 
 containerPorts:
   mysql: 3306

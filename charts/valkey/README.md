@@ -24,7 +24,7 @@ From inside the cluster:
 ```console
 kubectl run my-valkey-client --rm --tty -i --restart='Never' \
   --image docker.io/valkey/valkey:8.1.3-alpine \
-  --env="REDISCLI_AUTH=$(kubectl get secret my-valkey -o jsonpath='{.data.password}' | base64 -d)" \
+  --env="REDISCLI_AUTH=$(kubectl get secret my-valkey -o jsonpath='{.data.valkey-password}' | base64 -d)" \
   --command -- valkey-cli --host my-valkey ping
 ```
 
@@ -48,12 +48,12 @@ helm install my-valkey oci://ghcr.io/community-helm-charts/valkey \
 
 ## Credentials
 
-By default, the chart creates a Secret named after the release, using the key `password`.
+By default, the chart creates a Secret named after the release, using the key `valkey-password`.
 
 Use an existing Secret:
 
 ```console
-kubectl create secret generic my-valkey-auth --from-literal=password='change-me'
+kubectl create secret generic my-valkey-auth --from-literal=valkey-password='change-me'
 
 helm install my-valkey oci://ghcr.io/community-helm-charts/valkey \
   --set auth.existingSecret=my-valkey-auth
@@ -92,7 +92,7 @@ existingConfigmap: my-valkey-config
 | `auth.enabled` | Enable password authentication | `true` |
 | `auth.password` | Valkey password; generated when empty | `""` |
 | `auth.existingSecret` | Existing Secret containing the password | `""` |
-| `auth.secretKeys.passwordKey` | Password key in the Secret | `password` |
+| `auth.existingSecretPasswordKey` | Password key in the existing Secret | `valkey-password` |
 | `service.type` | Service type | `ClusterIP` |
 | `service.ports.valkey` | Service port | `6379` |
 | `containerPorts.valkey` | Container port | `6379` |

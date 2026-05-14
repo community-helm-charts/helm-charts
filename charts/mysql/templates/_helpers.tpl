@@ -31,11 +31,19 @@
 {{- end -}}
 
 {{- define "mysql.rootPasswordKey" -}}
-{{- default "root-password" .Values.auth.secretKeys.rootPasswordKey -}}
+{{- if .Values.auth.existingSecret -}}
+{{- default "mysql-root-password" .Values.auth.existingSecretRootPasswordKey -}}
+{{- else -}}
+mysql-root-password
+{{- end -}}
 {{- end -}}
 
 {{- define "mysql.passwordKey" -}}
-{{- default "password" .Values.auth.secretKeys.passwordKey -}}
+{{- if .Values.auth.existingSecret -}}
+{{- default "mysql-password" .Values.auth.existingSecretPasswordKey -}}
+{{- else -}}
+mysql-password
+{{- end -}}
 {{- end -}}
 
 {{- define "mysql.createSecret" -}}

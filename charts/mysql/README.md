@@ -32,7 +32,7 @@ helm install my-mysql oci://ghcr.io/community-helm-charts/mysql \
 From inside the cluster:
 
 ```console
-export MYSQL_ROOT_PASSWORD=$(kubectl get secret my-mysql -o jsonpath='{.data.root-password}' | base64 -d)
+export MYSQL_ROOT_PASSWORD=$(kubectl get secret my-mysql -o jsonpath='{.data.mysql-root-password}' | base64 -d)
 
 kubectl run my-mysql-client --rm --tty -i --restart='Never' \
   --image docker.io/library/mysql:8.4.9 \
@@ -66,14 +66,14 @@ helm install my-mysql oci://ghcr.io/community-helm-charts/mysql \
 
 ## Credentials
 
-By default, the chart creates a Secret named after the release, using the key `root-password` for the root password. If `auth.username` is set, the same Secret also includes the key `password` for that user.
+By default, the chart creates a Secret named after the release, using the key `mysql-root-password` for the root password. If `auth.username` is set, the same Secret also includes the key `mysql-password` for that user.
 
 Use an existing Secret:
 
 ```console
 kubectl create secret generic my-mysql-auth \
-  --from-literal=root-password='change-me' \
-  --from-literal=password='app-password'
+  --from-literal=mysql-root-password='change-me' \
+  --from-literal=mysql-password='app-password'
 
 helm install my-mysql oci://ghcr.io/community-helm-charts/mysql \
   --set auth.existingSecret=my-mysql-auth \
@@ -113,8 +113,8 @@ initdb:
 | `auth.password` | Password for `auth.username`; generated when empty and `auth.username` is set | `""` |
 | `auth.database` | Optional initial database name | `""` |
 | `auth.existingSecret` | Existing Secret containing credentials | `""` |
-| `auth.secretKeys.rootPasswordKey` | Root password key in the Secret | `root-password` |
-| `auth.secretKeys.passwordKey` | User password key in the Secret | `password` |
+| `auth.existingSecretRootPasswordKey` | Root password key in the existing Secret | `mysql-root-password` |
+| `auth.existingSecretPasswordKey` | User password key in the existing Secret | `mysql-password` |
 | `service.enabled` | Create the main Service | `true` |
 | `service.type` | Service type | `ClusterIP` |
 | `service.ports.mysql` | Service port | `3306` |

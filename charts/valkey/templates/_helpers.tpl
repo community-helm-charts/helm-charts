@@ -19,7 +19,11 @@
 {{- end -}}
 
 {{- define "valkey.passwordKey" -}}
-{{- default "password" .Values.auth.secretKeys.passwordKey -}}
+{{- if .Values.auth.existingSecret -}}
+{{- default "valkey-password" .Values.auth.existingSecretPasswordKey -}}
+{{- else -}}
+valkey-password
+{{- end -}}
 {{- end -}}
 
 {{- define "valkey.createSecret" -}}

@@ -19,7 +19,11 @@
 {{- end -}}
 
 {{- define "redis.passwordKey" -}}
-{{- default "password" .Values.auth.secretKeys.passwordKey -}}
+{{- if .Values.auth.existingSecret -}}
+{{- default "redis-password" .Values.auth.existingSecretPasswordKey -}}
+{{- else -}}
+redis-password
+{{- end -}}
 {{- end -}}
 
 {{- define "redis.createSecret" -}}

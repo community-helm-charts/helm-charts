@@ -24,7 +24,7 @@ From inside the cluster:
 ```console
 kubectl run my-redis-client --rm --tty -i --restart='Never' \
   --image docker.io/library/redis:8.2.1-alpine \
-  --env="REDISCLI_AUTH=$(kubectl get secret my-redis -o jsonpath='{.data.password}' | base64 -d)" \
+  --env="REDISCLI_AUTH=$(kubectl get secret my-redis -o jsonpath='{.data.redis-password}' | base64 -d)" \
   --command -- redis-cli --host my-redis ping
 ```
 
@@ -48,12 +48,12 @@ helm install my-redis oci://ghcr.io/community-helm-charts/redis \
 
 ## Credentials
 
-By default, the chart creates a Secret named after the release, using the key `password`.
+By default, the chart creates a Secret named after the release, using the key `redis-password`.
 
 Use an existing Secret:
 
 ```console
-kubectl create secret generic my-redis-auth --from-literal=password='change-me'
+kubectl create secret generic my-redis-auth --from-literal=redis-password='change-me'
 
 helm install my-redis oci://ghcr.io/community-helm-charts/redis \
   --set auth.existingSecret=my-redis-auth
@@ -92,7 +92,7 @@ existingConfigmap: my-redis-config
 | `auth.enabled` | Enable password authentication | `true` |
 | `auth.password` | Redis password; generated when empty | `""` |
 | `auth.existingSecret` | Existing Secret containing the password | `""` |
-| `auth.secretKeys.passwordKey` | Password key in the Secret | `password` |
+| `auth.existingSecretPasswordKey` | Password key in the existing Secret | `redis-password` |
 | `service.type` | Service type | `ClusterIP` |
 | `service.ports.redis` | Service port | `6379` |
 | `containerPorts.redis` | Container port | `6379` |

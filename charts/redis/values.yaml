@@ -26,8 +26,7 @@ auth:
   enabled: true
   password: ""
   existingSecret: ""
-  secretKeys:
-    passwordKey: password
+  existingSecretPasswordKey: redis-password
 
 containerPorts:
   redis: 6379

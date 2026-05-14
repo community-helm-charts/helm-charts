@@ -17,4 +17,4 @@ name: common
 sources:
   - https://github.com/community-helm-charts/helm-charts/tree/main/charts/common
 type: library
-version: 0.0.0
+version: 0.0.1

@@ -6,10 +6,6 @@
 {{- include "postgresql.chart.fullname" . -}}
 {{- end -}}
 
-{{- define "postgresql.headlessServiceName" -}}
-{{- printf "%s-hl" (include "postgresql.fullname" .) | trunc 63 | trimSuffix "-" -}}
-{{- end -}}
-
 {{- define "postgresql.image" -}}
 {{- include "common.images.image" (dict "imageRoot" .Values.image "global" .Values.global) -}}
 {{- end -}}

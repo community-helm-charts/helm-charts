@@ -2,7 +2,7 @@
 
 This chart deploys a single Valkey instance using the official Valkey image.
 
-It is intentionally small: one StatefulSet, one ClusterIP Service, one headless Service, and one optional Secret for authentication.
+It is intentionally small: one StatefulSet, one ClusterIP Service, and one optional Secret for authentication.
 
 ## Install
 

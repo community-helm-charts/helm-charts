@@ -2,7 +2,7 @@
 
 This chart deploys a single MySQL instance using the Docker Official MySQL image.
 
-It is designed to be small and predictable: one StatefulSet, one ClusterIP Service, one headless Service, and one Secret for credentials. It does not include built-in replication, failover, backup jobs, metrics exporters, TLS management, password migration jobs, or operator-style lifecycle automation.
+It is designed to be small and predictable: one StatefulSet, one ClusterIP Service, and one Secret for credentials. It does not include built-in replication, failover, backup jobs, metrics exporters, TLS management, password migration jobs, or operator-style lifecycle automation.
 
 ## Install
 

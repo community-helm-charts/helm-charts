@@ -2,10 +2,6 @@
 {{- include "common.names.fullname" . -}}
 {{- end -}}
 
-{{- define "redis.headlessServiceName" -}}
-{{- printf "%s-hl" (include "redis.fullname" .) | trunc 63 | trimSuffix "-" -}}
-{{- end -}}
-
 {{- define "redis.image" -}}
 {{- include "common.images.image" (dict "imageRoot" .Values.image "global" .Values.global) -}}
 {{- end -}}

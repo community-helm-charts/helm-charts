@@ -10,7 +10,7 @@ metadata:
     app.kubernetes.io/component: mysql
 spec:
   replicas: 1
-  serviceName: {{ include "mysql.headlessServiceName" . }}
+  serviceName: {{ include "mysql.fullname" . }}
   updateStrategy: {{- toYaml .Values.updateStrategy | nindent 4 }}
   {{- $podLabels := include "common.tplvalues.merge" (dict "values" (list .Values.podLabels .Values.commonLabels) "context" .) }}
   selector:

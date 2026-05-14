@@ -2,10 +2,6 @@
 {{- include "common.names.fullname" . -}}
 {{- end -}}
 
-{{- define "mysql.headlessServiceName" -}}
-{{- printf "%s-hl" (include "mysql.fullname" .) | trunc 63 | trimSuffix "-" -}}
-{{- end -}}
-
 {{- define "mysql.image" -}}
 {{- include "common.images.image" (dict "imageRoot" .Values.image "global" .Values.global) -}}
 {{- end -}}

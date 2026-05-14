@@ -9,7 +9,7 @@ metadata:
     app.kubernetes.io/component: postgresql
 spec:
   replicas: 1
-  serviceName: {{ include "postgresql.headlessServiceName" . }}
+  serviceName: {{ include "postgresql.fullname" . }}
   updateStrategy: {{- toYaml .Values.updateStrategy | nindent 4 }}
   {{- $podLabels := include "common.tplvalues.merge" (dict "values" (list .Values.podLabels .Values.commonLabels) "context" .) }}
   selector:

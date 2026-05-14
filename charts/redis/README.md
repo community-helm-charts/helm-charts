@@ -2,7 +2,7 @@
 
 This chart deploys a single Redis instance using the Docker Official Redis image.
 
-It is intentionally small: one StatefulSet, one ClusterIP Service, one headless Service, and one optional Secret for authentication.
+It is intentionally small: one StatefulSet, one ClusterIP Service, and one optional Secret for authentication.
 
 ## Install
 

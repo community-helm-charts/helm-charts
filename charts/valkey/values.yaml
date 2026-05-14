@@ -50,9 +50,6 @@ service:
   sessionAffinityConfig: {}
   extraPorts: []
 
-headlessService:
-  annotations: {}
-
 persistence:
   enabled: true
   volumeName: data

@@ -2,10 +2,6 @@
 {{- include "common.names.fullname" . -}}
 {{- end -}}
 
-{{- define "valkey.headlessServiceName" -}}
-{{- printf "%s-hl" (include "valkey.fullname" .) | trunc 63 | trimSuffix "-" -}}
-{{- end -}}
-
 {{- define "valkey.image" -}}
 {{- include "common.images.image" (dict "imageRoot" .Values.image "global" .Values.global) -}}
 {{- end -}}

@@ -7,7 +7,7 @@ metadata:
     app.kubernetes.io/component: redis
 spec:
   replicas: 1
-  serviceName: {{ include "redis.headlessServiceName" . }}
+  serviceName: {{ include "redis.fullname" . }}
   updateStrategy: {{- toYaml .Values.updateStrategy | nindent 4 }}
   {{- $podLabels := include "common.tplvalues.merge" (dict "values" (list .Values.podLabels .Values.commonLabels) "context" .) }}
   selector:

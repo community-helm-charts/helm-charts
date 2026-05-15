@@ -1,317 +1,375 @@
-#!/usr/bin/env python3
-import argparse
-import json
-import os
-import re
-import subprocess
-import sys
-from pathlib import Path
+#!/usr/bin/env node
+import { spawnSync } from "node:child_process";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { extname, join } from "node:path";
+import process from "node:process";
 
+const VERSION_RE = /^version:\s*['"]?([^'"\s#]+)['"]?\s*(?:#.*)?$/m;
+const SEMVER_RE = /^(\d+)\.(\d+)\.(\d+)(?:[-+].*)?$/;
+const TYPE_RE = /^(?<type>[a-zA-Z]+)(?:\([^)]+\))?(?<breaking>!)?:/;
+const BUMP_ORDER = { patch: 1, minor: 2, major: 3 };
 
-VERSION_RE = re.compile(r"^version:\s*['\"]?([^'\"\s#]+)['\"]?\s*(?:#.*)?$", re.MULTILINE)
-SEMVER_RE = re.compile(r"^(\d+)\.(\d+)\.(\d+)(?:[-+].*)?$")
-TYPE_RE = re.compile(r"^(?P<type>[a-zA-Z]+)(?:\([^)]+\))?(?P<breaking>!)?:")
-BUMP_ORDER = {"patch": 1, "minor": 2, "major": 3}
+class ChartVersionerError extends Error {}
 
+function git(args, cwd) {
+  const result = gitMaybe(args, cwd);
+  if (result.status !== 0) {
+    throw new ChartVersionerError(result.stderr.trim() || `git ${args.join(" ")} failed`);
+  }
+  return result.stdout;
+}
 
-class ChartVersionerError(Exception):
-    pass
+function gitMaybe(args, cwd) {
+  return spawnSync("git", args, {
+    cwd,
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+}
 
+function isZeroSha(value) {
+  return Boolean(value) && new Set(value).size === 1 && value[0] === "0";
+}
 
-def git(args, cwd):
-    result = subprocess.run(
-        ["git", *args],
-        cwd=cwd,
-        text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-    )
-    if result.returncode != 0:
-        raise ChartVersionerError(result.stderr.strip() or f"git {' '.join(args)} failed")
-    return result.stdout
+function resolveBase(base, head, cwd) {
+  if (base && !isZeroSha(base)) {
+    const result = gitMaybe(["rev-parse", "--verify", `${base}^{commit}`], cwd);
+    if (result.status === 0) {
+      return base;
+    }
+  }
 
+  const parent = gitMaybe(["rev-parse", "--verify", `${head}^{commit}^`], cwd);
+  if (parent.status === 0) {
+    return `${head}^`;
+  }
 
-def git_maybe(args, cwd):
-    result = subprocess.run(
-        ["git", *args],
-        cwd=cwd,
-        text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-    )
-    return result
+  return git(["hash-object", "-t", "tree", "/dev/null"], cwd).trim();
+}
 
+function changedFiles(base, head, cwd) {
+  const output = git(["diff", "--name-only", "--diff-filter=ACMRT", `${base}..${head}`], cwd);
+  return output
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+}
 
-def is_zero_sha(value):
-    return value and set(value) == {"0"}
+function chartNameFromPath(path, chartsDir) {
+  const parts = path.split("/");
+  if (parts.length < 3 || parts[0] !== chartsDir) {
+    return null;
+  }
+  return parts[1];
+}
 
+function isReleaseRelevant(path) {
+  return extname(path).toLowerCase() !== ".md";
+}
 
-def resolve_base(base, head, cwd):
-    if base and not is_zero_sha(base):
-        result = git_maybe(["rev-parse", "--verify", f"{base}^{{commit}}"], cwd)
-        if result.returncode == 0:
-            return base
+function chartVersionFromText(text, source) {
+  const match = VERSION_RE.exec(text);
+  if (!match) {
+    throw new ChartVersionerError(`Could not find root version in ${source}`);
+  }
+  return match[1];
+}
 
-    result = git_maybe(["rev-parse", "--verify", f"{head}^{{commit}}^"], cwd)
-    if result.returncode == 0:
-        return f"{head}^"
+function readWorktreeChartVersion(chartPath) {
+  const chartYaml = join(chartPath, "Chart.yaml");
+  return chartVersionFromText(readFileSync(chartYaml, "utf8"), chartYaml);
+}
 
-    return git(["hash-object", "-t", "tree", "/dev/null"], cwd).strip()
+function readRefChartVersion(ref, chartYamlPath, cwd) {
+  const result = gitMaybe(["show", `${ref}:${chartYamlPath}`], cwd);
+  if (result.status !== 0) {
+    return null;
+  }
+  return chartVersionFromText(result.stdout, `${ref}:${chartYamlPath}`);
+}
 
+function bumpVersion(version, bump) {
+  const match = SEMVER_RE.exec(version);
+  if (!match) {
+    throw new ChartVersionerError(`Only numeric semver versions are supported, got ${JSON.stringify(version)}`);
+  }
 
-def changed_files(base, head, cwd):
-    output = git(["diff", "--name-only", "--diff-filter=ACMRT", f"{base}..{head}"], cwd)
-    return [line.strip() for line in output.splitlines() if line.strip()]
+  const [, majorText, minorText, patchText] = match;
+  const major = Number(majorText);
+  const minor = Number(minorText);
+  const patch = Number(patchText);
 
+  if (bump === "major") {
+    return `${major + 1}.0.0`;
+  }
+  if (bump === "minor") {
+    return `${major}.${minor + 1}.0`;
+  }
+  if (bump === "patch") {
+    return `${major}.${minor}.${patch + 1}`;
+  }
+  throw new ChartVersionerError(`Unknown bump type ${JSON.stringify(bump)}`);
+}
 
-def chart_name_from_path(path, charts_dir):
-    parts = Path(path).parts
-    if len(parts) < 3 or parts[0] != charts_dir:
-        return None
-    return parts[1]
+function commitMessagesForChart(base, head, chart, chartsDir, cwd) {
+  const output = git(["log", "--format=%B%x00", `${base}..${head}`, "--", `${chartsDir}/${chart}`], cwd);
+  return output
+    .split("\0")
+    .map((message) => message.trim())
+    .filter(Boolean);
+}
 
+function maxBump(current, candidate) {
+  if (!current) {
+    return candidate;
+  }
+  return BUMP_ORDER[current] >= BUMP_ORDER[candidate] ? current : candidate;
+}
 
-def is_release_relevant(path):
-    return Path(path).suffix.lower() != ".md"
-
-
-def chart_version_from_text(text, source):
-    match = VERSION_RE.search(text)
-    if not match:
-        raise ChartVersionerError(f"Could not find root version in {source}")
-    return match.group(1)
-
-
-def read_worktree_chart_version(chart_path):
-    chart_yaml = chart_path / "Chart.yaml"
-    return chart_version_from_text(chart_yaml.read_text(encoding="utf-8"), str(chart_yaml))
-
-
-def read_ref_chart_version(ref, chart_yaml_path, cwd):
-    result = git_maybe(["show", f"{ref}:{chart_yaml_path}"], cwd)
-    if result.returncode != 0:
-        return None
-    return chart_version_from_text(result.stdout, f"{ref}:{chart_yaml_path}")
-
-
-def bump_version(version, bump):
-    match = SEMVER_RE.match(version)
-    if not match:
-        raise ChartVersionerError(f"Only numeric semver versions are supported, got {version!r}")
-    major, minor, patch = (int(part) for part in match.groups())
-    if bump == "major":
-        return f"{major + 1}.0.0"
-    if bump == "minor":
-        return f"{major}.{minor + 1}.0"
-    if bump == "patch":
-        return f"{major}.{minor}.{patch + 1}"
-    raise ChartVersionerError(f"Unknown bump type {bump!r}")
-
-
-def commit_messages_for_chart(base, head, chart, charts_dir, cwd):
-    output = git(["log", "--format=%B%x00", f"{base}..{head}", "--", f"{charts_dir}/{chart}"], cwd)
-    return [message.strip() for message in output.split("\x00") if message.strip()]
-
-
-def bump_from_messages(messages):
-    selected = None
-    for message in messages:
-        first_line = message.splitlines()[0] if message.splitlines() else ""
-        type_match = TYPE_RE.match(first_line)
-        if not type_match:
-            continue
-
-        commit_type = type_match.group("type")
-        if commit_type not in ("feat", "fix"):
-            continue
-
-        if type_match.group("breaking"):
-            selected = "major"
-        elif commit_type == "feat":
-            selected = max_bump(selected, "minor")
-        elif commit_type == "fix":
-            selected = max_bump(selected, "patch")
-
-    return selected
-
-
-def max_bump(current, candidate):
-    if current is None:
-        return candidate
-    return current if BUMP_ORDER[current] >= BUMP_ORDER[candidate] else candidate
-
-
-def replace_worktree_version(chart_path, next_version):
-    chart_yaml = chart_path / "Chart.yaml"
-    text = chart_yaml.read_text(encoding="utf-8")
-    new_text, count = re.subn(r"^version:\s*.*$", f"version: {next_version}", text, count=1, flags=re.MULTILINE)
-    if count != 1:
-        raise ChartVersionerError(f"Could not update root version in {chart_yaml}")
-    chart_yaml.write_text(new_text, encoding="utf-8")
-
-
-def build_plan(base, head, charts_dir, cwd):
-    files = changed_files(base, head, cwd)
-    files_by_chart = {}
-    for path in files:
-        chart = chart_name_from_path(path, charts_dir)
-        if not chart or not is_release_relevant(path):
-            continue
-        files_by_chart.setdefault(chart, []).append(path)
-
-    chart_plans = []
-    for chart in sorted(files_by_chart):
-        chart_path = cwd / charts_dir / chart
-        chart_yaml_path = f"{charts_dir}/{chart}/Chart.yaml"
-        if not (chart_path / "Chart.yaml").exists():
-            continue
-
-        current_version = read_worktree_chart_version(chart_path)
-        base_version = read_ref_chart_version(base, chart_yaml_path, cwd)
-        if base_version is None:
-            messages = commit_messages_for_chart(base, head, chart, charts_dir, cwd)
-            bump = bump_from_messages(messages)
-            if bump is None:
-                continue
-            chart_plans.append(
-                {
-                    "name": chart,
-                    "path": f"{charts_dir}/{chart}",
-                    "files": files_by_chart[chart],
-                    "bump": "new",
-                    "base_version": None,
-                    "current_version": current_version,
-                    "next_version": current_version,
-                    "needs_update": False,
-                }
-            )
-            continue
-
-        messages = commit_messages_for_chart(base, head, chart, charts_dir, cwd)
-        bump = bump_from_messages(messages)
-        if bump is None:
-            continue
-        next_version = bump_version(base_version, bump)
-
-        if current_version not in (base_version, next_version):
-            raise ChartVersionerError(
-                f"Chart {chart} has version {current_version}, expected {base_version} or {next_version}"
-            )
-
-        chart_plans.append(
-            {
-                "name": chart,
-                "path": f"{charts_dir}/{chart}",
-                "files": files_by_chart[chart],
-                "bump": bump,
-                "base_version": base_version,
-                "current_version": current_version,
-                "next_version": next_version,
-                "needs_update": current_version != next_version,
-            }
-        )
-
-    return {
-        "base": base,
-        "head": head,
-        "changed_charts": [chart["name"] for chart in chart_plans],
-        "charts": chart_plans,
+function bumpFromMessages(messages) {
+  let selected = null;
+  for (const message of messages) {
+    const firstLine = message.split(/\r?\n/, 1)[0] || "";
+    const typeMatch = TYPE_RE.exec(firstLine);
+    if (!typeMatch) {
+      continue;
     }
 
+    const commitType = typeMatch.groups.type;
+    if (commitType !== "feat" && commitType !== "fix") {
+      continue;
+    }
 
-def write_github_output(path, plan):
-    if not path:
-        return
-    changed = ",".join(plan["changed_charts"])
-    lines = [
-        f"has_changes={'true' if changed else 'false'}",
-        f"changed_charts={changed}",
-    ]
-    with open(path, "a", encoding="utf-8") as handle:
-        handle.write("\n".join(lines))
-        handle.write("\n")
+    if (typeMatch.groups.breaking) {
+      selected = "major";
+    } else if (commitType === "feat") {
+      selected = maxBump(selected, "minor");
+    } else if (commitType === "fix") {
+      selected = maxBump(selected, "patch");
+    }
+  }
+  return selected;
+}
 
+function replaceWorktreeVersion(chartPath, nextVersion) {
+  const chartYaml = join(chartPath, "Chart.yaml");
+  const text = readFileSync(chartYaml, "utf8");
+  let count = 0;
+  const newText = text.replace(/^version:\s*.*$/m, () => {
+    count += 1;
+    return `version: ${nextVersion}`;
+  });
 
-def write_output(path, plan):
-    if not path:
-        return
-    Path(path).write_text(json.dumps(plan, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+  if (count !== 1) {
+    throw new ChartVersionerError(`Could not update root version in ${chartYaml}`);
+  }
+  writeFileSync(chartYaml, newText, "utf8");
+}
 
+function buildPlan(base, head, chartsDir, cwd) {
+  const files = changedFiles(base, head, cwd);
+  const filesByChart = new Map();
+  for (const path of files) {
+    const chart = chartNameFromPath(path, chartsDir);
+    if (!chart || !isReleaseRelevant(path)) {
+      continue;
+    }
+    if (!filesByChart.has(chart)) {
+      filesByChart.set(chart, []);
+    }
+    filesByChart.get(chart).push(path);
+  }
 
-def cmd_plan(args):
-    cwd = Path.cwd()
-    base = resolve_base(args.base, args.head, cwd)
-    plan = build_plan(base, args.head, args.charts_dir, cwd)
-    write_output(args.output, plan)
-    write_github_output(args.github_output, plan)
-    print(json.dumps(plan, indent=2, sort_keys=True))
+  const chartPlans = [];
+  for (const chart of [...filesByChart.keys()].sort()) {
+    const chartPath = join(cwd, chartsDir, chart);
+    const chartYamlPath = `${chartsDir}/${chart}/Chart.yaml`;
+    if (!existsSync(join(chartPath, "Chart.yaml"))) {
+      continue;
+    }
 
+    const currentVersion = readWorktreeChartVersion(chartPath);
+    const baseVersion = readRefChartVersion(base, chartYamlPath, cwd);
+    const messages = commitMessagesForChart(base, head, chart, chartsDir, cwd);
+    const bump = bumpFromMessages(messages);
+    if (!bump) {
+      continue;
+    }
 
-def cmd_write(args):
-    cwd = Path.cwd()
-    base = resolve_base(args.base, args.head, cwd)
-    plan = build_plan(base, args.head, args.charts_dir, cwd)
-    for chart in plan["charts"]:
-        if chart["needs_update"]:
-            replace_worktree_version(cwd / chart["path"], chart["next_version"])
-            chart["updated"] = True
-        else:
-            chart["updated"] = False
+    if (baseVersion === null) {
+      chartPlans.push({
+        name: chart,
+        path: `${chartsDir}/${chart}`,
+        files: filesByChart.get(chart),
+        bump: "new",
+        base_version: null,
+        current_version: currentVersion,
+        next_version: currentVersion,
+        needs_update: false,
+      });
+      continue;
+    }
 
-    write_output(args.output, plan)
-    write_github_output(args.github_output, plan)
+    const nextVersion = bumpVersion(baseVersion, bump);
+    if (currentVersion !== baseVersion && currentVersion !== nextVersion) {
+      throw new ChartVersionerError(
+        `Chart ${chart} has version ${currentVersion}, expected ${baseVersion} or ${nextVersion}`,
+      );
+    }
 
-    if not plan["charts"]:
-        print("No changed charts detected.")
-        return
-    for chart in plan["charts"]:
-        action = "updated" if chart["updated"] else "unchanged"
-        print(f"{chart['name']}: {chart['base_version'] or 'new'} -> {chart['next_version']} ({chart['bump']}, {action})")
+    chartPlans.push({
+      name: chart,
+      path: `${chartsDir}/${chart}`,
+      files: filesByChart.get(chart),
+      bump,
+      base_version: baseVersion,
+      current_version: currentVersion,
+      next_version: nextVersion,
+      needs_update: currentVersion !== nextVersion,
+    });
+  }
 
+  return {
+    base,
+    head,
+    changed_charts: chartPlans.map((chart) => chart.name),
+    charts: chartPlans,
+  };
+}
 
-def cmd_check(args):
-    cwd = Path.cwd()
-    base = resolve_base(args.base, args.head, cwd)
-    plan = build_plan(base, args.head, args.charts_dir, cwd)
-    write_output(args.output, plan)
-    write_github_output(args.github_output, plan)
-    stale = [chart for chart in plan["charts"] if chart["needs_update"]]
-    if stale:
-        for chart in stale:
-            print(
-                f"{chart['name']} requires version {chart['next_version']} "
-                f"({chart['bump']} from {chart['base_version']})",
-                file=sys.stderr,
-            )
-        raise ChartVersionerError("Chart versions are not up to date")
-    print(json.dumps(plan, indent=2, sort_keys=True))
+function writeGithubOutput(path, plan) {
+  if (!path) {
+    return;
+  }
+  const changed = plan.changed_charts.join(",");
+  const lines = [`has_changes=${changed ? "true" : "false"}`, `changed_charts=${changed}`];
+  writeFileSync(path, `${lines.join("\n")}\n`, { encoding: "utf8", flag: "a" });
+}
 
+function writeOutput(path, plan) {
+  if (!path) {
+    return;
+  }
+  writeFileSync(path, `${JSON.stringify(plan, null, 2)}\n`, "utf8");
+}
 
-def parser():
-    common = argparse.ArgumentParser(add_help=False)
-    common.add_argument("--base", default=os.environ.get("CHART_VERSIONER_BASE", "HEAD~1"))
-    common.add_argument("--head", default=os.environ.get("CHART_VERSIONER_HEAD", "HEAD"))
-    common.add_argument("--charts-dir", default="charts")
-    common.add_argument("--output")
-    common.add_argument("--github-output")
+function printPlan(plan) {
+  console.log(JSON.stringify(plan, null, 2));
+}
 
-    root = argparse.ArgumentParser(description="Plan and update Helm chart versions from changed chart commits.")
-    subparsers = root.add_subparsers(dest="command", required=True)
-    subparsers.add_parser("plan", parents=[common]).set_defaults(func=cmd_plan)
-    subparsers.add_parser("write", parents=[common]).set_defaults(func=cmd_write)
-    subparsers.add_parser("check", parents=[common]).set_defaults(func=cmd_check)
-    return root
+function cmdPlan(args) {
+  const cwd = process.cwd();
+  const base = resolveBase(args.base, args.head, cwd);
+  const plan = buildPlan(base, args.head, args.chartsDir, cwd);
+  writeOutput(args.output, plan);
+  writeGithubOutput(args.githubOutput, plan);
+  printPlan(plan);
+}
 
+function cmdWrite(args) {
+  const cwd = process.cwd();
+  const base = resolveBase(args.base, args.head, cwd);
+  const plan = buildPlan(base, args.head, args.chartsDir, cwd);
+  for (const chart of plan.charts) {
+    if (chart.needs_update) {
+      replaceWorktreeVersion(join(cwd, chart.path), chart.next_version);
+      chart.updated = true;
+    } else {
+      chart.updated = false;
+    }
+  }
 
-def main():
-    args = parser().parse_args()
-    try:
-        args.func(args)
-    except ChartVersionerError as error:
-        print(f"error: {error}", file=sys.stderr)
-        return 1
-    return 0
+  writeOutput(args.output, plan);
+  writeGithubOutput(args.githubOutput, plan);
 
+  if (plan.charts.length === 0) {
+    console.log("No changed charts detected.");
+    return;
+  }
+  for (const chart of plan.charts) {
+    const action = chart.updated ? "updated" : "unchanged";
+    console.log(`${chart.name}: ${chart.base_version || "new"} -> ${chart.next_version} (${chart.bump}, ${action})`);
+  }
+}
 
-if __name__ == "__main__":
-    raise SystemExit(main())
+function cmdCheck(args) {
+  const cwd = process.cwd();
+  const base = resolveBase(args.base, args.head, cwd);
+  const plan = buildPlan(base, args.head, args.chartsDir, cwd);
+  writeOutput(args.output, plan);
+  writeGithubOutput(args.githubOutput, plan);
+  const stale = plan.charts.filter((chart) => chart.needs_update);
+  if (stale.length > 0) {
+    for (const chart of stale) {
+      console.error(`${chart.name} requires version ${chart.next_version} (${chart.bump} from ${chart.base_version})`);
+    }
+    throw new ChartVersionerError("Chart versions are not up to date");
+  }
+  printPlan(plan);
+}
+
+function parseArgs(argv) {
+  const [command, ...rest] = argv;
+  if (!command || !["plan", "write", "check"].includes(command)) {
+    throw new ChartVersionerError("Usage: chart-versioner <plan|write|check> [--base REF] [--head REF]");
+  }
+
+  const args = {
+    base: process.env.CHART_VERSIONER_BASE || "HEAD~1",
+    chartsDir: "charts",
+    command,
+    githubOutput: undefined,
+    head: process.env.CHART_VERSIONER_HEAD || "HEAD",
+    output: undefined,
+  };
+
+  for (let i = 0; i < rest.length; i += 1) {
+    const option = rest[i];
+    const value = rest[i + 1];
+    if (!option.startsWith("--")) {
+      throw new ChartVersionerError(`Unexpected argument ${JSON.stringify(option)}`);
+    }
+    if (value === undefined || value.startsWith("--")) {
+      throw new ChartVersionerError(`Missing value for ${option}`);
+    }
+
+    if (option === "--base") {
+      args.base = value;
+    } else if (option === "--head") {
+      args.head = value;
+    } else if (option === "--charts-dir") {
+      args.chartsDir = value;
+    } else if (option === "--output") {
+      args.output = value;
+    } else if (option === "--github-output") {
+      args.githubOutput = value;
+    } else {
+      throw new ChartVersionerError(`Unknown option ${option}`);
+    }
+    i += 1;
+  }
+
+  return args;
+}
+
+function main() {
+  try {
+    const args = parseArgs(process.argv.slice(2));
+    if (args.command === "plan") {
+      cmdPlan(args);
+    } else if (args.command === "write") {
+      cmdWrite(args);
+    } else if (args.command === "check") {
+      cmdCheck(args);
+    }
+    return 0;
+  } catch (error) {
+    if (error instanceof ChartVersionerError) {
+      console.error(`error: ${error.message}`);
+      return 1;
+    }
+    throw error;
+  }
+}
+
+process.exitCode = main();

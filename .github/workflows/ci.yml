@@ -6,6 +6,8 @@ on:
     paths:
       - ".github/workflows/ci.yml"
       - "charts/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
       - "scripts/**"
       - "tests/**"
   workflow_dispatch:
@@ -27,13 +29,28 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 11.1.2
+          run_install: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: lts/*
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
       - name: Set up Helm
         uses: azure/setup-helm@v5
         with:
           version: ${{ env.HELM_VERSION }}
 
       - name: Run chart versioner tests
-        run: python3 -m unittest tests/test_chart_versioner.py
+        run: pnpm test
 
       - name: Configure Git
         run: |

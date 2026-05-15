@@ -1,0 +1,23 @@
+{{- if .Values.analytics.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "ghost.analytics.fullname" . }}
+  namespace: {{ include "common.names.namespace" . | quote }}
+  {{- $labels := include "common.tplvalues.merge" (dict "values" (list .Values.analytics.service.labels .Values.commonLabels) "context" .) }}
+  labels: {{- include "common.labels.standard" (dict "customLabels" $labels "context" $) | nindent 4 }}
+    app.kubernetes.io/component: traffic-analytics
+  {{- if or .Values.analytics.service.annotations .Values.commonAnnotations }}
+  {{- $annotations := include "common.tplvalues.merge" (dict "values" (list .Values.analytics.service.annotations .Values.commonAnnotations) "context" .) }}
+  annotations: {{- include "common.tplvalues.render" (dict "value" $annotations "context" $) | nindent 4 }}
+  {{- end }}
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: {{ .Values.analytics.service.ports.http }}
+      targetPort: http
+  {{- $podLabels := include "common.tplvalues.merge" (dict "values" (list .Values.analytics.podLabels .Values.commonLabels) "context" .) }}
+  selector: {{- include "common.labels.matchLabels" (dict "customLabels" $podLabels "context" $) | nindent 4 }}
+    app.kubernetes.io/component: traffic-analytics
+{{- end }}

@@ -1,0 +1,38 @@
+annotations:
+  images: |
+    - name: ghost
+      image: docker.io/library/ghost:6-alpine
+    - name: mysql
+      image: docker.io/library/mysql:8.0.44
+    - name: traffic-analytics
+      image: docker.io/ghost/traffic-analytics:1.0.219
+    - name: activitypub
+      image: ghcr.io/tryghost/activitypub:1.2.2
+    - name: activitypub-migrations
+      image: ghcr.io/tryghost/activitypub-migrations:1.2.2
+    - name: tinybird-cli
+      image: docker.io/tinybirdco/tinybird-cli-docker:5.22.2
+  licenses: MIT
+apiVersion: v2
+appVersion: "6"
+dependencies:
+- name: common
+  repository: oci://ghcr.io/community-helm-charts
+  version: 0.x.x
+description: A Ghost CMS Helm chart with built-in MySQL, optional Tinybird analytics, and optional self-hosted ActivityPub.
+home: https://github.com/community-helm-charts/helm-charts
+keywords:
+- ghost
+- cms
+- publishing
+- blog
+- activitypub
+- analytics
+maintainers:
+- name: community-helm-charts
+  url: https://github.com/community-helm-charts/helm-charts
+name: ghost
+sources:
+- https://github.com/community-helm-charts/helm-charts/tree/main/charts/ghost
+- https://github.com/TryGhost/ghost-docker
+version: 0.0.0

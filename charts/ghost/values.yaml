@@ -1,0 +1,369 @@
+global:
+  imageRegistry: ""
+  imagePullSecrets: []
+  defaultStorageClass: ""
+  storageClass: ""
+
+kubeVersion: ""
+nameOverride: ""
+fullnameOverride: ""
+namespaceOverride: ""
+clusterDomain: cluster.local
+commonLabels: {}
+commonAnnotations: {}
+secretAnnotations: {}
+extraDeploy: []
+
+image:
+  registry: docker.io
+  repository: library/ghost
+  tag: 6-alpine
+  digest: ""
+  pullPolicy: IfNotPresent
+  pullSecrets: []
+
+url: http://localhost:2368
+adminUrl: ""
+
+smtp:
+  enabled: false
+  from: "'Ghost' <noreply@ghost.local>"
+  host: smtp.resend.com
+  port: 465
+  secure: true
+  user: resend
+  password: ""
+  existingSecret: ""
+  existingSecretPasswordKey: smtp-password
+
+containerPorts:
+  http: 2368
+
+service:
+  enabled: true
+  type: ClusterIP
+  ports:
+    http: 80
+  nodePorts:
+    http: ""
+  clusterIP: ""
+  annotations: {}
+  labels: {}
+  loadBalancerClass: ""
+  loadBalancerIP: ""
+  loadBalancerSourceRanges: []
+  externalTrafficPolicy: Cluster
+  sessionAffinity: None
+  sessionAffinityConfig: {}
+  extraPorts: []
+
+ingress:
+  enabled: true
+  className: ""
+  hostname: ghost.local
+  path: /
+  pathType: Prefix
+  annotations: {}
+  tls: false
+  selfSigned: false
+  extraHosts: []
+  extraPaths: []
+  extraTls: []
+  secrets: []
+
+persistence:
+  enabled: true
+  volumeName: ghost-content
+  mountPath: /var/lib/ghost/content
+  subPath: ""
+  storageClass: ""
+  accessModes:
+    - ReadWriteOnce
+  size: 8Gi
+  annotations: {}
+  labels: {}
+  selector: {}
+  dataSource: {}
+  existingClaim: ""
+
+mysql:
+  enabled: true
+  image:
+    registry: docker.io
+    repository: library/mysql
+    tag: 8.0.44
+    pullPolicy: IfNotPresent
+  auth:
+    rootPassword: ""
+    username: ghost
+    password: ""
+    database: ghost
+    existingSecret: ""
+    existingSecretRootPasswordKey: mysql-root-password
+    existingSecretPasswordKey: mysql-password
+  service:
+    port: 3306
+  persistence:
+    enabled: true
+    storageClass: ""
+    size: 8Gi
+    existingClaim: ""
+  resources: {}
+
+externalDatabase:
+  host: ""
+  port: 3306
+  user: ghost
+  password: ""
+  database: ghost
+  existingSecret: ""
+  existingSecretPasswordKey: mysql-password
+
+databaseWait:
+  enabled: true
+  timeoutSeconds: 300
+
+analytics:
+  enabled: false
+  image:
+    registry: docker.io
+    repository: ghost/traffic-analytics
+    tag: 1.0.219
+    digest: ""
+    pullPolicy: IfNotPresent
+    pullSecrets: []
+  tinybird:
+    apiUrl: https://api.tinybird.co
+    trackerToken: ""
+    adminToken: ""
+    workspaceId: ""
+    existingSecret: ""
+    secretKeys:
+      trackerTokenKey: tinybird-tracker-token
+      adminTokenKey: tinybird-admin-token
+      workspaceIdKey: tinybird-workspace-id
+    deploy:
+      enabled: false
+      image:
+        registry: docker.io
+        repository: tinybirdco/tinybird-cli-docker
+        tag: 5.22.2
+        digest: ""
+        pullPolicy: IfNotPresent
+        pullSecrets: []
+      backoffLimit: 1
+      activeDeadlineSeconds: 600
+      annotations: {}
+      podAnnotations: {}
+      resources: {}
+  containerPorts:
+    http: 3000
+  logLevel: debug
+  saltStoreType: file
+  persistence:
+    enabled: true
+    volumeName: traffic-analytics-data
+    mountPath: /data
+    storageClass: ""
+    accessModes:
+      - ReadWriteOnce
+    size: 1Gi
+    annotations: {}
+    labels: {}
+    selector: {}
+    dataSource: {}
+    existingClaim: ""
+  service:
+    ports:
+      http: 3000
+    annotations: {}
+    labels: {}
+  extraEnvVars: []
+  extraVolumes: []
+  extraVolumeMounts: []
+  podLabels: {}
+  podAnnotations: {}
+  podSecurityContext:
+    enabled: false
+  containerSecurityContext:
+    enabled: false
+    runAsUser: 1000
+    runAsGroup: 1000
+    runAsNonRoot: true
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    seccompProfile:
+      type: RuntimeDefault
+  resourcesPreset: none
+  resources: {}
+  livenessProbe:
+    enabled: true
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 6
+    successThreshold: 1
+  readinessProbe:
+    enabled: true
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 6
+    successThreshold: 1
+  customLivenessProbe: {}
+  customReadinessProbe: {}
+  affinity: {}
+  nodeSelector: {}
+  tolerations: []
+  topologySpreadConstraints: []
+
+activitypub:
+  enabled: false
+  image:
+    registry: ghcr.io
+    repository: tryghost/activitypub
+    tag: 1.2.2
+    digest: ""
+    pullPolicy: IfNotPresent
+    pullSecrets: []
+  migration:
+    image:
+      registry: ghcr.io
+      repository: tryghost/activitypub-migrations
+      tag: 1.2.2
+      digest: ""
+      pullPolicy: IfNotPresent
+      pullSecrets: []
+    resources: {}
+  database: activitypub
+  localStoragePath: /opt/activitypub/content/images/activitypub
+  containerPorts:
+    http: 8080
+  service:
+    ports:
+      http: 8080
+    annotations: {}
+    labels: {}
+  extraEnvVars: []
+  extraVolumes: []
+  extraVolumeMounts: []
+  podLabels: {}
+  podAnnotations: {}
+  podSecurityContext:
+    enabled: false
+  containerSecurityContext:
+    enabled: false
+    runAsUser: 1000
+    runAsGroup: 1000
+    runAsNonRoot: true
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    seccompProfile:
+      type: RuntimeDefault
+  resourcesPreset: none
+  resources: {}
+  livenessProbe:
+    enabled: true
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 6
+    successThreshold: 1
+  readinessProbe:
+    enabled: true
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 6
+    successThreshold: 1
+  customLivenessProbe: {}
+  customReadinessProbe: {}
+  affinity: {}
+  nodeSelector: {}
+  tolerations: []
+  topologySpreadConstraints: []
+
+updateStrategy:
+  type: RollingUpdate
+
+command: []
+args: []
+extraEnvVars: []
+extraEnvVarsCM: ""
+extraEnvVarsSecret: ""
+extraVolumes: []
+extraVolumeMounts: []
+initContainers: []
+sidecars: []
+
+podLabels: {}
+podAnnotations: {}
+podSecurityContext:
+  enabled: true
+  fsGroupChangePolicy: Always
+  sysctls: []
+  supplementalGroups: []
+  fsGroup: 1000
+containerSecurityContext:
+  enabled: false
+  runAsUser: 1000
+  runAsGroup: 1000
+  runAsNonRoot: true
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  seccompProfile:
+    type: RuntimeDefault
+
+resourcesPreset: none
+resources: {}
+
+startupProbe:
+  enabled: true
+  path: /
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 30
+  successThreshold: 1
+livenessProbe:
+  enabled: true
+  path: /
+  initialDelaySeconds: 60
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 6
+  successThreshold: 1
+readinessProbe:
+  enabled: true
+  path: /
+  initialDelaySeconds: 10
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 6
+  successThreshold: 1
+customStartupProbe: {}
+customLivenessProbe: {}
+customReadinessProbe: {}
+
+priorityClassName: ""
+schedulerName: ""
+terminationGracePeriodSeconds: ""
+hostAliases: []
+affinity: {}
+nodeSelector: {}
+tolerations: []
+topologySpreadConstraints: []
+
+serviceAccount:
+  create: true
+  name: ""
+  automountServiceAccountToken: false
+  annotations: {}
+
+automountServiceAccountToken: false

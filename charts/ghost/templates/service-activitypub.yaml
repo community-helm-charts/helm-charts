@@ -1,0 +1,23 @@
+{{- if .Values.activitypub.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "ghost.activitypub.fullname" . }}
+  namespace: {{ include "common.names.namespace" . | quote }}
+  {{- $labels := include "common.tplvalues.merge" (dict "values" (list .Values.activitypub.service.labels .Values.commonLabels) "context" .) }}
+  labels: {{- include "common.labels.standard" (dict "customLabels" $labels "context" $) | nindent 4 }}
+    app.kubernetes.io/component: activitypub
+  {{- if or .Values.activitypub.service.annotations .Values.commonAnnotations }}
+  {{- $annotations := include "common.tplvalues.merge" (dict "values" (list .Values.activitypub.service.annotations .Values.commonAnnotations) "context" .) }}
+  annotations: {{- include "common.tplvalues.render" (dict "value" $annotations "context" $) | nindent 4 }}
+  {{- end }}
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: {{ .Values.activitypub.service.ports.http }}
+      targetPort: http
+  {{- $podLabels := include "common.tplvalues.merge" (dict "values" (list .Values.activitypub.podLabels .Values.commonLabels) "context" .) }}
+  selector: {{- include "common.labels.matchLabels" (dict "customLabels" $podLabels "context" $) | nindent 4 }}
+    app.kubernetes.io/component: activitypub
+{{- end }}

@@ -1,0 +1,24 @@
+Ghost should be reachable through:
+
+  {{ include "ghost.serviceName" . }}.{{ include "common.names.namespace" . }}.svc.{{ .Values.clusterDomain }}:{{ .Values.service.ports.http }}
+
+{{- if .Values.ingress.enabled }}
+
+Ingress host:
+
+  {{ .Values.ingress.hostname }}
+{{- end }}
+
+{{- if .Values.analytics.enabled }}
+
+Analytics is enabled. Route public requests for this path to the traffic analytics service:
+
+  {{ include "ghost.publicUrl" . }}/.ghost/analytics/
+{{- end }}
+
+{{- if .Values.activitypub.enabled }}
+
+Self-hosted ActivityPub is enabled at:
+
+  {{ include "ghost.activitypub.fullname" . }}.{{ include "common.names.namespace" . }}.svc.{{ .Values.clusterDomain }}:{{ .Values.activitypub.service.ports.http }}
+{{- end }}

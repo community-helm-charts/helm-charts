@@ -1,0 +1,28 @@
+{{- if and .Values.analytics.enabled .Values.analytics.persistence.enabled (not .Values.analytics.persistence.existingClaim) }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "ghost.analytics.fullname" . }}
+  namespace: {{ include "common.names.namespace" . | quote }}
+  labels: {{- include "common.labels.standard" (dict "customLabels" .Values.analytics.persistence.labels "context" $) | nindent 4 }}
+    app.kubernetes.io/component: traffic-analytics
+  {{- if or .Values.analytics.persistence.annotations .Values.commonAnnotations }}
+  {{- $annotations := include "common.tplvalues.merge" (dict "values" (list .Values.analytics.persistence.annotations .Values.commonAnnotations) "context" .) }}
+  annotations: {{- include "common.tplvalues.render" (dict "value" $annotations "context" $) | nindent 4 }}
+  {{- end }}
+spec:
+  accessModes:
+    {{- range .Values.analytics.persistence.accessModes }}
+    - {{ . | quote }}
+    {{- end }}
+  {{- if .Values.analytics.persistence.dataSource }}
+  dataSource: {{- include "common.tplvalues.render" (dict "value" .Values.analytics.persistence.dataSource "context" $) | nindent 4 }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.analytics.persistence.size | quote }}
+  {{- if .Values.analytics.persistence.selector }}
+  selector: {{- include "common.tplvalues.render" (dict "value" .Values.analytics.persistence.selector "context" $) | nindent 4 }}
+  {{- end }}
+  {{- include "common.storage.class" (dict "persistence" .Values.analytics.persistence "global" .Values.global) | nindent 2 }}
+{{- end }}

@@ -1,0 +1,109 @@
+{{- if .Values.analytics.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "ghost.analytics.fullname" . }}
+  namespace: {{ include "common.names.namespace" . | quote }}
+  {{- $labels := include "common.tplvalues.merge" (dict "values" (list .Values.commonLabels) "context" .) }}
+  labels: {{- include "common.labels.standard" (dict "customLabels" $labels "context" $) | nindent 4 }}
+    app.kubernetes.io/component: traffic-analytics
+spec:
+  replicas: 1
+  selector:
+    {{- $podLabels := include "common.tplvalues.merge" (dict "values" (list .Values.analytics.podLabels .Values.commonLabels) "context" .) }}
+    matchLabels: {{- include "common.labels.matchLabels" (dict "customLabels" $podLabels "context" $) | nindent 6 }}
+      app.kubernetes.io/component: traffic-analytics
+  template:
+    metadata:
+      labels: {{- include "common.labels.standard" (dict "customLabels" $podLabels "context" $) | nindent 8 }}
+        app.kubernetes.io/component: traffic-analytics
+      {{- if .Values.analytics.podAnnotations }}
+      annotations: {{- include "common.tplvalues.render" (dict "value" .Values.analytics.podAnnotations "context" $) | nindent 8 }}
+      {{- end }}
+    spec:
+      serviceAccountName: {{ include "ghost.serviceAccountName" . }}
+      automountServiceAccountToken: {{ .Values.automountServiceAccountToken }}
+      {{- include "ghost.analytics.imagePullSecrets" . | nindent 6 }}
+      {{- if .Values.analytics.affinity }}
+      affinity: {{- include "common.tplvalues.render" (dict "value" .Values.analytics.affinity "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .Values.analytics.nodeSelector }}
+      nodeSelector: {{- include "common.tplvalues.render" (dict "value" .Values.analytics.nodeSelector "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .Values.analytics.tolerations }}
+      tolerations: {{- include "common.tplvalues.render" (dict "value" .Values.analytics.tolerations "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .Values.analytics.topologySpreadConstraints }}
+      topologySpreadConstraints: {{- include "common.tplvalues.render" (dict "value" .Values.analytics.topologySpreadConstraints "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .Values.analytics.podSecurityContext.enabled }}
+      securityContext: {{- include "common.compatibility.renderSecurityContext" (dict "secContext" .Values.analytics.podSecurityContext "context" $) | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: traffic-analytics
+          image: {{ include "ghost.analytics.image" . }}
+          imagePullPolicy: {{ .Values.analytics.image.pullPolicy | quote }}
+          {{- if .Values.analytics.containerSecurityContext.enabled }}
+          securityContext: {{- include "common.compatibility.renderSecurityContext" (dict "secContext" .Values.analytics.containerSecurityContext "context" $) | nindent 12 }}
+          {{- end }}
+          env:
+            - name: NODE_ENV
+              value: production
+            - name: PROXY_TARGET
+              value: {{ printf "%s/v0/events" (.Values.analytics.tinybird.apiUrl | trimSuffix "/") | quote }}
+            - name: SALT_STORE_TYPE
+              value: {{ .Values.analytics.saltStoreType | quote }}
+            - name: SALT_STORE_FILE_PATH
+              value: {{ printf "%s/salts.json" .Values.analytics.persistence.mountPath | quote }}
+            - name: TINYBIRD_TRACKER_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "ghost.analytics.secretName" . }}
+                  key: {{ include "ghost.analytics.trackerTokenKey" . }}
+            - name: LOG_LEVEL
+              value: {{ .Values.analytics.logLevel | quote }}
+            {{- if .Values.analytics.extraEnvVars }}
+            {{- include "common.tplvalues.render" (dict "value" .Values.analytics.extraEnvVars "context" $) | nindent 12 }}
+            {{- end }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.analytics.containerPorts.http }}
+          {{- if .Values.analytics.customLivenessProbe }}
+          livenessProbe: {{- include "common.tplvalues.render" (dict "value" .Values.analytics.customLivenessProbe "context" $) | nindent 12 }}
+          {{- else if .Values.analytics.livenessProbe.enabled }}
+          livenessProbe:
+            tcpSocket:
+              port: http
+            {{- include "common.tplvalues.render" (dict "value" (omit .Values.analytics.livenessProbe "enabled") "context" $) | nindent 12 }}
+          {{- end }}
+          {{- if .Values.analytics.customReadinessProbe }}
+          readinessProbe: {{- include "common.tplvalues.render" (dict "value" .Values.analytics.customReadinessProbe "context" $) | nindent 12 }}
+          {{- else if .Values.analytics.readinessProbe.enabled }}
+          readinessProbe:
+            tcpSocket:
+              port: http
+            {{- include "common.tplvalues.render" (dict "value" (omit .Values.analytics.readinessProbe "enabled") "context" $) | nindent 12 }}
+          {{- end }}
+          {{- if .Values.analytics.resources }}
+          resources: {{- toYaml .Values.analytics.resources | nindent 12 }}
+          {{- else if ne .Values.analytics.resourcesPreset "none" }}
+          resources: {{- include "common.resources.preset" (dict "type" .Values.analytics.resourcesPreset) | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: {{ .Values.analytics.persistence.volumeName }}
+              mountPath: {{ .Values.analytics.persistence.mountPath }}
+            {{- if .Values.analytics.extraVolumeMounts }}
+            {{- include "common.tplvalues.render" (dict "value" .Values.analytics.extraVolumeMounts "context" $) | nindent 12 }}
+            {{- end }}
+      volumes:
+        - name: {{ .Values.analytics.persistence.volumeName }}
+          {{- if .Values.analytics.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ default (include "ghost.analytics.fullname" .) .Values.analytics.persistence.existingClaim }}
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        {{- if .Values.analytics.extraVolumes }}
+        {{- include "common.tplvalues.render" (dict "value" .Values.analytics.extraVolumes "context" $) | nindent 8 }}
+        {{- end }}
+{{- end }}

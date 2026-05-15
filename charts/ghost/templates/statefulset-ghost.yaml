@@ -1,0 +1,239 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "ghost.fullname" . }}
+  namespace: {{ include "common.names.namespace" . | quote }}
+  {{- $labels := include "common.tplvalues.merge" (dict "values" (list .Values.commonLabels) "context" .) }}
+  labels: {{- include "common.labels.standard" (dict "customLabels" $labels "context" $) | nindent 4 }}
+    app.kubernetes.io/component: ghost
+spec:
+  replicas: 1
+  serviceName: {{ include "ghost.serviceName" . }}
+  updateStrategy: {{- toYaml .Values.updateStrategy | nindent 4 }}
+  selector:
+    {{- $podLabels := include "common.tplvalues.merge" (dict "values" (list .Values.podLabels .Values.commonLabels) "context" .) }}
+    matchLabels: {{- include "common.labels.matchLabels" (dict "customLabels" $podLabels "context" $) | nindent 6 }}
+      app.kubernetes.io/component: ghost
+  template:
+    metadata:
+      labels: {{- include "common.labels.standard" (dict "customLabels" $podLabels "context" $) | nindent 8 }}
+        app.kubernetes.io/component: ghost
+      {{- if .Values.podAnnotations }}
+      annotations: {{- include "common.tplvalues.render" (dict "value" .Values.podAnnotations "context" $) | nindent 8 }}
+      {{- end }}
+    spec:
+      serviceAccountName: {{ include "ghost.serviceAccountName" . }}
+      automountServiceAccountToken: {{ .Values.automountServiceAccountToken }}
+      {{- include "ghost.imagePullSecrets" . | nindent 6 }}
+      {{- if .Values.hostAliases }}
+      hostAliases: {{- include "common.tplvalues.render" (dict "value" .Values.hostAliases "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .Values.affinity }}
+      affinity: {{- include "common.tplvalues.render" (dict "value" .Values.affinity "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .Values.nodeSelector }}
+      nodeSelector: {{- include "common.tplvalues.render" (dict "value" .Values.nodeSelector "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .Values.tolerations }}
+      tolerations: {{- include "common.tplvalues.render" (dict "value" .Values.tolerations "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .Values.topologySpreadConstraints }}
+      topologySpreadConstraints: {{- include "common.tplvalues.render" (dict "value" .Values.topologySpreadConstraints "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .Values.priorityClassName }}
+      priorityClassName: {{ .Values.priorityClassName | quote }}
+      {{- end }}
+      {{- if .Values.schedulerName }}
+      schedulerName: {{ .Values.schedulerName | quote }}
+      {{- end }}
+      {{- if .Values.terminationGracePeriodSeconds }}
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
+      {{- end }}
+      {{- if .Values.podSecurityContext.enabled }}
+      securityContext: {{- include "common.compatibility.renderSecurityContext" (dict "secContext" .Values.podSecurityContext "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if or .Values.databaseWait.enabled .Values.initContainers }}
+      initContainers:
+        {{- if .Values.databaseWait.enabled }}
+        - name: wait-for-database
+          image: {{ include "ghost.mysql.image" . }}
+          imagePullPolicy: {{ .Values.mysql.image.pullPolicy | quote }}
+          env:
+            - name: DATABASE_HOST
+              value: {{ include "ghost.databaseHost" . | quote }}
+            - name: DATABASE_PORT
+              value: {{ include "ghost.databasePort" . | quote }}
+            - name: DATABASE_USER
+              value: {{ include "ghost.databaseUser" . | quote }}
+            - name: MYSQL_PWD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "ghost.databaseSecretName" . }}
+                  key: {{ include "ghost.databasePasswordKey" . }}
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              deadline=$((SECONDS + {{ .Values.databaseWait.timeoutSeconds }}))
+              until mysqladmin ping -h "$DATABASE_HOST" -P "$DATABASE_PORT" -u "$DATABASE_USER" --silent; do
+                if [ "$SECONDS" -ge "$deadline" ]; then
+                  echo "Timed out waiting for MySQL at ${DATABASE_HOST}:${DATABASE_PORT}" >&2
+                  exit 1
+                fi
+                sleep 2
+              done
+        {{- end }}
+        {{- if .Values.initContainers }}
+        {{- include "common.tplvalues.render" (dict "value" .Values.initContainers "context" $) | nindent 8 }}
+        {{- end }}
+      {{- end }}
+      containers:
+        - name: ghost
+          image: {{ include "ghost.image" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy | quote }}
+          {{- if .Values.containerSecurityContext.enabled }}
+          securityContext: {{- include "common.compatibility.renderSecurityContext" (dict "secContext" .Values.containerSecurityContext "context" $) | nindent 12 }}
+          {{- end }}
+          {{- if .Values.command }}
+          command: {{- include "common.tplvalues.render" (dict "value" .Values.command "context" $) | nindent 12 }}
+          {{- end }}
+          {{- if .Values.args }}
+          args: {{- include "common.tplvalues.render" (dict "value" .Values.args "context" $) | nindent 12 }}
+          {{- end }}
+          env:
+            - name: NODE_ENV
+              value: production
+            - name: url
+              value: {{ include "ghost.publicUrl" . | quote }}
+            {{- if .Values.adminUrl }}
+            - name: admin__url
+              value: {{ .Values.adminUrl | quote }}
+            {{- end }}
+            - name: database__client
+              value: mysql
+            - name: database__connection__host
+              value: {{ include "ghost.databaseHost" . | quote }}
+            - name: database__connection__port
+              value: {{ include "ghost.databasePort" . | quote }}
+            - name: database__connection__user
+              value: {{ include "ghost.databaseUser" . | quote }}
+            - name: database__connection__password
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "ghost.databaseSecretName" . }}
+                  key: {{ include "ghost.databasePasswordKey" . }}
+            - name: database__connection__database
+              value: {{ include "ghost.databaseName" . | quote }}
+            {{- if .Values.smtp.enabled }}
+            - name: mail__transport
+              value: "SMTP"
+            - name: mail__options__host
+              value: {{ .Values.smtp.host | quote }}
+            - name: mail__options__port
+              value: {{ .Values.smtp.port | quote }}
+            - name: mail__options__secure
+              value: {{ .Values.smtp.secure | quote }}
+            - name: mail__options__auth__user
+              value: {{ .Values.smtp.user | quote }}
+            - name: mail__options__auth__pass
+              {{- if or .Values.smtp.existingSecret .Values.smtp.password }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "ghost.smtp.secretName" . }}
+                  key: {{ include "ghost.smtp.passwordKey" . }}
+              {{- else }}
+              value: ""
+              {{- end }}
+            - name: mail__from
+              value: {{ .Values.smtp.from | quote }}
+            {{- end }}
+            {{- if .Values.analytics.enabled }}
+            - name: tinybird__tracker__endpoint
+              value: {{ printf "%s/.ghost/analytics/api/v1/page_hit" (include "ghost.publicUrl" .) | quote }}
+            - name: tinybird__adminToken
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "ghost.analytics.secretName" . }}
+                  key: {{ include "ghost.analytics.adminTokenKey" . }}
+            - name: tinybird__workspaceId
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "ghost.analytics.secretName" . }}
+                  key: {{ include "ghost.analytics.workspaceIdKey" . }}
+            - name: tinybird__tracker__datasource
+              value: analytics_events
+            - name: tinybird__stats__endpoint
+              value: {{ .Values.analytics.tinybird.apiUrl | quote }}
+            {{- end }}
+            {{- if .Values.extraEnvVars }}
+            {{- include "common.tplvalues.render" (dict "value" .Values.extraEnvVars "context" $) | nindent 12 }}
+            {{- end }}
+          {{- if or .Values.extraEnvVarsCM .Values.extraEnvVarsSecret }}
+          envFrom:
+            {{- if .Values.extraEnvVarsCM }}
+            - configMapRef:
+                name: {{ .Values.extraEnvVarsCM }}
+            {{- end }}
+            {{- if .Values.extraEnvVarsSecret }}
+            - secretRef:
+                name: {{ .Values.extraEnvVarsSecret }}
+            {{- end }}
+          {{- end }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.containerPorts.http }}
+          {{- if .Values.customStartupProbe }}
+          startupProbe: {{- include "common.tplvalues.render" (dict "value" .Values.customStartupProbe "context" $) | nindent 12 }}
+          {{- else if .Values.startupProbe.enabled }}
+          startupProbe:
+            httpGet:
+              path: {{ .Values.startupProbe.path | quote }}
+              port: http
+            {{- include "common.tplvalues.render" (dict "value" (omit .Values.startupProbe "enabled" "path") "context" $) | nindent 12 }}
+          {{- end }}
+          {{- if .Values.customLivenessProbe }}
+          livenessProbe: {{- include "common.tplvalues.render" (dict "value" .Values.customLivenessProbe "context" $) | nindent 12 }}
+          {{- else if .Values.livenessProbe.enabled }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.livenessProbe.path | quote }}
+              port: http
+            {{- include "common.tplvalues.render" (dict "value" (omit .Values.livenessProbe "enabled" "path") "context" $) | nindent 12 }}
+          {{- end }}
+          {{- if .Values.customReadinessProbe }}
+          readinessProbe: {{- include "common.tplvalues.render" (dict "value" .Values.customReadinessProbe "context" $) | nindent 12 }}
+          {{- else if .Values.readinessProbe.enabled }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.readinessProbe.path | quote }}
+              port: http
+            {{- include "common.tplvalues.render" (dict "value" (omit .Values.readinessProbe "enabled" "path") "context" $) | nindent 12 }}
+          {{- end }}
+          {{- if .Values.resources }}
+          resources: {{- toYaml .Values.resources | nindent 12 }}
+          {{- else if ne .Values.resourcesPreset "none" }}
+          resources: {{- include "common.resources.preset" (dict "type" .Values.resourcesPreset) | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: ghost-content
+              mountPath: {{ .Values.persistence.mountPath }}
+              {{- if .Values.persistence.subPath }}
+              subPath: {{ .Values.persistence.subPath }}
+              {{- end }}
+            {{- if .Values.extraVolumeMounts }}
+            {{- include "common.tplvalues.render" (dict "value" .Values.extraVolumeMounts "context" $) | nindent 12 }}
+            {{- end }}
+        {{- if .Values.sidecars }}
+        {{- include "common.tplvalues.render" (dict "value" .Values.sidecars "context" $) | nindent 8 }}
+        {{- end }}
+      volumes:
+        - name: ghost-content
+          {{- if .Values.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ include "ghost.contentPvcName" . }}
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        {{- if .Values.extraVolumes }}
+        {{- include "common.tplvalues.render" (dict "value" .Values.extraVolumes "context" $) | nindent 8 }}
+        {{- end }}

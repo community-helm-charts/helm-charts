@@ -1,0 +1,77 @@
+{{- if and .Values.analytics.enabled .Values.analytics.tinybird.deploy.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ printf "%s-tinybird-deploy" (include "ghost.fullname" .) | trunc 63 | trimSuffix "-" }}
+  namespace: {{ include "common.names.namespace" . | quote }}
+  labels: {{- include "common.labels.standard" (dict "customLabels" .Values.commonLabels "context" $) | nindent 4 }}
+    app.kubernetes.io/component: tinybird-deploy
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+    {{- if .Values.analytics.tinybird.deploy.annotations }}
+    {{- include "common.tplvalues.render" (dict "value" .Values.analytics.tinybird.deploy.annotations "context" $) | nindent 4 }}
+    {{- end }}
+spec:
+  backoffLimit: {{ .Values.analytics.tinybird.deploy.backoffLimit }}
+  activeDeadlineSeconds: {{ .Values.analytics.tinybird.deploy.activeDeadlineSeconds }}
+  template:
+    metadata:
+      labels: {{- include "common.labels.standard" (dict "customLabels" .Values.commonLabels "context" $) | nindent 8 }}
+        app.kubernetes.io/component: tinybird-deploy
+      {{- if .Values.analytics.tinybird.deploy.podAnnotations }}
+      annotations: {{- include "common.tplvalues.render" (dict "value" .Values.analytics.tinybird.deploy.podAnnotations "context" $) | nindent 8 }}
+      {{- end }}
+    spec:
+      restartPolicy: Never
+      serviceAccountName: {{ include "ghost.serviceAccountName" . }}
+      automountServiceAccountToken: {{ .Values.automountServiceAccountToken }}
+      {{- include "ghost.tinybirdDeploy.imagePullSecrets" . | nindent 6 }}
+      initContainers:
+        - name: sync-tinybird-files
+          image: {{ include "ghost.image" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy | quote }}
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              if [ -d /var/lib/ghost/current/core/server/data/tinybird ]; then
+                rm -rf /data/tinybird/*;
+                cp -rf /var/lib/ghost/current/core/server/data/tinybird/* /data/tinybird/;
+                echo 'Tinybird files synced into shared volume.';
+              else
+                echo 'Tinybird source directory not found.';
+                exit 1;
+              fi
+          volumeMounts:
+            - name: tinybird-files
+              mountPath: /data/tinybird
+      containers:
+        - name: tinybird-deploy
+          image: {{ include "ghost.tinybirdDeploy.image" . }}
+          imagePullPolicy: {{ .Values.analytics.tinybird.deploy.image.pullPolicy | quote }}
+          workingDir: /data/tinybird
+          env:
+            - name: TINYBIRD_API_URL
+              value: {{ .Values.analytics.tinybird.apiUrl | quote }}
+            - name: TINYBIRD_ADMIN_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "ghost.analytics.secretName" . }}
+                  key: {{ include "ghost.analytics.adminTokenKey" . }}
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              tb --host "${TINYBIRD_API_URL}" --token "${TINYBIRD_ADMIN_TOKEN}" auth
+              tb --cloud deploy
+          {{- if .Values.analytics.tinybird.deploy.resources }}
+          resources: {{- toYaml .Values.analytics.tinybird.deploy.resources | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: tinybird-files
+              mountPath: /data/tinybird
+      volumes:
+        - name: tinybird-files
+          emptyDir: {}
+{{- end }}

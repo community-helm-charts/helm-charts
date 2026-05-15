@@ -1,0 +1,118 @@
+{{- if .Values.mysql.enabled }}
+apiVersion: {{ include "common.capabilities.statefulset.apiVersion" . }}
+kind: StatefulSet
+metadata:
+  name: {{ include "ghost.mysql.fullname" . }}
+  namespace: {{ include "common.names.namespace" . | quote }}
+  {{- $labels := include "common.tplvalues.merge" (dict "values" (list .Values.commonLabels) "context" .) }}
+  labels: {{- include "common.labels.standard" (dict "customLabels" $labels "context" $) | nindent 4 }}
+    app.kubernetes.io/component: mysql
+spec:
+  replicas: 1
+  serviceName: {{ include "ghost.mysql.fullname" . }}
+  updateStrategy:
+    type: RollingUpdate
+  {{- $podLabels := include "common.tplvalues.merge" (dict "values" (list .Values.commonLabels) "context" .) }}
+  selector:
+    matchLabels: {{- include "common.labels.matchLabels" (dict "customLabels" $podLabels "context" $) | nindent 6 }}
+      app.kubernetes.io/component: mysql
+  template:
+    metadata:
+      labels: {{- include "common.labels.standard" (dict "customLabels" $podLabels "context" $) | nindent 8 }}
+        app.kubernetes.io/component: mysql
+      {{- if .Values.activitypub.enabled }}
+      annotations:
+        checksum/initdb-scripts: {{ include (print $.Template.BasePath "/configmap-mysql-initdb.yaml") . | sha256sum }}
+      {{- end }}
+    spec:
+      serviceAccountName: {{ include "ghost.serviceAccountName" . }}
+      automountServiceAccountToken: {{ .Values.automountServiceAccountToken }}
+      {{- include "ghost.mysql.imagePullSecrets" . | nindent 6 }}
+      containers:
+        - name: mysql
+          image: {{ include "ghost.mysql.image" . }}
+          imagePullPolicy: {{ .Values.mysql.image.pullPolicy | quote }}
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "ghost.databaseSecretName" . }}
+                  key: {{ include "ghost.databaseRootPasswordKey" . }}
+            - name: MYSQL_USER
+              value: {{ include "ghost.databaseUser" . | quote }}
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "ghost.databaseSecretName" . }}
+                  key: {{ include "ghost.databasePasswordKey" . }}
+            - name: MYSQL_DATABASE
+              value: {{ include "ghost.databaseName" . | quote }}
+          ports:
+            - name: tcp-mysql
+              containerPort: 3306
+          startupProbe:
+            exec:
+              command: {{- include "ghost.mysql.probeCommand" . | nindent 16 }}
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 30
+            successThreshold: 1
+          livenessProbe:
+            exec:
+              command: {{- include "ghost.mysql.probeCommand" . | nindent 16 }}
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+            successThreshold: 1
+          readinessProbe:
+            exec:
+              command: {{- include "ghost.mysql.probeCommand" . | nindent 16 }}
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+            successThreshold: 1
+          {{- if .Values.mysql.resources }}
+          resources: {{- toYaml .Values.mysql.resources | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            {{- if (include "ghost.mysql.hasInitdb" .) }}
+            - name: mysql-initdb
+              mountPath: /docker-entrypoint-initdb.d
+              readOnly: true
+            {{- end }}
+            - name: mysql-data
+              mountPath: /var/lib/mysql
+      {{- if or (include "ghost.mysql.hasInitdb" .) (and .Values.mysql.persistence.enabled .Values.mysql.persistence.existingClaim) (not .Values.mysql.persistence.enabled) }}
+      volumes:
+        {{- if (include "ghost.mysql.hasInitdb" .) }}
+        - name: mysql-initdb
+          configMap:
+            name: {{ include "ghost.mysql.initdbConfigMapName" . }}
+        {{- end }}
+        {{- if and .Values.mysql.persistence.enabled .Values.mysql.persistence.existingClaim }}
+        - name: mysql-data
+          persistentVolumeClaim:
+            claimName: {{ tpl .Values.mysql.persistence.existingClaim $ }}
+        {{- else if not .Values.mysql.persistence.enabled }}
+        - name: mysql-data
+          emptyDir: {}
+        {{- end }}
+      {{- end }}
+  {{- if and .Values.mysql.persistence.enabled (not .Values.mysql.persistence.existingClaim) }}
+  volumeClaimTemplates:
+    - apiVersion: v1
+      kind: PersistentVolumeClaim
+      metadata:
+        name: mysql-data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: {{ .Values.mysql.persistence.size | quote }}
+        {{- include "common.storage.class" (dict "persistence" .Values.mysql.persistence "global" .Values.global) | nindent 8 }}
+  {{- end }}
+{{- end }}

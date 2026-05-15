@@ -20,10 +20,13 @@ spec:
     metadata:
       labels: {{- include "common.labels.standard" (dict "customLabels" $podLabels "context" $) | nindent 8 }}
         app.kubernetes.io/component: mysql
-      {{- if or .Values.podAnnotations (and .Values.initdb.scripts (not .Values.initdb.scriptsConfigMap)) }}
+      {{- if or .Values.podAnnotations (and .Values.initdb.scripts (not .Values.initdb.scriptsConfigMap)) (include "mysql.createSecret" .) }}
       annotations:
         {{- if and .Values.initdb.scripts (not .Values.initdb.scriptsConfigMap) }}
-        checksum/initdb-scripts: {{ include (print $.Template.BasePath "/initdb-configmap.yaml") . | sha256sum }}
+        checksum/scripts: {{ include "common.utils.checksumTemplate" (dict "path" "/initdb-configmap.yaml" "context" $) }}
+        {{- end }}
+        {{- if (include "mysql.createSecret" .) }}
+        checksum/secret: {{ include "common.utils.checksumTemplate" (dict "path" "/secret.yaml" "context" $) }}
         {{- end }}
         {{- if .Values.podAnnotations }}
         {{- include "common.tplvalues.render" (dict "value" .Values.podAnnotations "context" $) | nindent 8 }}

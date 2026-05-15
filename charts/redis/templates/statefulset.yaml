@@ -17,10 +17,13 @@ spec:
     metadata:
       labels: {{- include "common.labels.standard" (dict "customLabels" $podLabels "context" $) | nindent 8 }}
         app.kubernetes.io/component: redis
-      {{- if or .Values.podAnnotations (and .Values.configuration (not .Values.existingConfigmap)) }}
+      {{- if or .Values.podAnnotations (and .Values.configuration (not .Values.existingConfigmap)) (include "redis.createSecret" .) }}
       annotations:
         {{- if and .Values.configuration (not .Values.existingConfigmap) }}
-        checksum/configuration: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/configmap: {{ include "common.utils.checksumTemplate" (dict "path" "/configmap.yaml" "context" $) }}
+        {{- end }}
+        {{- if (include "redis.createSecret" .) }}
+        checksum/secret: {{ include "common.utils.checksumTemplate" (dict "path" "/secret.yaml" "context" $) }}
         {{- end }}
         {{- if .Values.podAnnotations }}
         {{- include "common.tplvalues.render" (dict "value" .Values.podAnnotations "context" $) | nindent 8 }}

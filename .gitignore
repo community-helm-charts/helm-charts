@@ -5,6 +5,9 @@
 # Chart dependencies
 **/charts/*.tgz
 
+### Node ###
+node_modules/
+
 ### macOS ###
 # General
 .DS_Store

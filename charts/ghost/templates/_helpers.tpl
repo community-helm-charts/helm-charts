@@ -79,7 +79,7 @@
 {{- end -}}
 
 {{- define "ghost.activitypubIngress.fullname" -}}
-{{- include "ghost.componentName" (dict "component" "activitypub-ingress" "Chart" .Chart "Values" .Values "Release" .Release "Capabilities" .Capabilities "Template" .Template) -}}
+{{- include "ghost.activitypub.fullname" . -}}
 {{- end -}}
 
 {{- define "ghost.analyticsStripPrefixMiddlewareName" -}}

@@ -193,9 +193,10 @@ ghost:
 | `mysql.auth.existingSecret` | Existing Secret containing built-in MySQL credentials | `""` |
 | `mysql.persistence.enabled` | Persist MySQL data | `true` |
 | `mysql.persistence.volumeName` | Built-in MySQL data volume claim template name | `mysql-data` |
-| `mysql.persistence.size` | MySQL PVC size | `8Gi` |
+| `mysql.persistence.size` | MySQL PVC size | `5Gi` |
 | `mysql.persistence.existingClaim` | Existing PVC for MySQL data | `""` |
 | `mysql.initdb.scriptsConfigMap` | Initdb ConfigMap mounted by the MySQL subchart | `{{ .Release.Name }}-mysql-initdb` |
+| `mysql.resourcesPreset` | MySQL resource preset | `small` |
 | `mysql.resources` | MySQL resource requests and limits | `{}` |
 | `analytics.enabled` | Enable Tinybird traffic analytics | `false` |
 | `analytics.tinybird.apiUrl` | Tinybird API URL | `https://api.tinybird.co` |

@@ -174,10 +174,11 @@ mysql:
     storageClass: ""
     accessModes:
       - ReadWriteOnce
-    size: 8Gi
+    size: 5Gi
     existingClaim: ""
   initdb:
     scriptsConfigMap: "{{ .Release.Name }}-mysql-initdb"
+  resourcesPreset: small
   resources: {}
 
 databaseWait:

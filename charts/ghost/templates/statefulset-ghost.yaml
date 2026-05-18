@@ -58,7 +58,7 @@ spec:
       {{- if .Values.ghost.podSecurityContext.enabled }}
       securityContext: {{- include "common.compatibility.renderSecurityContext" (dict "secContext" .Values.ghost.podSecurityContext "context" $) | nindent 8 }}
       {{- end }}
-      {{- if or .Values.databaseWait.enabled .Values.ghost.initContainers }}
+      {{- if or .Values.databaseWait.enabled .Values.activitypub.enabled .Values.ghost.initContainers }}
       initContainers:
         {{- if .Values.databaseWait.enabled }}
         - name: wait-for-database
@@ -88,6 +88,24 @@ spec:
               until mysqladmin ping -h "$DATABASE_HOST" -P "$DATABASE_PORT" -u "$DATABASE_USER" --silent; do
                 if [ "$SECONDS" -ge "$deadline" ]; then
                   echo "Timed out waiting for MySQL at ${DATABASE_HOST}:${DATABASE_PORT}" >&2
+                  exit 1
+                fi
+                sleep 2
+              done
+        {{- end }}
+        {{- if .Values.activitypub.enabled }}
+        - name: wait-for-activitypub
+          image: {{ include "ghost.activitypub.image" . }}
+          imagePullPolicy: {{ .Values.activitypub.image.pullPolicy | quote }}
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              deadline=$((SECONDS + {{ .Values.databaseWait.timeoutSeconds }}))
+              url="http://{{ include "ghost.activitypub.fullname" . }}.{{ include "common.names.namespace" . }}.svc.{{ .Values.clusterDomain }}:{{ .Values.activitypub.service.ports.http }}/ping"
+              until node -e 'fetch(process.argv[1]).then((res) => process.exit(res.ok ? 0 : 1)).catch(() => process.exit(1))' "$url"; do
+                if [ "$SECONDS" -ge "$deadline" ]; then
+                  echo "Timed out waiting for ActivityPub at ${url}" >&2
                   exit 1
                 fi
                 sleep 2
@@ -183,8 +201,8 @@ spec:
           volumeMounts:
             - name: ghost-content
               mountPath: /var/lib/ghost/content
-              {{- if .Values.ghost.persistence.subPath }}
-              subPath: {{ .Values.ghost.persistence.subPath }}
+              {{- if .Values.persistence.subPath }}
+              subPath: {{ .Values.persistence.subPath }}
               {{- end }}
             {{- if .Values.ghost.extraVolumeMounts }}
             {{- include "common.tplvalues.render" (dict "value" .Values.ghost.extraVolumeMounts "context" $) | nindent 12 }}
@@ -194,7 +212,7 @@ spec:
         {{- end }}
       volumes:
         - name: ghost-content
-          {{- if .Values.ghost.persistence.enabled }}
+          {{- if .Values.persistence.enabled }}
           persistentVolumeClaim:
             claimName: {{ include "ghost.contentPvcName" . }}
           {{- else }}

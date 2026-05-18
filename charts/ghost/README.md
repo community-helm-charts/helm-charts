@@ -29,7 +29,7 @@ For a non-persistent development install:
 ```console
 helm install my-ghost oci://ghcr.io/community-helm-charts/ghost \
   --set ghost.config.url=http://my-ghost.local \
-  --set ghost.persistence.enabled=false \
+  --set persistence.enabled=false \
   --set mysql.persistence.enabled=false
 ```
 
@@ -142,7 +142,9 @@ activitypub:
   enabled: true
 ```
 
-The ActivityPub pod runs the official migration image as an init container before starting the service. It stores local ActivityPub files under the shared Ghost content volume, so persistent storage should stay enabled for production. The chart only supports the self-hosted ActivityPub service.
+The ActivityPub pod runs the official migration image as an init container before starting the service. When ActivityPub is enabled, the Ghost pod waits for the ActivityPub service `/ping` endpoint before starting, mirroring the startup ordering used by Ghost's Docker Compose setup. ActivityPub stores local files under the shared site content volume, so persistent storage should stay enabled for production. The chart only supports the self-hosted ActivityPub service.
+
+For fresh installs with the built-in MySQL subchart, the chart creates the `activitypub` database through MySQL initdb. For upgrades of an existing built-in MySQL release, a `pre-upgrade` hook Job runs first and idempotently creates the database and grant before the ActivityPub migration init container starts. If you use an external MySQL database, create the ActivityPub database and grants outside this chart.
 
 If the public site uses a `www` hostname, configure the root-domain redirect at your edge or Ingress layer as described in Ghost's Docker documentation.
 
@@ -184,8 +186,8 @@ ghost:
 | `ghost.service.ports.http` | Ghost Service HTTP port | `80` |
 | `ingress.enabled` | Create an Ingress | `true` |
 | `ingress.hostname` | Ingress hostname | `ghost.local` |
-| `ghost.persistence.enabled` | Persist Ghost content | `true` |
-| `ghost.persistence.size` | Ghost content PVC size | `5Gi` |
+| `persistence.enabled` | Persist the shared site content volume used by Ghost and ActivityPub | `true` |
+| `persistence.size` | Shared site content PVC size | `5Gi` |
 | `mysql.enabled` | Deploy built-in MySQL | `true` |
 | `mysql.auth.username` | Built-in MySQL user for Ghost | `ghost` |
 | `mysql.auth.password` | Built-in MySQL user password | `""` |
@@ -203,6 +205,7 @@ ghost:
 | `analytics.tinybird.existingSecret` | Secret containing Tinybird tokens | `""` |
 | `analytics.tinybird.deploy.enabled` | Run Tinybird deploy hook Job | `false` |
 | `activitypub.enabled` | Enable self-hosted ActivityPub | `false` |
+| `activitypub.database` | MySQL database name for ActivityPub | `activitypub` |
 | `ghost.extraEnvVars` | Extra environment variables for Ghost | `[]` |
 | `ghost.resources` | Ghost resource requests and limits | `{}` |
 

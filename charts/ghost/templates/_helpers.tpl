@@ -31,11 +31,19 @@
 {{- end -}}
 
 {{- define "ghost.imagePullSecrets" -}}
-{{- include "common.images.renderPullSecrets" (dict "images" (list .Values.ghost.image) "context" $) -}}
+{{- $images := list .Values.ghost.image .Values.mysql.image -}}
+{{- if .Values.activitypub.enabled -}}
+{{- $images = append $images .Values.activitypub.image -}}
+{{- end -}}
+{{- include "common.images.renderPullSecrets" (dict "images" $images "context" $) -}}
 {{- end -}}
 
 {{- define "ghost.mysql.imagePullPolicy" -}}
 {{- default "IfNotPresent" .Values.mysql.image.pullPolicy -}}
+{{- end -}}
+
+{{- define "ghost.mysql.imagePullSecrets" -}}
+{{- include "common.images.renderPullSecrets" (dict "images" (list .Values.mysql.image) "context" $) -}}
 {{- end -}}
 
 {{- define "ghost.analytics.imagePullSecrets" -}}
@@ -71,8 +79,8 @@
 {{- end -}}
 
 {{- define "ghost.contentPvcName" -}}
-{{- if .Values.ghost.persistence.existingClaim -}}
-{{- tpl .Values.ghost.persistence.existingClaim $ -}}
+{{- if .Values.persistence.existingClaim -}}
+{{- tpl .Values.persistence.existingClaim $ -}}
 {{- else -}}
 {{- printf "%s-content" (include "ghost.fullname" .) | trunc 63 | trimSuffix "-" -}}
 {{- end -}}

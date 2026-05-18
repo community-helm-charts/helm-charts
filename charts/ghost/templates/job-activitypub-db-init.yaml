@@ -1,0 +1,56 @@
+{{- if and .Values.activitypub.enabled .Values.mysql.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ printf "%s-activitypub-db-init" (include "ghost.fullname" .) | trunc 63 | trimSuffix "-" }}
+  namespace: {{ include "common.names.namespace" . | quote }}
+  labels: {{- include "common.labels.standard" (dict "customLabels" .Values.commonLabels "context" $) | nindent 4 }}
+    app.kubernetes.io/component: activitypub-db-init
+  annotations:
+    "helm.sh/hook": pre-upgrade
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  backoffLimit: 3
+  activeDeadlineSeconds: 300
+  template:
+    metadata:
+      labels: {{- include "common.labels.standard" (dict "customLabels" .Values.commonLabels "context" $) | nindent 8 }}
+        app.kubernetes.io/component: activitypub-db-init
+    spec:
+      restartPolicy: Never
+      serviceAccountName: {{ include "ghost.serviceAccountName" . }}
+      automountServiceAccountToken: {{ .Values.automountServiceAccountToken }}
+      {{- include "ghost.mysql.imagePullSecrets" . | nindent 6 }}
+      containers:
+        - name: activitypub-db-init
+          image: {{ include "ghost.mysql.image" . }}
+          imagePullPolicy: {{ include "ghost.mysql.imagePullPolicy" . | quote }}
+          env:
+            - name: DATABASE_HOST
+              value: {{ include "ghost.databaseHost" . | quote }}
+            - name: DATABASE_PORT
+              value: {{ include "ghost.databasePort" . | quote }}
+            - name: MYSQL_PWD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "ghost.databaseSecretName" . }}
+                  key: {{ include "ghost.databaseRootPasswordKey" . }}
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              deadline=$((SECONDS + {{ .Values.databaseWait.timeoutSeconds }}))
+              until mysqladmin ping -h "$DATABASE_HOST" -P "$DATABASE_PORT" -uroot --silent; do
+                if [ "$SECONDS" -ge "$deadline" ]; then
+                  echo "Timed out waiting for MySQL at ${DATABASE_HOST}:${DATABASE_PORT}" >&2
+                  exit 1
+                fi
+                sleep 2
+              done
+
+              mysql -h "$DATABASE_HOST" -P "$DATABASE_PORT" -uroot <<'SQL'
+              CREATE DATABASE IF NOT EXISTS `{{ .Values.activitypub.database }}`;
+              GRANT ALL ON `{{ .Values.activitypub.database }}`.* TO '{{ include "ghost.databaseUser" . }}'@'%';
+              FLUSH PRIVILEGES;
+              SQL
+{{- end }}

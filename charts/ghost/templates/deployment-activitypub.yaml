@@ -152,15 +152,15 @@ spec:
           volumeMounts:
             - name: ghost-content
               mountPath: /opt/activitypub/content
-              {{- if .Values.ghost.persistence.subPath }}
-              subPath: {{ .Values.ghost.persistence.subPath }}
+              {{- if .Values.persistence.subPath }}
+              subPath: {{ .Values.persistence.subPath }}
               {{- end }}
             {{- if .Values.activitypub.extraVolumeMounts }}
             {{- include "common.tplvalues.render" (dict "value" .Values.activitypub.extraVolumeMounts "context" $) | nindent 12 }}
             {{- end }}
       volumes:
         - name: ghost-content
-          {{- if .Values.ghost.persistence.enabled }}
+          {{- if .Values.persistence.enabled }}
           persistentVolumeClaim:
             claimName: {{ include "ghost.contentPvcName" . }}
           {{- else }}

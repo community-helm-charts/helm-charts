@@ -14,6 +14,19 @@ commonAnnotations: {}
 secretAnnotations: {}
 extraDeploy: []
 
+persistence:
+  enabled: true
+  storageClass: ""
+  annotations: {}
+  labels: {}
+  accessModes:
+    - ReadWriteOnce
+  size: 5Gi
+  existingClaim: ""
+  subPath: ""
+  selector: {}
+  dataSource: {}
+
 ghost:
   enabled: true
   image:
@@ -54,15 +67,6 @@ ghost:
     sessionAffinity: None
     sessionAffinityConfig: {}
     extraPorts: []
-  persistence:
-    enabled: true
-    storageClass: ""
-    annotations: {}
-    accessModes:
-      - ReadWriteOnce
-    size: 5Gi
-    existingClaim: ""
-    subPath: ""
   updateStrategy:
     type: RollingUpdate
   command: []

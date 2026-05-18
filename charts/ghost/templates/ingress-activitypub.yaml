@@ -1,8 +1,8 @@
-{{- if and .Values.ingress.enabled (or (and .Values.ghost.enabled .Values.ghost.service.enabled) .Values.ingress.extraPaths) }}
+{{- if and .Values.ingress.enabled .Values.activitypub.enabled }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ include "ghost.fullname" . }}
+  name: {{ include "ghost.activitypubIngress.fullname" . }}
   namespace: {{ include "common.names.namespace" . | quote }}
   labels: {{- include "common.labels.standard" (dict "customLabels" .Values.commonLabels "context" $) | nindent 4 }}
   {{- if or .Values.ingress.annotations .Values.commonAnnotations }}
@@ -17,32 +17,27 @@ spec:
     - host: {{ .Values.ingress.hostname | quote }}
       http:
         paths:
-          {{- if .Values.ingress.extraPaths }}
-          {{- include "common.tplvalues.render" (dict "value" .Values.ingress.extraPaths "context" $) | nindent 10 }}
-          {{- end }}
-          {{- if and .Values.ghost.enabled .Values.ghost.service.enabled }}
-          - path: {{ .Values.ingress.path | quote }}
-            pathType: {{ .Values.ingress.pathType }}
+          - path: /.ghost/activitypub
+            pathType: Prefix
             backend:
               service:
-                name: {{ include "ghost.serviceName" . }}
+                name: {{ include "ghost.activitypub.fullname" . }}
                 port:
                   name: http
-          {{- end }}
-    {{- range .Values.ingress.extraHosts }}
-    {{- if and $.Values.ghost.enabled $.Values.ghost.service.enabled }}
-    - host: {{ .name | quote }}
-      http:
-        paths:
-          - path: {{ default "/" .path | quote }}
-            pathType: {{ default "Prefix" .pathType }}
+          - path: /.well-known/webfinger
+            pathType: Exact
             backend:
               service:
-                name: {{ include "ghost.serviceName" $ }}
+                name: {{ include "ghost.activitypub.fullname" . }}
                 port:
                   name: http
-    {{- end }}
-    {{- end }}
+          - path: /.well-known/nodeinfo
+            pathType: Exact
+            backend:
+              service:
+                name: {{ include "ghost.activitypub.fullname" . }}
+                port:
+                  name: http
   {{- if or .Values.ingress.tls .Values.ingress.extraTls }}
   tls:
     {{- if .Values.ingress.tls }}
@@ -54,17 +49,4 @@ spec:
     {{- include "common.tplvalues.render" (dict "value" .Values.ingress.extraTls "context" $) | nindent 4 }}
     {{- end }}
   {{- end }}
-{{- end }}
-{{- range .Values.ingress.secrets }}
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: {{ .name }}
-  namespace: {{ include "common.names.namespace" $ | quote }}
-  labels: {{- include "common.labels.standard" (dict "customLabels" $.Values.commonLabels "context" $) | nindent 4 }}
-type: kubernetes.io/tls
-data:
-  tls.crt: {{ .certificate | b64enc | quote }}
-  tls.key: {{ .key | b64enc | quote }}
 {{- end }}

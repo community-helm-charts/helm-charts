@@ -133,8 +133,11 @@ analytics:
 
 If you manage Tinybird datafiles outside Helm, leave the deploy Job disabled and only provide the runtime tokens.
 
-When using Traefik, the chart creates a dedicated analytics Ingress with a strip-prefix middleware. Ghost sends browser traffic to
+The chart creates a dedicated analytics Ingress because Ghost sends browser traffic to
 `/.ghost/analytics/api/v1/page_hit`, while the analytics service expects `/api/v1/page_hit`.
+When `ingress.className` is set to a Traefik or nginx class, only the matching rewrite annotations are rendered.
+When `ingress.className` is empty, both Traefik and ingress-nginx annotations are rendered so the default IngressClass can handle the route.
+The route matches the concrete `page_hit` endpoint instead of using a regex path; nginx rewrites it directly to `/api/v1/page_hit`, and Traefik strips the `/.ghost/analytics` prefix.
 
 ## ActivityPub
 
@@ -145,7 +148,7 @@ activitypub:
   enabled: true
 ```
 
-The ActivityPub pod runs the official migration image as an init container before starting the service. When ActivityPub is enabled, the Ghost pod waits for the ActivityPub service `/ping` endpoint before starting, mirroring the startup ordering used by Ghost's Docker Compose setup. ActivityPub stores local files under the shared site content volume, so persistent storage should stay enabled for production. The chart only supports the self-hosted ActivityPub service.
+The ActivityPub pod runs the official migration image as an init container before starting the service. When ActivityPub is enabled, the Ghost pod waits for the ActivityPub service `/ping` endpoint before starting, mirroring the startup ordering used by Ghost's Docker Compose setup. ActivityPub stores local files under the shared site content volume, so persistent storage should stay enabled for production. The chart creates a dedicated ActivityPub Ingress for `/.ghost/activitypub` and the required `/.well-known` endpoints. The chart only supports the self-hosted ActivityPub service.
 
 For fresh installs with the built-in MySQL subchart, the chart creates the `activitypub` database through MySQL initdb. For upgrades of an existing built-in MySQL release, a `pre-upgrade` hook Job runs first and idempotently creates the database and grant before the ActivityPub migration init container starts. If you use an external MySQL database, create the ActivityPub database and grants outside this chart.
 

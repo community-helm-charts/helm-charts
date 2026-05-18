@@ -15,9 +15,9 @@ Ingress host:
 
 {{- if .Values.analytics.enabled }}
 
-Analytics is enabled. Route public requests for this path to the traffic analytics service:
+Analytics is enabled. Route public requests for this endpoint to the traffic analytics service:
 
-  {{ include "ghost.publicUrl" . }}/.ghost/analytics/
+  {{ include "ghost.publicUrl" . }}{{ include "ghost.analytics.path" . }}
 {{- if .Values.analytics.tinybird.existingSecret }}
 
 Tinybird credentials are read from Secret {{ include "ghost.analytics.secretName" . }}.

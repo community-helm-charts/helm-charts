@@ -78,6 +78,10 @@
 {{- include "ghost.componentName" (dict "component" "analytics" "Chart" .Chart "Values" .Values "Release" .Release "Capabilities" .Capabilities "Template" .Template) -}}
 {{- end -}}
 
+{{- define "ghost.activitypubIngress.fullname" -}}
+{{- include "ghost.componentName" (dict "component" "activitypub-ingress" "Chart" .Chart "Values" .Values "Release" .Release "Capabilities" .Capabilities "Template" .Template) -}}
+{{- end -}}
+
 {{- define "ghost.analyticsStripPrefixMiddlewareName" -}}
 {{- printf "%s-strip-prefix" (include "ghost.analyticsIngress.fullname" .) | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
@@ -86,8 +90,43 @@
 {{- printf "%s-%s@kubernetescrd" (include "common.names.namespace" .) (include "ghost.analyticsStripPrefixMiddlewareName" .) -}}
 {{- end -}}
 
-{{- define "ghost.analytics.useTraefikIngress" -}}
-{{- if and .Values.ingress.enabled .Values.analytics.enabled (or (eq .Values.ingress.className "traefik") (.Capabilities.APIVersions.Has "traefik.io/v1alpha1/Middleware")) -}}
+{{- define "ghost.ingress.controllerMode" -}}
+{{- $className := lower (default "" .Values.ingress.className) -}}
+{{- if not $className -}}
+both
+{{- else if contains "traefik" $className -}}
+traefik
+{{- else if contains "nginx" $className -}}
+nginx
+{{- else -}}
+generic
+{{- end -}}
+{{- end -}}
+
+{{- define "ghost.analytics.useTraefikAnnotations" -}}
+{{- $mode := include "ghost.ingress.controllerMode" . -}}
+{{- if or (eq $mode "traefik") (eq $mode "both") -}}
+true
+{{- end -}}
+{{- end -}}
+
+{{- define "ghost.analytics.useNginxAnnotations" -}}
+{{- $mode := include "ghost.ingress.controllerMode" . -}}
+{{- if or (eq $mode "nginx") (eq $mode "both") -}}
+true
+{{- end -}}
+{{- end -}}
+
+{{- define "ghost.analytics.path" -}}
+/.ghost/analytics/api/v1/page_hit
+{{- end -}}
+
+{{- define "ghost.analytics.pathType" -}}
+Exact
+{{- end -}}
+
+{{- define "ghost.analytics.renderTraefikMiddleware" -}}
+{{- if and (include "ghost.analytics.useTraefikAnnotations" .) (.Capabilities.APIVersions.Has "traefik.io/v1alpha1/Middleware") -}}
 true
 {{- end -}}
 {{- end -}}

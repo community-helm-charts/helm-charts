@@ -207,8 +207,8 @@ analytics:
       enabled: false
       image:
         registry: docker.io
-        repository: tinybirdco/tinybird-cli-docker
-        tag: 5.22.2
+        repository: tinybirdco/tb-cli-docker
+        tag: 4.5.8
         digest: ""
         pullPolicy: IfNotPresent
         pullSecrets: []

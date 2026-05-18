@@ -122,7 +122,7 @@ analytics:
     existingSecret: ghost-tinybird
 ```
 
-The optional Tinybird deploy Job copies the Tinybird datafiles from the Ghost image and runs the Tinybird CLI deploy command:
+The optional Tinybird deploy Job copies the Tinybird datafiles from the Ghost image and runs the Tinybird Forward CLI deploy command. The Job uses the admin token and allows destructive operations so the deployed Tinybird schema matches Ghost's bundled datafiles:
 
 ```yaml
 analytics:

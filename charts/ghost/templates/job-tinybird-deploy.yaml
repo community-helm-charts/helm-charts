@@ -69,8 +69,7 @@ spec:
             - /bin/sh
             - -ec
             - |
-              tb --host "${TINYBIRD_API_URL}" --token "${TINYBIRD_ADMIN_TOKEN}" auth
-              tb --cloud deploy
+              tb --cloud --host "${TINYBIRD_API_URL}" --token "${TINYBIRD_ADMIN_TOKEN}" deploy --allow-destructive-operations
           {{- if .Values.analytics.tinybird.deploy.resources }}
           resources: {{- toYaml .Values.analytics.tinybird.deploy.resources | nindent 12 }}
           {{- end }}

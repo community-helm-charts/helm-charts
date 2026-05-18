@@ -18,6 +18,26 @@ Ingress host:
 Analytics is enabled. Route public requests for this path to the traffic analytics service:
 
   {{ include "ghost.publicUrl" . }}/.ghost/analytics/
+{{- if .Values.analytics.tinybird.existingSecret }}
+
+Tinybird credentials are read from Secret {{ include "ghost.analytics.secretName" . }}.
+Ensure it contains these keys:
+
+  {{ include "ghost.analytics.trackerTokenKey" . }}
+  {{ include "ghost.analytics.adminTokenKey" . }}
+  {{ include "ghost.analytics.workspaceIdKey" . }}
+{{- else if not .Values.analytics.tinybird.trackerToken }}
+
+Tinybird tracker token is not configured yet.
+After deploying the Ghost Tinybird datafiles, get the token named "tracker"
+from the Tinybird workspace Tokens page, then set:
+
+  analytics.tinybird.trackerToken
+
+or create a Secret with key:
+
+  {{ include "ghost.analytics.trackerTokenKey" . }}
+{{- end }}
 {{- end }}
 
 {{- if .Values.activitypub.enabled }}

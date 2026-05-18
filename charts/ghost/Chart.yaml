@@ -10,8 +10,8 @@ annotations:
       image: ghcr.io/tryghost/activitypub:1.2.2
     - name: activitypub-migrations
       image: ghcr.io/tryghost/activitypub-migrations:1.2.2
-    - name: tinybird-cli
-      image: docker.io/tinybirdco/tinybird-cli-docker:5.22.2
+    - name: tinybird-forward-cli
+      image: docker.io/tinybirdco/tb-cli-docker:4.5.8
   licenses: MIT
 apiVersion: v2
 appVersion: "6"
@@ -39,4 +39,4 @@ name: ghost
 sources:
 - https://github.com/community-helm-charts/helm-charts/tree/main/charts/ghost
 - https://github.com/TryGhost/ghost-docker
-version: 0.0.6
+version: 0.0.8

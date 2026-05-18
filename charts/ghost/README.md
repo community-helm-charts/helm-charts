@@ -179,7 +179,7 @@ ghost:
 | --- | --- | --- |
 | `ghost.enabled` | Deploy the Ghost StatefulSet and Service | `true` |
 | `ghost.image.repository` | Ghost image repository | `library/ghost` |
-| `ghost.image.tag` | Ghost image tag | `6-alpine` |
+| `ghost.image.tag` | Ghost image tag | `6.39.0-alpine` |
 | `ghost.config` | Ghost runtime configuration, flattened into environment variables in a Secret | See `values.yaml` |
 | `ghost.config.url` | Public Ghost URL | `http://localhost:2368` |
 | `ghost.config.admin.url` | Optional separate Ghost Admin URL | `""` |

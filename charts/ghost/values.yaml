@@ -32,7 +32,7 @@ ghost:
   image:
     registry: docker.io
     repository: library/ghost
-    tag: 6-alpine
+    tag: 6.39.0-alpine
     digest: ""
     pullPolicy: IfNotPresent
     pullSecrets: []

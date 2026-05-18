@@ -101,13 +101,13 @@ test("ingress can route side services without the Ghost backend", () => {
       "--set",
       "ghost.enabled=false",
       "--set",
-      "analytics.enabled=true",
+      "trafficAnalytics.enabled=true",
       "--set",
       "ingress.hostname=blog.example.com",
     );
 
     assert.deepEqual(resourceNames(manifest, "StatefulSet"), ["ghost-mysql"]);
-    assert.match(manifest, /path: \/\.ghost\/analytics/);
+    assert.match(manifest, /path: "\/\.ghost\/analytics\/api\/v1\/page_hit"/);
     assert.match(manifest, /name: ghost-traffic-analytics/);
     assert.doesNotMatch(manifest, new RegExp('path: "/"[\\s\\S]*?name: ghost\\n\\s+port:\\n\\s+name: http'));
   } finally {

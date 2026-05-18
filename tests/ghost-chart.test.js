@@ -11,15 +11,24 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 function makeGhostChart() {
   const dir = mkdtempSync(join(tmpdir(), "ghost-chart-"));
   const chart = join(dir, "ghost");
+  const mysql = join(dir, "mysql");
   cpSync(join(ROOT, "charts", "ghost"), chart, { recursive: true });
+  cpSync(join(ROOT, "charts", "mysql"), mysql, { recursive: true });
+  rmSync(join(chart, "charts"), { force: true, recursive: true });
+  rmSync(join(mysql, "charts"), { force: true, recursive: true });
   mkdirSync(join(chart, "charts"), { recursive: true });
+  mkdirSync(join(mysql, "charts"), { recursive: true });
 
-  for (const dependency of ["common", "mysql"]) {
-    const output = execFileSync("helm", ["package", join(ROOT, "charts", dependency), "--destination", join(chart, "charts")], {
-      encoding: "utf8",
-    });
-    assert.match(output, new RegExp(`${dependency}-.*\\.tgz`));
-  }
+  const commonOutput = execFileSync("helm", ["package", join(ROOT, "charts", "common"), "--destination", join(chart, "charts")], {
+    encoding: "utf8",
+  });
+  assert.match(commonOutput, /common-.*\.tgz/);
+  cpSync(join(chart, "charts"), join(mysql, "charts"), { recursive: true });
+
+  const mysqlOutput = execFileSync("helm", ["package", mysql, "--destination", join(chart, "charts")], {
+    encoding: "utf8",
+  });
+  assert.match(mysqlOutput, /mysql-.*\.tgz/);
 
   function render(...args) {
     return execFileSync("helm", ["template", "ghost", chart, ...args], {

@@ -182,7 +182,7 @@ spec:
           {{- end }}
           volumeMounts:
             - name: ghost-content
-              mountPath: {{ .Values.ghost.persistence.mountPath }}
+              mountPath: /var/lib/ghost/content
               {{- if .Values.ghost.persistence.subPath }}
               subPath: {{ .Values.ghost.persistence.subPath }}
               {{- end }}

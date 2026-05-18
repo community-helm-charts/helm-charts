@@ -185,7 +185,7 @@ ghost:
 | `ingress.enabled` | Create an Ingress | `true` |
 | `ingress.hostname` | Ingress hostname | `ghost.local` |
 | `ghost.persistence.enabled` | Persist Ghost content | `true` |
-| `ghost.persistence.size` | Ghost content PVC size | `8Gi` |
+| `ghost.persistence.size` | Ghost content PVC size | `5Gi` |
 | `mysql.enabled` | Deploy built-in MySQL | `true` |
 | `mysql.auth.username` | Built-in MySQL user for Ghost | `ghost` |
 | `mysql.auth.password` | Built-in MySQL user password | `""` |

@@ -52,6 +52,7 @@ spec:
                 port:
                   name: http
           {{- end }}
+          {{- if and .Values.ghost.enabled .Values.ghost.service.enabled }}
           - path: {{ .Values.ingress.path | quote }}
             pathType: {{ .Values.ingress.pathType }}
             backend:
@@ -59,7 +60,12 @@ spec:
                 name: {{ include "ghost.serviceName" . }}
                 port:
                   name: http
+          {{- end }}
+          {{- if and (not .Values.ghost.enabled) (not .Values.analytics.enabled) (not .Values.activitypub.enabled) (not .Values.ingress.extraPaths) }}
+          {{- fail "ingress.enabled=true requires ghost.enabled=true, analytics.enabled=true, activitypub.enabled=true, or ingress.extraPaths" }}
+          {{- end }}
     {{- range .Values.ingress.extraHosts }}
+    {{- if and $.Values.ghost.enabled $.Values.ghost.service.enabled }}
     - host: {{ .name | quote }}
       http:
         paths:
@@ -70,6 +76,7 @@ spec:
                 name: {{ include "ghost.serviceName" $ }}
                 port:
                   name: http
+    {{- end }}
     {{- end }}
   {{- if or .Values.ingress.tls .Values.ingress.extraTls }}
   tls:

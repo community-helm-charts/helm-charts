@@ -7,13 +7,11 @@
 {{- end -}}
 
 {{- define "ghost.image" -}}
-{{- include "common.images.image" (dict "imageRoot" .Values.image "global" .Values.global) -}}
+{{- include "common.images.image" (dict "imageRoot" .Values.ghost.image "global" .Values.global) -}}
 {{- end -}}
 
 {{- define "ghost.mysql.image" -}}
-{{- $image := default dict .Values.mysql.image -}}
-{{- $imageRoot := dict "registry" (default "docker.io" $image.registry) "repository" (default "library/mysql" $image.repository) "tag" (default "8.0.44" $image.tag) "digest" (default "" $image.digest) -}}
-{{- include "common.images.image" (dict "imageRoot" $imageRoot "global" .Values.global) -}}
+{{- include "common.images.image" (dict "imageRoot" .Values.mysql.image "global" .Values.global) -}}
 {{- end -}}
 
 {{- define "ghost.analytics.image" -}}
@@ -33,18 +31,11 @@
 {{- end -}}
 
 {{- define "ghost.imagePullSecrets" -}}
-{{- include "common.images.renderPullSecrets" (dict "images" (list .Values.image) "context" $) -}}
-{{- end -}}
-
-{{- define "ghost.mysql.imagePullSecrets" -}}
-{{- $image := default dict .Values.mysql.image -}}
-{{- $imageRoot := dict "pullSecrets" (default (list) $image.pullSecrets) -}}
-{{- include "common.images.renderPullSecrets" (dict "images" (list $imageRoot) "context" $) -}}
+{{- include "common.images.renderPullSecrets" (dict "images" (list .Values.ghost.image) "context" $) -}}
 {{- end -}}
 
 {{- define "ghost.mysql.imagePullPolicy" -}}
-{{- $image := default dict .Values.mysql.image -}}
-{{- default "IfNotPresent" $image.pullPolicy -}}
+{{- default "IfNotPresent" .Values.mysql.image.pullPolicy -}}
 {{- end -}}
 
 {{- define "ghost.analytics.imagePullSecrets" -}}
@@ -56,11 +47,11 @@
 {{- end -}}
 
 {{- define "ghost.tinybirdDeploy.imagePullSecrets" -}}
-{{- include "common.images.renderPullSecrets" (dict "images" (list .Values.image .Values.analytics.tinybird.deploy.image) "context" $) -}}
+{{- include "common.images.renderPullSecrets" (dict "images" (list .Values.ghost.image .Values.analytics.tinybird.deploy.image) "context" $) -}}
 {{- end -}}
 
 {{- define "ghost.publicUrl" -}}
-{{- required "config.url is required" .Values.config.url | trimSuffix "/" -}}
+{{- required "ghost.config.url is required" .Values.ghost.config.url | trimSuffix "/" -}}
 {{- end -}}
 
 {{- define "ghost.serviceName" -}}
@@ -68,7 +59,7 @@
 {{- end -}}
 
 {{- define "ghost.mysql.fullname" -}}
-{{- include "ghost.componentName" (dict "component" "mysql" "Chart" .Chart "Values" .Values "Release" .Release "Capabilities" .Capabilities "Template" .Template) -}}
+{{- include "common.names.dependency.fullname" (dict "chartName" "mysql" "chartValues" .Values.mysql "context" $) -}}
 {{- end -}}
 
 {{- define "ghost.analytics.fullname" -}}
@@ -80,8 +71,8 @@
 {{- end -}}
 
 {{- define "ghost.contentPvcName" -}}
-{{- if .Values.persistence.existingClaim -}}
-{{- tpl .Values.persistence.existingClaim $ -}}
+{{- if .Values.ghost.persistence.existingClaim -}}
+{{- tpl .Values.ghost.persistence.existingClaim $ -}}
 {{- else -}}
 {{- printf "%s-content" (include "ghost.fullname" .) | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
@@ -93,17 +84,10 @@
   {{- if $auth.existingSecret -}}
     {{- tpl $auth.existingSecret $ -}}
   {{- else -}}
-    {{- printf "%s-auth" (include "ghost.mysql.fullname" .) | trunc 63 | trimSuffix "-" -}}
+    {{- include "ghost.mysql.fullname" . -}}
   {{- end -}}
 {{- else -}}
 {{- include "ghost.config.secretName" . -}}
-{{- end -}}
-{{- end -}}
-
-{{- define "ghost.createDatabaseSecret" -}}
-{{- $auth := default dict .Values.mysql.auth -}}
-{{- if and .Values.mysql.enabled (not $auth.existingSecret) -}}
-true
 {{- end -}}
 {{- end -}}
 
@@ -130,59 +114,41 @@ database__connection__password
 {{- end -}}
 
 {{- define "ghost.databaseHost" -}}
-{{- $config := default dict .Values.config -}}
+{{- $config := default dict .Values.ghost.config -}}
 {{- $host := dig "database" "connection" "host" "" $config -}}
 {{- if $host -}}
 {{- $host -}}
 {{- else if .Values.mysql.enabled -}}
 {{- include "ghost.mysql.fullname" . -}}
 {{- else -}}
-{{- required "config.database.connection.host is required when mysql.enabled=false" $host -}}
+{{- required "ghost.config.database.connection.host is required when mysql.enabled=false" $host -}}
 {{- end -}}
 {{- end -}}
 
 {{- define "ghost.databasePort" -}}
-{{- $config := default dict .Values.config -}}
+{{- $config := default dict .Values.ghost.config -}}
 {{- default 3306 (dig "database" "connection" "port" "" $config) -}}
 {{- end -}}
 
 {{- define "ghost.databaseUser" -}}
-{{- $config := default dict .Values.config -}}
-{{- default "ghost" (dig "database" "connection" "user" "" $config) -}}
+{{- $config := default dict .Values.ghost.config -}}
+{{- $auth := default dict .Values.mysql.auth -}}
+{{- default (default "ghost" $auth.username) (dig "database" "connection" "user" "" $config) -}}
 {{- end -}}
 
 {{- define "ghost.databaseName" -}}
-{{- $config := default dict .Values.config -}}
-{{- default "ghost" (dig "database" "connection" "database" "" $config) -}}
-{{- end -}}
-
-{{- define "ghost.mysql.hasInitdb" -}}
-{{- if .Values.activitypub.enabled -}}
-true
-{{- end -}}
+{{- $config := default dict .Values.ghost.config -}}
+{{- $auth := default dict .Values.mysql.auth -}}
+{{- default (default "ghost" $auth.database) (dig "database" "connection" "database" "" $config) -}}
 {{- end -}}
 
 {{- define "ghost.mysql.initdbConfigMapName" -}}
+{{- $initdb := default dict .Values.mysql.initdb -}}
+{{- if $initdb.scriptsConfigMap -}}
+{{- tpl $initdb.scriptsConfigMap $ -}}
+{{- else -}}
 {{- printf "%s-initdb" (include "ghost.mysql.fullname" .) | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
-
-{{- define "ghost.mysql.persistenceEnabled" -}}
-{{- $persistence := default dict .Values.mysql.persistence -}}
-{{- if hasKey $persistence "enabled" -}}
-{{- $persistence.enabled -}}
-{{- else -}}
-true
-{{- end -}}
-{{- end -}}
-
-{{- define "ghost.mysql.persistenceExistingClaim" -}}
-{{- $persistence := default dict .Values.mysql.persistence -}}
-{{- default "" $persistence.existingClaim -}}
-{{- end -}}
-
-{{- define "ghost.mysql.persistenceSize" -}}
-{{- $persistence := default dict .Values.mysql.persistence -}}
-{{- default "8Gi" $persistence.size -}}
 {{- end -}}
 
 {{- define "ghost.config.secretName" -}}
@@ -190,17 +156,17 @@ true
 {{- end -}}
 
 {{- define "ghost.config.databasePassword" -}}
-{{- $config := default dict .Values.config -}}
+{{- $config := default dict .Values.ghost.config -}}
 {{- dig "database" "connection" "password" "" $config -}}
 {{- end -}}
 
 {{- define "ghost.config.tinybirdAdminToken" -}}
-{{- $config := default dict .Values.config -}}
+{{- $config := default dict .Values.ghost.config -}}
 {{- dig "tinybird" "adminToken" "" $config -}}
 {{- end -}}
 
 {{- define "ghost.config.tinybirdWorkspaceId" -}}
-{{- $config := default dict .Values.config -}}
+{{- $config := default dict .Values.ghost.config -}}
 {{- dig "tinybird" "workspaceId" "" $config -}}
 {{- end -}}
 

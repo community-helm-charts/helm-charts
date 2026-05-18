@@ -1,3 +1,4 @@
+{{- if .Values.ghost.enabled }}
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -9,9 +10,9 @@ metadata:
 spec:
   replicas: 1
   serviceName: {{ include "ghost.serviceName" . }}
-  updateStrategy: {{- toYaml .Values.updateStrategy | nindent 4 }}
+  updateStrategy: {{- toYaml .Values.ghost.updateStrategy | nindent 4 }}
   selector:
-    {{- $podLabels := include "common.tplvalues.merge" (dict "values" (list .Values.podLabels .Values.commonLabels) "context" .) }}
+    {{- $podLabels := include "common.tplvalues.merge" (dict "values" (list .Values.ghost.podLabels .Values.commonLabels) "context" .) }}
     matchLabels: {{- include "common.labels.matchLabels" (dict "customLabels" $podLabels "context" $) | nindent 6 }}
       app.kubernetes.io/component: ghost
   template:
@@ -20,47 +21,44 @@ spec:
         app.kubernetes.io/component: ghost
       annotations:
         checksum/config-secret: {{ include "common.utils.checksumTemplate" (dict "path" "/config-secret.yaml" "context" $) }}
-        {{- if (include "ghost.createDatabaseSecret" .) }}
-        checksum/database-secret: {{ include "common.utils.checksumTemplate" (dict "path" "/database-secret.yaml" "context" $) }}
-        {{- end }}
         {{- if (include "ghost.analytics.createSecret" .) }}
         checksum/analytics-secret: {{ include "common.utils.checksumTemplate" (dict "path" "/analytics-secret.yaml" "context" $) }}
         {{- end }}
-        {{- if .Values.podAnnotations }}
-        {{- include "common.tplvalues.render" (dict "value" .Values.podAnnotations "context" $) | nindent 8 }}
+        {{- if .Values.ghost.podAnnotations }}
+        {{- include "common.tplvalues.render" (dict "value" .Values.ghost.podAnnotations "context" $) | nindent 8 }}
         {{- end }}
     spec:
       serviceAccountName: {{ include "ghost.serviceAccountName" . }}
       automountServiceAccountToken: {{ .Values.automountServiceAccountToken }}
       {{- include "ghost.imagePullSecrets" . | nindent 6 }}
-      {{- if .Values.hostAliases }}
-      hostAliases: {{- include "common.tplvalues.render" (dict "value" .Values.hostAliases "context" $) | nindent 8 }}
+      {{- if .Values.ghost.hostAliases }}
+      hostAliases: {{- include "common.tplvalues.render" (dict "value" .Values.ghost.hostAliases "context" $) | nindent 8 }}
       {{- end }}
-      {{- if .Values.affinity }}
-      affinity: {{- include "common.tplvalues.render" (dict "value" .Values.affinity "context" $) | nindent 8 }}
+      {{- if .Values.ghost.affinity }}
+      affinity: {{- include "common.tplvalues.render" (dict "value" .Values.ghost.affinity "context" $) | nindent 8 }}
       {{- end }}
-      {{- if .Values.nodeSelector }}
-      nodeSelector: {{- include "common.tplvalues.render" (dict "value" .Values.nodeSelector "context" $) | nindent 8 }}
+      {{- if .Values.ghost.nodeSelector }}
+      nodeSelector: {{- include "common.tplvalues.render" (dict "value" .Values.ghost.nodeSelector "context" $) | nindent 8 }}
       {{- end }}
-      {{- if .Values.tolerations }}
-      tolerations: {{- include "common.tplvalues.render" (dict "value" .Values.tolerations "context" $) | nindent 8 }}
+      {{- if .Values.ghost.tolerations }}
+      tolerations: {{- include "common.tplvalues.render" (dict "value" .Values.ghost.tolerations "context" $) | nindent 8 }}
       {{- end }}
-      {{- if .Values.topologySpreadConstraints }}
-      topologySpreadConstraints: {{- include "common.tplvalues.render" (dict "value" .Values.topologySpreadConstraints "context" $) | nindent 8 }}
+      {{- if .Values.ghost.topologySpreadConstraints }}
+      topologySpreadConstraints: {{- include "common.tplvalues.render" (dict "value" .Values.ghost.topologySpreadConstraints "context" $) | nindent 8 }}
       {{- end }}
-      {{- if .Values.priorityClassName }}
-      priorityClassName: {{ .Values.priorityClassName | quote }}
+      {{- if .Values.ghost.priorityClassName }}
+      priorityClassName: {{ .Values.ghost.priorityClassName | quote }}
       {{- end }}
-      {{- if .Values.schedulerName }}
-      schedulerName: {{ .Values.schedulerName | quote }}
+      {{- if .Values.ghost.schedulerName }}
+      schedulerName: {{ .Values.ghost.schedulerName | quote }}
       {{- end }}
-      {{- if .Values.terminationGracePeriodSeconds }}
-      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
+      {{- if .Values.ghost.terminationGracePeriodSeconds }}
+      terminationGracePeriodSeconds: {{ .Values.ghost.terminationGracePeriodSeconds }}
       {{- end }}
-      {{- if .Values.podSecurityContext.enabled }}
-      securityContext: {{- include "common.compatibility.renderSecurityContext" (dict "secContext" .Values.podSecurityContext "context" $) | nindent 8 }}
+      {{- if .Values.ghost.podSecurityContext.enabled }}
+      securityContext: {{- include "common.compatibility.renderSecurityContext" (dict "secContext" .Values.ghost.podSecurityContext "context" $) | nindent 8 }}
       {{- end }}
-      {{- if or .Values.databaseWait.enabled .Values.initContainers }}
+      {{- if or .Values.databaseWait.enabled .Values.ghost.initContainers }}
       initContainers:
         {{- if .Values.databaseWait.enabled }}
         - name: wait-for-database
@@ -95,22 +93,22 @@ spec:
                 sleep 2
               done
         {{- end }}
-        {{- if .Values.initContainers }}
-        {{- include "common.tplvalues.render" (dict "value" .Values.initContainers "context" $) | nindent 8 }}
+        {{- if .Values.ghost.initContainers }}
+        {{- include "common.tplvalues.render" (dict "value" .Values.ghost.initContainers "context" $) | nindent 8 }}
         {{- end }}
       {{- end }}
       containers:
         - name: ghost
           image: {{ include "ghost.image" . }}
-          imagePullPolicy: {{ .Values.image.pullPolicy | quote }}
-          {{- if .Values.containerSecurityContext.enabled }}
-          securityContext: {{- include "common.compatibility.renderSecurityContext" (dict "secContext" .Values.containerSecurityContext "context" $) | nindent 12 }}
+          imagePullPolicy: {{ .Values.ghost.image.pullPolicy | quote }}
+          {{- if .Values.ghost.containerSecurityContext.enabled }}
+          securityContext: {{- include "common.compatibility.renderSecurityContext" (dict "secContext" .Values.ghost.containerSecurityContext "context" $) | nindent 12 }}
           {{- end }}
-          {{- if .Values.command }}
-          command: {{- include "common.tplvalues.render" (dict "value" .Values.command "context" $) | nindent 12 }}
+          {{- if .Values.ghost.command }}
+          command: {{- include "common.tplvalues.render" (dict "value" .Values.ghost.command "context" $) | nindent 12 }}
           {{- end }}
-          {{- if .Values.args }}
-          args: {{- include "common.tplvalues.render" (dict "value" .Values.args "context" $) | nindent 12 }}
+          {{- if .Values.ghost.args }}
+          args: {{- include "common.tplvalues.render" (dict "value" .Values.ghost.args "context" $) | nindent 12 }}
           {{- end }}
           env:
             - name: NODE_ENV
@@ -136,72 +134,73 @@ spec:
                   name: {{ include "ghost.analytics.secretName" . }}
                   key: {{ include "ghost.analytics.workspaceIdKey" . }}
             {{- end }}
-            {{- if .Values.extraEnvVars }}
-            {{- include "common.tplvalues.render" (dict "value" .Values.extraEnvVars "context" $) | nindent 12 }}
+            {{- if .Values.ghost.extraEnvVars }}
+            {{- include "common.tplvalues.render" (dict "value" .Values.ghost.extraEnvVars "context" $) | nindent 12 }}
             {{- end }}
           envFrom:
             - secretRef:
                 name: {{ include "ghost.config.secretName" . }}
-            {{- if .Values.extraEnvVarsCM }}
+            {{- if .Values.ghost.extraEnvVarsCM }}
             - configMapRef:
-                name: {{ .Values.extraEnvVarsCM }}
+                name: {{ .Values.ghost.extraEnvVarsCM }}
             {{- end }}
-            {{- if .Values.extraEnvVarsSecret }}
+            {{- if .Values.ghost.extraEnvVarsSecret }}
             - secretRef:
-                name: {{ .Values.extraEnvVarsSecret }}
+                name: {{ .Values.ghost.extraEnvVarsSecret }}
             {{- end }}
           ports:
             - name: http
-              containerPort: {{ .Values.containerPorts.http }}
-          {{- if .Values.customStartupProbe }}
-          startupProbe: {{- include "common.tplvalues.render" (dict "value" .Values.customStartupProbe "context" $) | nindent 12 }}
-          {{- else if .Values.startupProbe.enabled }}
+              containerPort: {{ .Values.ghost.containerPorts.http }}
+          {{- if .Values.ghost.customStartupProbe }}
+          startupProbe: {{- include "common.tplvalues.render" (dict "value" .Values.ghost.customStartupProbe "context" $) | nindent 12 }}
+          {{- else if .Values.ghost.startupProbe.enabled }}
           startupProbe:
             tcpSocket:
               port: http
-            {{- include "common.tplvalues.render" (dict "value" (omit .Values.startupProbe "enabled") "context" $) | nindent 12 }}
+            {{- include "common.tplvalues.render" (dict "value" (omit .Values.ghost.startupProbe "enabled") "context" $) | nindent 12 }}
           {{- end }}
-          {{- if .Values.customLivenessProbe }}
-          livenessProbe: {{- include "common.tplvalues.render" (dict "value" .Values.customLivenessProbe "context" $) | nindent 12 }}
-          {{- else if .Values.livenessProbe.enabled }}
+          {{- if .Values.ghost.customLivenessProbe }}
+          livenessProbe: {{- include "common.tplvalues.render" (dict "value" .Values.ghost.customLivenessProbe "context" $) | nindent 12 }}
+          {{- else if .Values.ghost.livenessProbe.enabled }}
           livenessProbe:
             tcpSocket:
               port: http
-            {{- include "common.tplvalues.render" (dict "value" (omit .Values.livenessProbe "enabled") "context" $) | nindent 12 }}
+            {{- include "common.tplvalues.render" (dict "value" (omit .Values.ghost.livenessProbe "enabled") "context" $) | nindent 12 }}
           {{- end }}
-          {{- if .Values.customReadinessProbe }}
-          readinessProbe: {{- include "common.tplvalues.render" (dict "value" .Values.customReadinessProbe "context" $) | nindent 12 }}
-          {{- else if .Values.readinessProbe.enabled }}
+          {{- if .Values.ghost.customReadinessProbe }}
+          readinessProbe: {{- include "common.tplvalues.render" (dict "value" .Values.ghost.customReadinessProbe "context" $) | nindent 12 }}
+          {{- else if .Values.ghost.readinessProbe.enabled }}
           readinessProbe:
             tcpSocket:
               port: http
-            {{- include "common.tplvalues.render" (dict "value" (omit .Values.readinessProbe "enabled") "context" $) | nindent 12 }}
+            {{- include "common.tplvalues.render" (dict "value" (omit .Values.ghost.readinessProbe "enabled") "context" $) | nindent 12 }}
           {{- end }}
-          {{- if .Values.resources }}
-          resources: {{- toYaml .Values.resources | nindent 12 }}
-          {{- else if ne .Values.resourcesPreset "none" }}
-          resources: {{- include "common.resources.preset" (dict "type" .Values.resourcesPreset) | nindent 12 }}
+          {{- if .Values.ghost.resources }}
+          resources: {{- toYaml .Values.ghost.resources | nindent 12 }}
+          {{- else if ne .Values.ghost.resourcesPreset "none" }}
+          resources: {{- include "common.resources.preset" (dict "type" .Values.ghost.resourcesPreset) | nindent 12 }}
           {{- end }}
           volumeMounts:
             - name: ghost-content
-              mountPath: {{ .Values.persistence.mountPath }}
-              {{- if .Values.persistence.subPath }}
-              subPath: {{ .Values.persistence.subPath }}
+              mountPath: {{ .Values.ghost.persistence.mountPath }}
+              {{- if .Values.ghost.persistence.subPath }}
+              subPath: {{ .Values.ghost.persistence.subPath }}
               {{- end }}
-            {{- if .Values.extraVolumeMounts }}
-            {{- include "common.tplvalues.render" (dict "value" .Values.extraVolumeMounts "context" $) | nindent 12 }}
+            {{- if .Values.ghost.extraVolumeMounts }}
+            {{- include "common.tplvalues.render" (dict "value" .Values.ghost.extraVolumeMounts "context" $) | nindent 12 }}
             {{- end }}
-        {{- if .Values.sidecars }}
-        {{- include "common.tplvalues.render" (dict "value" .Values.sidecars "context" $) | nindent 8 }}
+        {{- if .Values.ghost.sidecars }}
+        {{- include "common.tplvalues.render" (dict "value" .Values.ghost.sidecars "context" $) | nindent 8 }}
         {{- end }}
       volumes:
         - name: ghost-content
-          {{- if .Values.persistence.enabled }}
+          {{- if .Values.ghost.persistence.enabled }}
           persistentVolumeClaim:
             claimName: {{ include "ghost.contentPvcName" . }}
           {{- else }}
           emptyDir: {}
           {{- end }}
-        {{- if .Values.extraVolumes }}
-        {{- include "common.tplvalues.render" (dict "value" .Values.extraVolumes "context" $) | nindent 8 }}
+        {{- if .Values.ghost.extraVolumes }}
+        {{- include "common.tplvalues.render" (dict "value" .Values.ghost.extraVolumes "context" $) | nindent 8 }}
         {{- end }}
+{{- end }}

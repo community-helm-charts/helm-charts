@@ -1,0 +1,107 @@
+import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
+import { cpSync, mkdtempSync, mkdirSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import test from "node:test";
+
+const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+
+function makeGhostChart() {
+  const dir = mkdtempSync(join(tmpdir(), "ghost-chart-"));
+  const chart = join(dir, "ghost");
+  cpSync(join(ROOT, "charts", "ghost"), chart, { recursive: true });
+  mkdirSync(join(chart, "charts"), { recursive: true });
+
+  for (const dependency of ["common", "mysql"]) {
+    const output = execFileSync("helm", ["package", join(ROOT, "charts", dependency), "--destination", join(chart, "charts")], {
+      encoding: "utf8",
+    });
+    assert.match(output, new RegExp(`${dependency}-.*\\.tgz`));
+  }
+
+  function render(...args) {
+    return execFileSync("helm", ["template", "ghost", chart, ...args], {
+      encoding: "utf8",
+      maxBuffer: 10 * 1024 * 1024,
+    });
+  }
+
+  function cleanup() {
+    rmSync(dir, { force: true, recursive: true });
+  }
+
+  return { cleanup, render };
+}
+
+function resourceNames(manifest, kind) {
+  return manifest
+    .split(/^---$/m)
+    .map((doc) => {
+      const lines = doc.split("\n");
+      if (!lines.some((line) => line === `kind: ${kind}`)) {
+        return "";
+      }
+      const name = lines.find((line) => line.startsWith("  name: "));
+      return name ? name.replace("  name: ", "").trim().replaceAll('"', "") : "";
+    })
+    .filter(Boolean)
+    .sort();
+}
+
+test("ghost.config values flatten into the generated Secret", () => {
+  const chart = makeGhostChart();
+  try {
+    const manifest = chart.render(
+      "--set",
+      "ghost.config.url=https://blog.example.com",
+      "--set",
+      "ghost.config.database.connection.host=mysql.example.svc.cluster.local",
+      "--set",
+      "ghost.config.mail.transport=SMTP",
+    );
+
+    assert.match(manifest, /url: "https:\/\/blog\.example\.com"/);
+    assert.match(manifest, /database__connection__host: "mysql\.example\.svc\.cluster\.local"/);
+    assert.match(manifest, /mail__transport: "SMTP"/);
+  } finally {
+    chart.cleanup();
+  }
+});
+
+test("ghost.enabled=false keeps MySQL while omitting Ghost workload and Service", () => {
+  const chart = makeGhostChart();
+  try {
+    const manifest = chart.render("--set", "ghost.enabled=false", "--set", "ingress.enabled=false");
+
+    assert.deepEqual(resourceNames(manifest, "StatefulSet"), ["ghost-mysql"]);
+    assert.deepEqual(resourceNames(manifest, "PersistentVolumeClaim"), ["ghost-content"]);
+    assert.deepEqual(resourceNames(manifest, "Ingress"), []);
+    assert.ok(resourceNames(manifest, "Service").includes("ghost-mysql"));
+    assert.ok(!resourceNames(manifest, "Service").includes("ghost"));
+  } finally {
+    chart.cleanup();
+  }
+});
+
+test("ingress can route side services without the Ghost backend", () => {
+  const chart = makeGhostChart();
+  try {
+    const manifest = chart.render(
+      "--set",
+      "ghost.enabled=false",
+      "--set",
+      "analytics.enabled=true",
+      "--set",
+      "ingress.hostname=blog.example.com",
+    );
+
+    assert.deepEqual(resourceNames(manifest, "StatefulSet"), ["ghost-mysql"]);
+    assert.match(manifest, /path: \/\.ghost\/analytics/);
+    assert.match(manifest, /name: ghost-traffic-analytics/);
+    assert.doesNotMatch(manifest, new RegExp('path: "/"[\\s\\S]*?name: ghost\\n\\s+port:\\n\\s+name: http'));
+  } finally {
+    chart.cleanup();
+  }
+});

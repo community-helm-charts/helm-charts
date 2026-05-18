@@ -1,6 +1,10 @@
+{{- if and .Values.ghost.enabled .Values.ghost.service.enabled }}
 Ghost should be reachable through:
 
-  {{ include "ghost.serviceName" . }}.{{ include "common.names.namespace" . }}.svc.{{ .Values.clusterDomain }}:{{ .Values.service.ports.http }}
+  {{ include "ghost.serviceName" . }}.{{ include "common.names.namespace" . }}.svc.{{ .Values.clusterDomain }}:{{ .Values.ghost.service.ports.http }}
+{{- else }}
+Ghost is disabled by ghost.enabled=false.
+{{- end }}
 
 {{- if .Values.ingress.enabled }}
 

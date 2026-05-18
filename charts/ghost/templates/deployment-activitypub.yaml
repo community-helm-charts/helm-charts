@@ -17,11 +17,8 @@ spec:
     metadata:
       labels: {{- include "common.labels.standard" (dict "customLabels" $podLabels "context" $) | nindent 8 }}
         app.kubernetes.io/component: activitypub
-      {{- if or (include "ghost.createDatabaseSecret" .) (not .Values.mysql.enabled) .Values.activitypub.podAnnotations }}
+      {{- if or (not .Values.mysql.enabled) .Values.activitypub.podAnnotations }}
       annotations:
-        {{- if (include "ghost.createDatabaseSecret" .) }}
-        checksum/database-secret: {{ include "common.utils.checksumTemplate" (dict "path" "/database-secret.yaml" "context" $) }}
-        {{- end }}
         {{- if not .Values.mysql.enabled }}
         checksum/config-secret: {{ include "common.utils.checksumTemplate" (dict "path" "/config-secret.yaml" "context" $) }}
         {{- end }}
@@ -155,15 +152,15 @@ spec:
           volumeMounts:
             - name: ghost-content
               mountPath: /opt/activitypub/content
-              {{- if .Values.persistence.subPath }}
-              subPath: {{ .Values.persistence.subPath }}
+              {{- if .Values.ghost.persistence.subPath }}
+              subPath: {{ .Values.ghost.persistence.subPath }}
               {{- end }}
             {{- if .Values.activitypub.extraVolumeMounts }}
             {{- include "common.tplvalues.render" (dict "value" .Values.activitypub.extraVolumeMounts "context" $) | nindent 12 }}
             {{- end }}
       volumes:
         - name: ghost-content
-          {{- if .Values.persistence.enabled }}
+          {{- if .Values.ghost.persistence.enabled }}
           persistentVolumeClaim:
             claimName: {{ include "ghost.contentPvcName" . }}
           {{- else }}

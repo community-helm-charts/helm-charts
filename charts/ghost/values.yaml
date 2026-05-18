@@ -14,47 +14,124 @@ commonAnnotations: {}
 secretAnnotations: {}
 extraDeploy: []
 
-image:
-  registry: docker.io
-  repository: library/ghost
-  tag: 6-alpine
-  digest: ""
-  pullPolicy: IfNotPresent
-  pullSecrets: []
-
-config:
-  url: http://localhost:2368
-  admin:
-    url: ""
-  database:
-    client: mysql
-    connection:
-      host: ""
-      port: 3306
-      user: ghost
-      password: ""
-      database: ghost
-
-containerPorts:
-  http: 2368
-
-service:
+ghost:
   enabled: true
-  type: ClusterIP
-  ports:
-    http: 80
-  nodePorts:
-    http: ""
-  clusterIP: ""
-  annotations: {}
-  labels: {}
-  loadBalancerClass: ""
-  loadBalancerIP: ""
-  loadBalancerSourceRanges: []
-  externalTrafficPolicy: Cluster
-  sessionAffinity: None
-  sessionAffinityConfig: {}
-  extraPorts: []
+  image:
+    registry: docker.io
+    repository: library/ghost
+    tag: 6-alpine
+    digest: ""
+    pullPolicy: IfNotPresent
+    pullSecrets: []
+  config:
+    url: http://localhost:2368
+    admin:
+      url: ""
+    database:
+      client: mysql
+      connection:
+        host: ""
+        port: 3306
+        user: ghost
+        password: ""
+        database: ghost
+  containerPorts:
+    http: 2368
+  service:
+    enabled: true
+    type: ClusterIP
+    ports:
+      http: 80
+    nodePorts:
+      http: ""
+    clusterIP: ""
+    annotations: {}
+    labels: {}
+    loadBalancerClass: ""
+    loadBalancerIP: ""
+    loadBalancerSourceRanges: []
+    externalTrafficPolicy: Cluster
+    sessionAffinity: None
+    sessionAffinityConfig: {}
+    extraPorts: []
+  persistence:
+    enabled: true
+    volumeName: ghost-content
+    mountPath: /var/lib/ghost/content
+    subPath: ""
+    storageClass: ""
+    accessModes:
+      - ReadWriteOnce
+    size: 8Gi
+    annotations: {}
+    labels: {}
+    selector: {}
+    dataSource: {}
+    existingClaim: ""
+  updateStrategy:
+    type: RollingUpdate
+  command: []
+  args: []
+  extraEnvVars: []
+  extraEnvVarsCM: ""
+  extraEnvVarsSecret: ""
+  extraVolumes: []
+  extraVolumeMounts: []
+  initContainers: []
+  sidecars: []
+  podLabels: {}
+  podAnnotations: {}
+  podSecurityContext:
+    enabled: true
+    fsGroupChangePolicy: Always
+    sysctls: []
+    supplementalGroups: []
+    fsGroup: 1000
+  containerSecurityContext:
+    enabled: false
+    runAsUser: 1000
+    runAsGroup: 1000
+    runAsNonRoot: true
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    seccompProfile:
+      type: RuntimeDefault
+  resourcesPreset: none
+  resources: {}
+  startupProbe:
+    enabled: true
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 30
+    successThreshold: 1
+  livenessProbe:
+    enabled: true
+    initialDelaySeconds: 60
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 6
+    successThreshold: 1
+  readinessProbe:
+    enabled: true
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 6
+    successThreshold: 1
+  customStartupProbe: {}
+  customLivenessProbe: {}
+  customReadinessProbe: {}
+  priorityClassName: ""
+  schedulerName: ""
+  terminationGracePeriodSeconds: ""
+  hostAliases: []
+  affinity: {}
+  nodeSelector: {}
+  tolerations: []
+  topologySpreadConstraints: []
 
 ingress:
   enabled: true
@@ -70,31 +147,37 @@ ingress:
   extraTls: []
   secrets: []
 
-persistence:
-  enabled: true
-  volumeName: ghost-content
-  mountPath: /var/lib/ghost/content
-  subPath: ""
-  storageClass: ""
-  accessModes:
-    - ReadWriteOnce
-  size: 8Gi
-  annotations: {}
-  labels: {}
-  selector: {}
-  dataSource: {}
-  existingClaim: ""
-
 mysql:
   enabled: true
+  image:
+    registry: docker.io
+    repository: library/mysql
+    tag: 8.0.44
+    digest: ""
+    pullPolicy: IfNotPresent
+    pullSecrets: []
   auth:
     rootPassword: ""
+    username: ghost
     password: ""
+    database: ghost
     existingSecret: ""
+    existingSecretRootPasswordKey: mysql-root-password
+    existingSecretPasswordKey: mysql-password
+  service:
+    ports:
+      mysql: 3306
   persistence:
     enabled: true
+    volumeName: mysql-data
+    mountPath: /var/lib/mysql
+    storageClass: ""
+    accessModes:
+      - ReadWriteOnce
     size: 8Gi
     existingClaim: ""
+  initdb:
+    scriptsConfigMap: "{{ .Release.Name }}-mysql-initdb"
   resources: {}
 
 databaseWait:
@@ -264,76 +347,6 @@ activitypub:
   nodeSelector: {}
   tolerations: []
   topologySpreadConstraints: []
-
-updateStrategy:
-  type: RollingUpdate
-
-command: []
-args: []
-extraEnvVars: []
-extraEnvVarsCM: ""
-extraEnvVarsSecret: ""
-extraVolumes: []
-extraVolumeMounts: []
-initContainers: []
-sidecars: []
-
-podLabels: {}
-podAnnotations: {}
-podSecurityContext:
-  enabled: true
-  fsGroupChangePolicy: Always
-  sysctls: []
-  supplementalGroups: []
-  fsGroup: 1000
-containerSecurityContext:
-  enabled: false
-  runAsUser: 1000
-  runAsGroup: 1000
-  runAsNonRoot: true
-  allowPrivilegeEscalation: false
-  capabilities:
-    drop:
-      - ALL
-  seccompProfile:
-    type: RuntimeDefault
-
-resourcesPreset: none
-resources: {}
-
-startupProbe:
-  enabled: true
-  initialDelaySeconds: 30
-  periodSeconds: 10
-  timeoutSeconds: 5
-  failureThreshold: 30
-  successThreshold: 1
-livenessProbe:
-  enabled: true
-  initialDelaySeconds: 60
-  periodSeconds: 10
-  timeoutSeconds: 5
-  failureThreshold: 6
-  successThreshold: 1
-readinessProbe:
-  enabled: true
-  initialDelaySeconds: 10
-  periodSeconds: 10
-  timeoutSeconds: 5
-  failureThreshold: 6
-  successThreshold: 1
-customStartupProbe: {}
-customLivenessProbe: {}
-customReadinessProbe: {}
-
-priorityClassName: ""
-schedulerName: ""
-terminationGracePeriodSeconds: ""
-hostAliases: []
-affinity: {}
-nodeSelector: {}
-tolerations: []
-topologySpreadConstraints: []
 
 serviceAccount:
   create: true

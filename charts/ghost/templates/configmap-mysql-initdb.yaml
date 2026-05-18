@@ -1,4 +1,4 @@
-{{- if and .Values.mysql.enabled .Values.activitypub.enabled }}
+{{- if .Values.mysql.enabled }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -9,8 +9,12 @@ metadata:
   {{- if .Values.commonAnnotations }}
   annotations: {{- include "common.tplvalues.render" (dict "value" .Values.commonAnnotations "context" $) | nindent 4 }}
   {{- end }}
+{{- if .Values.activitypub.enabled }}
 data:
   01-activitypub-database.sql: |
     CREATE DATABASE IF NOT EXISTS `{{ .Values.activitypub.database }}`;
     GRANT ALL ON `{{ .Values.activitypub.database }}`.* TO '{{ include "ghost.databaseUser" . }}'@'%';
+{{- else }}
+data: {}
+{{- end }}
 {{- end }}

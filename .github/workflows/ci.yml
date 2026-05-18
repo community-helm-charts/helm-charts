@@ -110,8 +110,9 @@ jobs:
             exit 0
           fi
 
-          mkdir -p /tmp/common-chart-package
-          common_package="$(helm package charts/common --destination /tmp/common-chart-package | awk '{print $NF}')"
+          mkdir -p /tmp/local-chart-packages
+          common_package="$(helm package charts/common --destination /tmp/local-chart-packages | awk '{print $NF}')"
+          mysql_package="$(helm package charts/mysql --destination /tmp/local-chart-packages | awk '{print $NF}')"
 
           for chart in "${charts[@]}"; do
             if [[ "${chart}" == "common" ]]; then
@@ -122,6 +123,9 @@ jobs:
             mkdir -p "${chart_dir}/charts"
             rm -rf "${chart_dir}/charts"/*
             cp "${common_package}" "${chart_dir}/charts/"
+            if grep -q 'name: mysql' "${chart_dir}/Chart.yaml"; then
+              cp "${mysql_package}" "${chart_dir}/charts/"
+            fi
           done
 
       - name: Log in to the Container registry

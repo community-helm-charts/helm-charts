@@ -8,6 +8,9 @@
 ### Node ###
 node_modules/
 
+# Local operational backups
+.backups/
+
 ### macOS ###
 # General
 .DS_Store

@@ -133,6 +133,9 @@ analytics:
 
 If you manage Tinybird datafiles outside Helm, leave the deploy Job disabled and only provide the runtime tokens.
 
+When using Traefik, the chart creates a dedicated analytics Ingress with a strip-prefix middleware. Ghost sends browser traffic to
+`/.ghost/analytics/api/v1/page_hit`, while the analytics service expects `/api/v1/page_hit`.
+
 ## ActivityPub
 
 Enable self-hosted ActivityPub:

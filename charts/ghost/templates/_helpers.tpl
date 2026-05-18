@@ -74,6 +74,24 @@
 {{- include "ghost.componentName" (dict "component" "traffic-analytics" "Chart" .Chart "Values" .Values "Release" .Release "Capabilities" .Capabilities "Template" .Template) -}}
 {{- end -}}
 
+{{- define "ghost.analyticsIngress.fullname" -}}
+{{- include "ghost.componentName" (dict "component" "analytics" "Chart" .Chart "Values" .Values "Release" .Release "Capabilities" .Capabilities "Template" .Template) -}}
+{{- end -}}
+
+{{- define "ghost.analyticsStripPrefixMiddlewareName" -}}
+{{- printf "%s-strip-prefix" (include "ghost.analyticsIngress.fullname" .) | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+
+{{- define "ghost.analyticsStripPrefixMiddlewareRef" -}}
+{{- printf "%s-%s@kubernetescrd" (include "common.names.namespace" .) (include "ghost.analyticsStripPrefixMiddlewareName" .) -}}
+{{- end -}}
+
+{{- define "ghost.analytics.useTraefikIngress" -}}
+{{- if and .Values.ingress.enabled .Values.analytics.enabled (or (eq .Values.ingress.className "traefik") (.Capabilities.APIVersions.Has "traefik.io/v1alpha1/Middleware")) -}}
+true
+{{- end -}}
+{{- end -}}
+
 {{- define "ghost.activitypub.fullname" -}}
 {{- include "ghost.componentName" (dict "component" "activitypub" "Chart" .Chart "Values" .Values "Release" .Release "Capabilities" .Capabilities "Template" .Template) -}}
 {{- end -}}

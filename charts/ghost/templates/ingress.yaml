@@ -20,7 +20,7 @@ spec:
           {{- if .Values.ingress.extraPaths }}
           {{- include "common.tplvalues.render" (dict "value" .Values.ingress.extraPaths "context" $) | nindent 10 }}
           {{- end }}
-          {{- if .Values.analytics.enabled }}
+          {{- if and .Values.analytics.enabled (not (include "ghost.analytics.useTraefikIngress" .)) }}
           - path: /.ghost/analytics
             pathType: Prefix
             backend:

@@ -11,7 +11,9 @@
 {{- end -}}
 
 {{- define "ghost.mysql.image" -}}
-{{- include "common.images.image" (dict "imageRoot" .Values.mysql.image "global" .Values.global) -}}
+{{- $image := default dict .Values.mysql.image -}}
+{{- $imageRoot := dict "registry" (default "docker.io" $image.registry) "repository" (default "library/mysql" $image.repository) "tag" (default "8.0.44" $image.tag) "digest" (default "" $image.digest) -}}
+{{- include "common.images.image" (dict "imageRoot" $imageRoot "global" .Values.global) -}}
 {{- end -}}
 
 {{- define "ghost.analytics.image" -}}
@@ -35,7 +37,14 @@
 {{- end -}}
 
 {{- define "ghost.mysql.imagePullSecrets" -}}
-{{- include "common.images.renderPullSecrets" (dict "images" (list .Values.mysql.image) "context" $) -}}
+{{- $image := default dict .Values.mysql.image -}}
+{{- $imageRoot := dict "pullSecrets" (default (list) $image.pullSecrets) -}}
+{{- include "common.images.renderPullSecrets" (dict "images" (list $imageRoot) "context" $) -}}
+{{- end -}}
+
+{{- define "ghost.mysql.imagePullPolicy" -}}
+{{- $image := default dict .Values.mysql.image -}}
+{{- default "IfNotPresent" $image.pullPolicy -}}
 {{- end -}}
 
 {{- define "ghost.analytics.imagePullSecrets" -}}
@@ -51,7 +60,7 @@
 {{- end -}}
 
 {{- define "ghost.publicUrl" -}}
-{{- required "url is required" .Values.url | trimSuffix "/" -}}
+{{- required "config.url is required" .Values.config.url | trimSuffix "/" -}}
 {{- end -}}
 
 {{- define "ghost.serviceName" -}}
@@ -80,27 +89,28 @@
 
 {{- define "ghost.databaseSecretName" -}}
 {{- if .Values.mysql.enabled -}}
-  {{- if .Values.mysql.auth.existingSecret -}}
-    {{- tpl .Values.mysql.auth.existingSecret $ -}}
+  {{- $auth := default dict .Values.mysql.auth -}}
+  {{- if $auth.existingSecret -}}
+    {{- tpl $auth.existingSecret $ -}}
   {{- else -}}
     {{- printf "%s-auth" (include "ghost.mysql.fullname" .) | trunc 63 | trimSuffix "-" -}}
   {{- end -}}
-{{- else if .Values.externalDatabase.existingSecret -}}
-{{- tpl .Values.externalDatabase.existingSecret $ -}}
 {{- else -}}
-{{- printf "%s-externaldb" (include "ghost.fullname" .) | trunc 63 | trimSuffix "-" -}}
+{{- include "ghost.config.secretName" . -}}
 {{- end -}}
 {{- end -}}
 
 {{- define "ghost.createDatabaseSecret" -}}
-{{- if or (and .Values.mysql.enabled (not .Values.mysql.auth.existingSecret)) (and (not .Values.mysql.enabled) (not .Values.externalDatabase.existingSecret)) -}}
+{{- $auth := default dict .Values.mysql.auth -}}
+{{- if and .Values.mysql.enabled (not $auth.existingSecret) -}}
 true
 {{- end -}}
 {{- end -}}
 
 {{- define "ghost.databaseRootPasswordKey" -}}
-{{- if .Values.mysql.auth.existingSecret -}}
-{{- default "mysql-root-password" .Values.mysql.auth.existingSecretRootPasswordKey -}}
+{{- $auth := default dict .Values.mysql.auth -}}
+{{- if $auth.existingSecret -}}
+{{- default "mysql-root-password" $auth.existingSecretRootPasswordKey -}}
 {{- else -}}
 mysql-root-password
 {{- end -}}
@@ -108,50 +118,42 @@ mysql-root-password
 
 {{- define "ghost.databasePasswordKey" -}}
 {{- if .Values.mysql.enabled -}}
-{{- if .Values.mysql.auth.existingSecret -}}
-{{- default "mysql-password" .Values.mysql.auth.existingSecretPasswordKey -}}
+{{- $auth := default dict .Values.mysql.auth -}}
+{{- if $auth.existingSecret -}}
+{{- default "mysql-password" $auth.existingSecretPasswordKey -}}
 {{- else -}}
 mysql-password
 {{- end -}}
 {{- else -}}
-{{- if .Values.externalDatabase.existingSecret -}}
-{{- default "mysql-password" .Values.externalDatabase.existingSecretPasswordKey -}}
-{{- else -}}
-mysql-password
-{{- end -}}
+database__connection__password
 {{- end -}}
 {{- end -}}
 
 {{- define "ghost.databaseHost" -}}
-{{- if .Values.mysql.enabled -}}
+{{- $config := default dict .Values.config -}}
+{{- $host := dig "database" "connection" "host" "" $config -}}
+{{- if $host -}}
+{{- $host -}}
+{{- else if .Values.mysql.enabled -}}
 {{- include "ghost.mysql.fullname" . -}}
 {{- else -}}
-{{- required "externalDatabase.host is required when mysql.enabled=false" .Values.externalDatabase.host -}}
+{{- required "config.database.connection.host is required when mysql.enabled=false" $host -}}
 {{- end -}}
 {{- end -}}
 
 {{- define "ghost.databasePort" -}}
-{{- if .Values.mysql.enabled -}}
-{{- .Values.mysql.service.port -}}
-{{- else -}}
-{{- .Values.externalDatabase.port -}}
-{{- end -}}
+{{- $config := default dict .Values.config -}}
+{{- default 3306 (dig "database" "connection" "port" "" $config) -}}
 {{- end -}}
 
 {{- define "ghost.databaseUser" -}}
-{{- if .Values.mysql.enabled -}}
-{{- default "ghost" .Values.mysql.auth.username -}}
-{{- else -}}
-{{- default "ghost" .Values.externalDatabase.user -}}
-{{- end -}}
+{{- $config := default dict .Values.config -}}
+{{- default "ghost" (dig "database" "connection" "user" "" $config) -}}
 {{- end -}}
 
 {{- define "ghost.databaseName" -}}
-{{- if .Values.mysql.enabled -}}
-{{- default "ghost" .Values.mysql.auth.database -}}
-{{- else -}}
-{{- default "ghost" .Values.externalDatabase.database -}}
-{{- end -}}
+{{- $config := default dict .Values.config -}}
+{{- default "ghost" (dig "database" "connection" "database" "" $config) -}}
 {{- end -}}
 
 {{- define "ghost.mysql.hasInitdb" -}}
@@ -162,6 +164,66 @@ true
 
 {{- define "ghost.mysql.initdbConfigMapName" -}}
 {{- printf "%s-initdb" (include "ghost.mysql.fullname" .) | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+
+{{- define "ghost.mysql.persistenceEnabled" -}}
+{{- $persistence := default dict .Values.mysql.persistence -}}
+{{- if hasKey $persistence "enabled" -}}
+{{- $persistence.enabled -}}
+{{- else -}}
+true
+{{- end -}}
+{{- end -}}
+
+{{- define "ghost.mysql.persistenceExistingClaim" -}}
+{{- $persistence := default dict .Values.mysql.persistence -}}
+{{- default "" $persistence.existingClaim -}}
+{{- end -}}
+
+{{- define "ghost.mysql.persistenceSize" -}}
+{{- $persistence := default dict .Values.mysql.persistence -}}
+{{- default "8Gi" $persistence.size -}}
+{{- end -}}
+
+{{- define "ghost.config.secretName" -}}
+{{- printf "%s-config" (include "ghost.fullname" .) | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+
+{{- define "ghost.config.databasePassword" -}}
+{{- $config := default dict .Values.config -}}
+{{- dig "database" "connection" "password" "" $config -}}
+{{- end -}}
+
+{{- define "ghost.config.tinybirdAdminToken" -}}
+{{- $config := default dict .Values.config -}}
+{{- dig "tinybird" "adminToken" "" $config -}}
+{{- end -}}
+
+{{- define "ghost.config.tinybirdWorkspaceId" -}}
+{{- $config := default dict .Values.config -}}
+{{- dig "tinybird" "workspaceId" "" $config -}}
+{{- end -}}
+
+{{- define "ghost.config.flatten" -}}
+{{- $prefix := .prefix -}}
+{{- $value := .value -}}
+{{- $context := .context -}}
+{{- if kindIs "map" $value -}}
+{{- range $key, $item := $value }}
+{{- $name := $key -}}
+{{- if $prefix -}}
+{{- $name = printf "%s__%s" $prefix $key -}}
+{{- end -}}
+{{- include "ghost.config.flatten" (dict "prefix" $name "value" $item "context" $context) -}}
+{{- end -}}
+{{- else if and (kindIs "string" $value) (eq $value "") -}}
+{{- else if not (empty $prefix) -}}
+{{- if kindIs "slice" $value -}}
+{{- printf "%s: %s\n" $prefix (toJson $value | quote) -}}
+{{- else -}}
+{{- printf "%s: %s\n" $prefix (include "common.tplvalues.render" (dict "value" (toString $value) "context" $context) | quote) -}}
+{{- end -}}
+{{- end -}}
 {{- end -}}
 
 {{- define "ghost.mysql.probeCommand" -}}
@@ -210,28 +272,6 @@ true
 
 {{- define "ghost.analytics.workspaceIdKey" -}}
 {{- default "tinybird-workspace-id" .Values.analytics.tinybird.secretKeys.workspaceIdKey -}}
-{{- end -}}
-
-{{- define "ghost.smtp.secretName" -}}
-{{- if .Values.smtp.existingSecret -}}
-{{- tpl .Values.smtp.existingSecret $ -}}
-{{- else -}}
-{{- printf "%s-smtp" (include "ghost.fullname" .) | trunc 63 | trimSuffix "-" -}}
-{{- end -}}
-{{- end -}}
-
-{{- define "ghost.smtp.createSecret" -}}
-{{- if and .Values.smtp.enabled (not .Values.smtp.existingSecret) .Values.smtp.password -}}
-true
-{{- end -}}
-{{- end -}}
-
-{{- define "ghost.smtp.passwordKey" -}}
-{{- if .Values.smtp.existingSecret -}}
-{{- default "smtp-password" .Values.smtp.existingSecretPasswordKey -}}
-{{- else -}}
-smtp-password
-{{- end -}}
 {{- end -}}
 
 {{- define "ghost.activitypubStorageUrl" -}}

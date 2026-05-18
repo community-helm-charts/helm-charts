@@ -10,14 +10,14 @@ Ghost runs as a single-replica StatefulSet. This chart does not support horizont
 
 ```console
 helm install my-ghost oci://ghcr.io/community-helm-charts/ghost \
-  --set url=https://example.com
+  --set config.url=https://example.com
 ```
 
 Install with an Ingress:
 
 ```console
 helm install my-ghost oci://ghcr.io/community-helm-charts/ghost \
-  --set url=https://blog.example.com \
+  --set config.url=https://blog.example.com \
   --set ingress.enabled=true \
   --set ingress.hostname=blog.example.com
 ```
@@ -26,7 +26,7 @@ For a non-persistent development install:
 
 ```console
 helm install my-ghost oci://ghcr.io/community-helm-charts/ghost \
-  --set url=http://my-ghost.local \
+  --set config.url=http://my-ghost.local \
   --set persistence.enabled=false \
   --set mysql.persistence.enabled=false
 ```
@@ -47,6 +47,24 @@ The public Service points directly at Ghost. When `ingress.enabled=true`, the ch
 
 If you do not use the chart's Ingress, configure the same root-path routing in your external proxy or Ingress Controller.
 
+## Ghost Configuration
+
+Ghost runtime configuration lives under `config`. The chart flattens nested keys into Ghost environment variables and stores them in a generated Secret. For example, `config.database.connection.host` becomes `database__connection__host`.
+
+```yaml
+config:
+  url: https://blog.example.com
+  privacy:
+    useStructuredData: false
+```
+
+The generated Secret includes:
+
+```text
+url=https://blog.example.com
+privacy__useStructuredData=false
+```
+
 ## MySQL
 
 The chart includes a single MySQL instance by default. It creates the Ghost database through the official MySQL image environment variables. When self-hosted ActivityPub is enabled, the chart adds a small SQL init file to create the `activitypub` database and grant access to the Ghost database user.
@@ -57,20 +75,14 @@ Use an external MySQL database:
 mysql:
   enabled: false
 
-externalDatabase:
-  host: mysql.example.svc.cluster.local
-  port: 3306
-  user: ghost
-  password: change-me
-  database: ghost
-```
-
-Use an existing Secret for the database password:
-
-```yaml
-externalDatabase:
-  existingSecret: ghost-db
-  existingSecretPasswordKey: mysql-password
+config:
+  database:
+    connection:
+      host: mysql.example.svc.cluster.local
+      port: 3306
+      user: ghost
+      password: change-me
+      database: ghost
 ```
 
 ## Analytics
@@ -122,26 +134,20 @@ If the public site uses a `www` hostname, configure the root-domain redirect at 
 
 ## Mail
 
-Ghost requires SMTP for staff invites, password resets, and other transactional mail. Enable the built-in SMTP values to set Ghost's mail environment variables:
+Ghost requires SMTP for staff invites, password resets, and other transactional mail. Configure SMTP under `config.mail`:
 
 ```yaml
-smtp:
-  enabled: true
-  from: "'Ghost' <noreply@ghost.local>"
-  host: smtp.resend.com
-  port: 465
-  secure: true
-  user: resend
-  password: change-me
-```
-
-Use an existing Secret for the SMTP password:
-
-```yaml
-smtp:
-  enabled: true
-  existingSecret: ghost-smtp
-  existingSecretPasswordKey: smtp-password
+config:
+  mail:
+    transport: SMTP
+    from: "'Ghost' <noreply@ghost.local>"
+    options:
+      host: smtp.resend.com
+      port: 465
+      secure: true
+      auth:
+        user: resend
+        pass: change-me
 ```
 
 ## Parameters
@@ -150,40 +156,26 @@ smtp:
 | --- | --- | --- |
 | `image.repository` | Ghost image repository | `library/ghost` |
 | `image.tag` | Ghost image tag | `6-alpine` |
-| `url` | Public Ghost URL | `http://localhost:2368` |
-| `adminUrl` | Optional separate Ghost Admin URL | `""` |
+| `config` | Ghost runtime configuration, flattened into environment variables in a Secret | See `values.yaml` |
+| `config.url` | Public Ghost URL | `http://localhost:2368` |
+| `config.admin.url` | Optional separate Ghost Admin URL | `""` |
+| `config.database.connection.host` | Database host; defaults to built-in MySQL service when empty | `""` |
+| `config.database.connection.port` | Database port | `3306` |
+| `config.database.connection.user` | Database user | `ghost` |
+| `config.database.connection.password` | Database password; stored in the generated config Secret | `""` |
+| `config.database.connection.database` | Database name | `ghost` |
 | `service.type` | Public Service type | `ClusterIP` |
 | `service.ports.http` | Public Service HTTP port | `80` |
 | `ingress.enabled` | Create an Ingress | `true` |
 | `ingress.hostname` | Ingress hostname | `ghost.local` |
-| `smtp.enabled` | Enable SMTP mail configuration | `false` |
-| `smtp.from` | Ghost mail sender | `'Ghost' <noreply@ghost.local>` |
-| `smtp.host` | SMTP host | `smtp.resend.com` |
-| `smtp.port` | SMTP port | `465` |
-| `smtp.secure` | Use secure SMTP connection | `true` |
-| `smtp.user` | SMTP username | `resend` |
-| `smtp.password` | SMTP password; stored in a generated Secret when set | `""` |
-| `smtp.existingSecret` | Existing Secret containing the SMTP password | `""` |
-| `smtp.existingSecretPasswordKey` | Password key in the existing SMTP Secret | `smtp-password` |
 | `persistence.enabled` | Persist Ghost content | `true` |
 | `persistence.size` | Ghost content PVC size | `8Gi` |
 | `mysql.enabled` | Deploy built-in MySQL | `true` |
-| `mysql.image.repository` | MySQL image repository | `library/mysql` |
-| `mysql.image.tag` | MySQL image tag | `8.0.44` |
-| `mysql.auth.username` | MySQL user for Ghost | `ghost` |
-| `mysql.auth.database` | Ghost database name | `ghost` |
 | `mysql.auth.existingSecret` | Existing Secret containing built-in MySQL credentials | `""` |
-| `mysql.auth.existingSecretRootPasswordKey` | Root password key in the existing MySQL Secret | `mysql-root-password` |
-| `mysql.auth.existingSecretPasswordKey` | User password key in the existing MySQL Secret | `mysql-password` |
-| `mysql.service.port` | Built-in MySQL Service port | `3306` |
 | `mysql.persistence.enabled` | Persist MySQL data | `true` |
-| `mysql.persistence.storageClass` | MySQL PVC storage class | `""` |
 | `mysql.persistence.size` | MySQL PVC size | `8Gi` |
 | `mysql.persistence.existingClaim` | Existing PVC for MySQL data | `""` |
 | `mysql.resources` | MySQL resource requests and limits | `{}` |
-| `externalDatabase.host` | External MySQL host when `mysql.enabled=false` | `""` |
-| `externalDatabase.existingSecret` | Existing Secret containing the external database password | `""` |
-| `externalDatabase.existingSecretPasswordKey` | Password key in the existing external database Secret | `mysql-password` |
 | `analytics.enabled` | Enable Tinybird traffic analytics | `false` |
 | `analytics.tinybird.apiUrl` | Tinybird API URL | `https://api.tinybird.co` |
 | `analytics.tinybird.existingSecret` | Secret containing Tinybird tokens | `""` |

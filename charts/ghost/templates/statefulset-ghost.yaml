@@ -18,9 +18,17 @@ spec:
     metadata:
       labels: {{- include "common.labels.standard" (dict "customLabels" $podLabels "context" $) | nindent 8 }}
         app.kubernetes.io/component: ghost
-      {{- if .Values.podAnnotations }}
-      annotations: {{- include "common.tplvalues.render" (dict "value" .Values.podAnnotations "context" $) | nindent 8 }}
-      {{- end }}
+      annotations:
+        checksum/config-secret: {{ include "common.utils.checksumTemplate" (dict "path" "/config-secret.yaml" "context" $) }}
+        {{- if (include "ghost.createDatabaseSecret" .) }}
+        checksum/database-secret: {{ include "common.utils.checksumTemplate" (dict "path" "/database-secret.yaml" "context" $) }}
+        {{- end }}
+        {{- if (include "ghost.analytics.createSecret" .) }}
+        checksum/analytics-secret: {{ include "common.utils.checksumTemplate" (dict "path" "/analytics-secret.yaml" "context" $) }}
+        {{- end }}
+        {{- if .Values.podAnnotations }}
+        {{- include "common.tplvalues.render" (dict "value" .Values.podAnnotations "context" $) | nindent 8 }}
+        {{- end }}
     spec:
       serviceAccountName: {{ include "ghost.serviceAccountName" . }}
       automountServiceAccountToken: {{ .Values.automountServiceAccountToken }}
@@ -57,7 +65,7 @@ spec:
         {{- if .Values.databaseWait.enabled }}
         - name: wait-for-database
           image: {{ include "ghost.mysql.image" . }}
-          imagePullPolicy: {{ .Values.mysql.image.pullPolicy | quote }}
+          imagePullPolicy: {{ include "ghost.mysql.imagePullPolicy" . | quote }}
           env:
             - name: DATABASE_HOST
               value: {{ include "ghost.databaseHost" . | quote }}
@@ -68,7 +76,11 @@ spec:
             - name: MYSQL_PWD
               valueFrom:
                 secretKeyRef:
+                  {{- if .Values.mysql.enabled }}
                   name: {{ include "ghost.databaseSecretName" . }}
+                  {{- else }}
+                  name: {{ include "ghost.config.secretName" . }}
+                  {{- end }}
                   key: {{ include "ghost.databasePasswordKey" . }}
           command:
             - /bin/sh
@@ -103,73 +115,33 @@ spec:
           env:
             - name: NODE_ENV
               value: production
-            - name: url
-              value: {{ include "ghost.publicUrl" . | quote }}
-            {{- if .Values.adminUrl }}
-            - name: admin__url
-              value: {{ .Values.adminUrl | quote }}
-            {{- end }}
-            - name: database__client
-              value: mysql
-            - name: database__connection__host
-              value: {{ include "ghost.databaseHost" . | quote }}
-            - name: database__connection__port
-              value: {{ include "ghost.databasePort" . | quote }}
-            - name: database__connection__user
-              value: {{ include "ghost.databaseUser" . | quote }}
+            {{- if and .Values.mysql.enabled (not (include "ghost.config.databasePassword" .)) }}
             - name: database__connection__password
               valueFrom:
                 secretKeyRef:
                   name: {{ include "ghost.databaseSecretName" . }}
                   key: {{ include "ghost.databasePasswordKey" . }}
-            - name: database__connection__database
-              value: {{ include "ghost.databaseName" . | quote }}
-            {{- if .Values.smtp.enabled }}
-            - name: mail__transport
-              value: "SMTP"
-            - name: mail__options__host
-              value: {{ .Values.smtp.host | quote }}
-            - name: mail__options__port
-              value: {{ .Values.smtp.port | quote }}
-            - name: mail__options__secure
-              value: {{ .Values.smtp.secure | quote }}
-            - name: mail__options__auth__user
-              value: {{ .Values.smtp.user | quote }}
-            - name: mail__options__auth__pass
-              {{- if or .Values.smtp.existingSecret .Values.smtp.password }}
-              valueFrom:
-                secretKeyRef:
-                  name: {{ include "ghost.smtp.secretName" . }}
-                  key: {{ include "ghost.smtp.passwordKey" . }}
-              {{- else }}
-              value: ""
-              {{- end }}
-            - name: mail__from
-              value: {{ .Values.smtp.from | quote }}
             {{- end }}
-            {{- if .Values.analytics.enabled }}
-            - name: tinybird__tracker__endpoint
-              value: {{ printf "%s/.ghost/analytics/api/v1/page_hit" (include "ghost.publicUrl" .) | quote }}
+            {{- if and .Values.analytics.enabled (not (include "ghost.config.tinybirdAdminToken" .)) }}
             - name: tinybird__adminToken
               valueFrom:
                 secretKeyRef:
                   name: {{ include "ghost.analytics.secretName" . }}
                   key: {{ include "ghost.analytics.adminTokenKey" . }}
+            {{- end }}
+            {{- if and .Values.analytics.enabled (not (include "ghost.config.tinybirdWorkspaceId" .)) }}
             - name: tinybird__workspaceId
               valueFrom:
                 secretKeyRef:
                   name: {{ include "ghost.analytics.secretName" . }}
                   key: {{ include "ghost.analytics.workspaceIdKey" . }}
-            - name: tinybird__tracker__datasource
-              value: analytics_events
-            - name: tinybird__stats__endpoint
-              value: {{ .Values.analytics.tinybird.apiUrl | quote }}
             {{- end }}
             {{- if .Values.extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .Values.extraEnvVars "context" $) | nindent 12 }}
             {{- end }}
-          {{- if or .Values.extraEnvVarsCM .Values.extraEnvVarsSecret }}
           envFrom:
+            - secretRef:
+                name: {{ include "ghost.config.secretName" . }}
             {{- if .Values.extraEnvVarsCM }}
             - configMapRef:
                 name: {{ .Values.extraEnvVarsCM }}
@@ -178,7 +150,6 @@ spec:
             - secretRef:
                 name: {{ .Values.extraEnvVarsSecret }}
             {{- end }}
-          {{- end }}
           ports:
             - name: http
               containerPort: {{ .Values.containerPorts.http }}
@@ -186,28 +157,25 @@ spec:
           startupProbe: {{- include "common.tplvalues.render" (dict "value" .Values.customStartupProbe "context" $) | nindent 12 }}
           {{- else if .Values.startupProbe.enabled }}
           startupProbe:
-            httpGet:
-              path: {{ .Values.startupProbe.path | quote }}
+            tcpSocket:
               port: http
-            {{- include "common.tplvalues.render" (dict "value" (omit .Values.startupProbe "enabled" "path") "context" $) | nindent 12 }}
+            {{- include "common.tplvalues.render" (dict "value" (omit .Values.startupProbe "enabled") "context" $) | nindent 12 }}
           {{- end }}
           {{- if .Values.customLivenessProbe }}
           livenessProbe: {{- include "common.tplvalues.render" (dict "value" .Values.customLivenessProbe "context" $) | nindent 12 }}
           {{- else if .Values.livenessProbe.enabled }}
           livenessProbe:
-            httpGet:
-              path: {{ .Values.livenessProbe.path | quote }}
+            tcpSocket:
               port: http
-            {{- include "common.tplvalues.render" (dict "value" (omit .Values.livenessProbe "enabled" "path") "context" $) | nindent 12 }}
+            {{- include "common.tplvalues.render" (dict "value" (omit .Values.livenessProbe "enabled") "context" $) | nindent 12 }}
           {{- end }}
           {{- if .Values.customReadinessProbe }}
           readinessProbe: {{- include "common.tplvalues.render" (dict "value" .Values.customReadinessProbe "context" $) | nindent 12 }}
           {{- else if .Values.readinessProbe.enabled }}
           readinessProbe:
-            httpGet:
-              path: {{ .Values.readinessProbe.path | quote }}
+            tcpSocket:
               port: http
-            {{- include "common.tplvalues.render" (dict "value" (omit .Values.readinessProbe "enabled" "path") "context" $) | nindent 12 }}
+            {{- include "common.tplvalues.render" (dict "value" (omit .Values.readinessProbe "enabled") "context" $) | nindent 12 }}
           {{- end }}
           {{- if .Values.resources }}
           resources: {{- toYaml .Values.resources | nindent 12 }}

@@ -17,8 +17,14 @@ spec:
     metadata:
       labels: {{- include "common.labels.standard" (dict "customLabels" $podLabels "context" $) | nindent 8 }}
         app.kubernetes.io/component: traffic-analytics
-      {{- if .Values.analytics.podAnnotations }}
-      annotations: {{- include "common.tplvalues.render" (dict "value" .Values.analytics.podAnnotations "context" $) | nindent 8 }}
+      {{- if or (include "ghost.analytics.createSecret" .) .Values.analytics.podAnnotations }}
+      annotations:
+        {{- if (include "ghost.analytics.createSecret" .) }}
+        checksum/analytics-secret: {{ include "common.utils.checksumTemplate" (dict "path" "/analytics-secret.yaml" "context" $) }}
+        {{- end }}
+        {{- if .Values.analytics.podAnnotations }}
+        {{- include "common.tplvalues.render" (dict "value" .Values.analytics.podAnnotations "context" $) | nindent 8 }}
+        {{- end }}
       {{- end }}
     spec:
       serviceAccountName: {{ include "ghost.serviceAccountName" . }}

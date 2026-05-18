@@ -14,7 +14,7 @@ spec:
   type: ClusterIP
   ports:
     - name: tcp-mysql
-      port: {{ .Values.mysql.service.port }}
+      port: {{ include "ghost.databasePort" . }}
       targetPort: tcp-mysql
   {{- $podLabels := include "common.tplvalues.merge" (dict "values" (list .Values.commonLabels) "context" .) }}
   selector: {{- include "common.labels.matchLabels" (dict "customLabels" $podLabels "context" $) | nindent 4 }}

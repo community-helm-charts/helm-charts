@@ -17,8 +17,17 @@ spec:
     metadata:
       labels: {{- include "common.labels.standard" (dict "customLabels" $podLabels "context" $) | nindent 8 }}
         app.kubernetes.io/component: activitypub
-      {{- if .Values.activitypub.podAnnotations }}
-      annotations: {{- include "common.tplvalues.render" (dict "value" .Values.activitypub.podAnnotations "context" $) | nindent 8 }}
+      {{- if or (include "ghost.createDatabaseSecret" .) (not .Values.mysql.enabled) .Values.activitypub.podAnnotations }}
+      annotations:
+        {{- if (include "ghost.createDatabaseSecret" .) }}
+        checksum/database-secret: {{ include "common.utils.checksumTemplate" (dict "path" "/database-secret.yaml" "context" $) }}
+        {{- end }}
+        {{- if not .Values.mysql.enabled }}
+        checksum/config-secret: {{ include "common.utils.checksumTemplate" (dict "path" "/config-secret.yaml" "context" $) }}
+        {{- end }}
+        {{- if .Values.activitypub.podAnnotations }}
+        {{- include "common.tplvalues.render" (dict "value" .Values.activitypub.podAnnotations "context" $) | nindent 8 }}
+        {{- end }}
       {{- end }}
     spec:
       serviceAccountName: {{ include "ghost.serviceAccountName" . }}
@@ -42,7 +51,7 @@ spec:
       initContainers:
         - name: wait-for-database
           image: {{ include "ghost.mysql.image" . }}
-          imagePullPolicy: {{ .Values.mysql.image.pullPolicy | quote }}
+          imagePullPolicy: {{ include "ghost.mysql.imagePullPolicy" . | quote }}
           env:
             - name: DATABASE_HOST
               value: {{ include "ghost.databaseHost" . | quote }}

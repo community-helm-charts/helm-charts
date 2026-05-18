@@ -1,4 +1,4 @@
-{{- if and .Values.analytics.enabled .Values.analytics.tinybird.deploy.enabled }}
+{{- if and .Values.trafficAnalytics.enabled .Values.trafficAnalytics.tinybird.deploy.enabled }}
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -9,23 +9,23 @@ metadata:
   annotations:
     "helm.sh/hook": post-install,post-upgrade
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
-    {{- if .Values.analytics.tinybird.deploy.annotations }}
-    {{- include "common.tplvalues.render" (dict "value" .Values.analytics.tinybird.deploy.annotations "context" $) | nindent 4 }}
+    {{- if .Values.trafficAnalytics.tinybird.deploy.annotations }}
+    {{- include "common.tplvalues.render" (dict "value" .Values.trafficAnalytics.tinybird.deploy.annotations "context" $) | nindent 4 }}
     {{- end }}
 spec:
-  backoffLimit: {{ .Values.analytics.tinybird.deploy.backoffLimit }}
-  activeDeadlineSeconds: {{ .Values.analytics.tinybird.deploy.activeDeadlineSeconds }}
+  backoffLimit: {{ .Values.trafficAnalytics.tinybird.deploy.backoffLimit }}
+  activeDeadlineSeconds: {{ .Values.trafficAnalytics.tinybird.deploy.activeDeadlineSeconds }}
   template:
     metadata:
       labels: {{- include "common.labels.standard" (dict "customLabels" .Values.commonLabels "context" $) | nindent 8 }}
         app.kubernetes.io/component: tinybird-deploy
-      {{- if or (include "ghost.analytics.createSecret" .) .Values.analytics.tinybird.deploy.podAnnotations }}
+      {{- if or (include "ghost.trafficAnalytics.createSecret" .) .Values.trafficAnalytics.tinybird.deploy.podAnnotations }}
       annotations:
-        {{- if (include "ghost.analytics.createSecret" .) }}
-        checksum/analytics-secret: {{ include "common.utils.checksumTemplate" (dict "path" "/analytics-secret.yaml" "context" $) }}
+        {{- if (include "ghost.trafficAnalytics.createSecret" .) }}
+        checksum/traffic-analytics-secret: {{ include "common.utils.checksumTemplate" (dict "path" "/traffic-analytics-secret.yaml" "context" $) }}
         {{- end }}
-        {{- if .Values.analytics.tinybird.deploy.podAnnotations }}
-        {{- include "common.tplvalues.render" (dict "value" .Values.analytics.tinybird.deploy.podAnnotations "context" $) | nindent 8 }}
+        {{- if .Values.trafficAnalytics.tinybird.deploy.podAnnotations }}
+        {{- include "common.tplvalues.render" (dict "value" .Values.trafficAnalytics.tinybird.deploy.podAnnotations "context" $) | nindent 8 }}
         {{- end }}
       {{- end }}
     spec:
@@ -55,23 +55,23 @@ spec:
       containers:
         - name: tinybird-deploy
           image: {{ include "ghost.tinybirdDeploy.image" . }}
-          imagePullPolicy: {{ .Values.analytics.tinybird.deploy.image.pullPolicy | quote }}
+          imagePullPolicy: {{ .Values.trafficAnalytics.tinybird.deploy.image.pullPolicy | quote }}
           workingDir: /data/tinybird
           env:
             - name: TINYBIRD_API_URL
-              value: {{ .Values.analytics.tinybird.apiUrl | quote }}
+              value: {{ .Values.trafficAnalytics.tinybird.apiUrl | quote }}
             - name: TINYBIRD_ADMIN_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "ghost.analytics.secretName" . }}
-                  key: {{ include "ghost.analytics.adminTokenKey" . }}
+                  name: {{ include "ghost.trafficAnalytics.secretName" . }}
+                  key: {{ include "ghost.trafficAnalytics.adminTokenKey" . }}
           command:
             - /bin/sh
             - -ec
             - |
               tb --cloud --host "${TINYBIRD_API_URL}" --token "${TINYBIRD_ADMIN_TOKEN}" deploy --allow-destructive-operations
-          {{- if .Values.analytics.tinybird.deploy.resources }}
-          resources: {{- toYaml .Values.analytics.tinybird.deploy.resources | nindent 12 }}
+          {{- if .Values.trafficAnalytics.tinybird.deploy.resources }}
+          resources: {{- toYaml .Values.trafficAnalytics.tinybird.deploy.resources | nindent 12 }}
           {{- end }}
           volumeMounts:
             - name: tinybird-files

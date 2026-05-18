@@ -1,9 +1,9 @@
-{{- if and .Values.ingress.enabled .Values.analytics.enabled }}
-{{- if (include "ghost.analytics.renderTraefikMiddleware" .) }}
+{{- if and .Values.ingress.enabled .Values.trafficAnalytics.enabled }}
+{{- if (include "ghost.trafficAnalytics.renderTraefikMiddleware" .) }}
 apiVersion: traefik.io/v1alpha1
 kind: Middleware
 metadata:
-  name: {{ include "ghost.analyticsStripPrefixMiddlewareName" . }}
+  name: {{ include "ghost.trafficAnalyticsStripPrefixMiddlewareName" . }}
   namespace: {{ include "common.names.namespace" . | quote }}
   labels: {{- include "common.labels.standard" (dict "customLabels" .Values.commonLabels "context" $) | nindent 4 }}
   {{- if .Values.commonAnnotations }}
@@ -18,15 +18,15 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ include "ghost.analyticsIngress.fullname" . }}
+  name: {{ include "ghost.trafficAnalyticsIngress.fullname" . }}
   namespace: {{ include "common.names.namespace" . | quote }}
   labels: {{- include "common.labels.standard" (dict "customLabels" .Values.commonLabels "context" $) | nindent 4 }}
-  {{- if or (include "ghost.analytics.useTraefikAnnotations" .) (include "ghost.analytics.useNginxAnnotations" .) .Values.ingress.annotations .Values.commonAnnotations }}
+  {{- if or (include "ghost.trafficAnalytics.useTraefikAnnotations" .) (include "ghost.trafficAnalytics.useNginxAnnotations" .) .Values.ingress.annotations .Values.commonAnnotations }}
   annotations:
-    {{- if (include "ghost.analytics.useTraefikAnnotations" .) }}
-    traefik.ingress.kubernetes.io/router.middlewares: {{ include "ghost.analyticsStripPrefixMiddlewareRef" . | quote }}
+    {{- if (include "ghost.trafficAnalytics.useTraefikAnnotations" .) }}
+    traefik.ingress.kubernetes.io/router.middlewares: {{ include "ghost.trafficAnalyticsStripPrefixMiddlewareRef" . | quote }}
     {{- end }}
-    {{- if (include "ghost.analytics.useNginxAnnotations" .) }}
+    {{- if (include "ghost.trafficAnalytics.useNginxAnnotations" .) }}
     nginx.ingress.kubernetes.io/rewrite-target: /api/v1/page_hit
     {{- end }}
     {{- if or .Values.ingress.annotations .Values.commonAnnotations }}
@@ -42,11 +42,11 @@ spec:
     - host: {{ .Values.ingress.hostname | quote }}
       http:
         paths:
-          - path: {{ include "ghost.analytics.path" . | quote }}
-            pathType: {{ include "ghost.analytics.pathType" . }}
+          - path: {{ include "ghost.trafficAnalytics.path" . | quote }}
+            pathType: {{ include "ghost.trafficAnalytics.pathType" . }}
             backend:
               service:
-                name: {{ include "ghost.analytics.fullname" . }}
+                name: {{ include "ghost.trafficAnalytics.fullname" . }}
                 port:
                   name: http
   {{- if or .Values.ingress.tls .Values.ingress.extraTls }}

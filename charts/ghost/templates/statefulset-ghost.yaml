@@ -21,8 +21,8 @@ spec:
         app.kubernetes.io/component: ghost
       annotations:
         checksum/config-secret: {{ include "common.utils.checksumTemplate" (dict "path" "/config-secret.yaml" "context" $) }}
-        {{- if (include "ghost.analytics.createSecret" .) }}
-        checksum/analytics-secret: {{ include "common.utils.checksumTemplate" (dict "path" "/analytics-secret.yaml" "context" $) }}
+        {{- if (include "ghost.trafficAnalytics.createSecret" .) }}
+        checksum/traffic-analytics-secret: {{ include "common.utils.checksumTemplate" (dict "path" "/traffic-analytics-secret.yaml" "context" $) }}
         {{- end }}
         {{- if .Values.ghost.podAnnotations }}
         {{- include "common.tplvalues.render" (dict "value" .Values.ghost.podAnnotations "context" $) | nindent 8 }}
@@ -138,19 +138,19 @@ spec:
                   name: {{ include "ghost.databaseSecretName" . }}
                   key: {{ include "ghost.databasePasswordKey" . }}
             {{- end }}
-            {{- if and .Values.analytics.enabled (not (include "ghost.config.tinybirdAdminToken" .)) }}
+            {{- if and .Values.trafficAnalytics.enabled (not (include "ghost.config.tinybirdAdminToken" .)) }}
             - name: tinybird__adminToken
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "ghost.analytics.secretName" . }}
-                  key: {{ include "ghost.analytics.adminTokenKey" . }}
+                  name: {{ include "ghost.trafficAnalytics.secretName" . }}
+                  key: {{ include "ghost.trafficAnalytics.adminTokenKey" . }}
             {{- end }}
-            {{- if and .Values.analytics.enabled (not (include "ghost.config.tinybirdWorkspaceId" .)) }}
+            {{- if and .Values.trafficAnalytics.enabled (not (include "ghost.config.tinybirdWorkspaceId" .)) }}
             - name: tinybird__workspaceId
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "ghost.analytics.secretName" . }}
-                  key: {{ include "ghost.analytics.workspaceIdKey" . }}
+                  name: {{ include "ghost.trafficAnalytics.secretName" . }}
+                  key: {{ include "ghost.trafficAnalytics.workspaceIdKey" . }}
             {{- end }}
             {{- if .Values.ghost.extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .Values.ghost.extraEnvVars "context" $) | nindent 12 }}

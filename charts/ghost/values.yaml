@@ -184,12 +184,12 @@ databaseWait:
   enabled: true
   timeoutSeconds: 300
 
-analytics:
+trafficAnalytics:
   enabled: false
   image:
     registry: docker.io
     repository: ghost/traffic-analytics
-    tag: 1.0.219
+    tag: 1.0.231
     digest: ""
     pullPolicy: IfNotPresent
     pullSecrets: []

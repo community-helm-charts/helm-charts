@@ -14,8 +14,8 @@
 {{- include "common.images.image" (dict "imageRoot" .Values.mysql.image "global" .Values.global) -}}
 {{- end -}}
 
-{{- define "ghost.analytics.image" -}}
-{{- include "common.images.image" (dict "imageRoot" .Values.analytics.image "global" .Values.global) -}}
+{{- define "ghost.trafficAnalytics.image" -}}
+{{- include "common.images.image" (dict "imageRoot" .Values.trafficAnalytics.image "global" .Values.global) -}}
 {{- end -}}
 
 {{- define "ghost.activitypub.image" -}}
@@ -27,7 +27,7 @@
 {{- end -}}
 
 {{- define "ghost.tinybirdDeploy.image" -}}
-{{- include "common.images.image" (dict "imageRoot" .Values.analytics.tinybird.deploy.image "global" .Values.global) -}}
+{{- include "common.images.image" (dict "imageRoot" .Values.trafficAnalytics.tinybird.deploy.image "global" .Values.global) -}}
 {{- end -}}
 
 {{- define "ghost.imagePullSecrets" -}}
@@ -46,8 +46,8 @@
 {{- include "common.images.renderPullSecrets" (dict "images" (list .Values.mysql.image) "context" $) -}}
 {{- end -}}
 
-{{- define "ghost.analytics.imagePullSecrets" -}}
-{{- include "common.images.renderPullSecrets" (dict "images" (list .Values.analytics.image) "context" $) -}}
+{{- define "ghost.trafficAnalytics.imagePullSecrets" -}}
+{{- include "common.images.renderPullSecrets" (dict "images" (list .Values.trafficAnalytics.image) "context" $) -}}
 {{- end -}}
 
 {{- define "ghost.activitypub.imagePullSecrets" -}}
@@ -55,7 +55,7 @@
 {{- end -}}
 
 {{- define "ghost.tinybirdDeploy.imagePullSecrets" -}}
-{{- include "common.images.renderPullSecrets" (dict "images" (list .Values.ghost.image .Values.analytics.tinybird.deploy.image) "context" $) -}}
+{{- include "common.images.renderPullSecrets" (dict "images" (list .Values.ghost.image .Values.trafficAnalytics.tinybird.deploy.image) "context" $) -}}
 {{- end -}}
 
 {{- define "ghost.publicUrl" -}}
@@ -70,24 +70,24 @@
 {{- include "common.names.dependency.fullname" (dict "chartName" "mysql" "chartValues" .Values.mysql "context" $) -}}
 {{- end -}}
 
-{{- define "ghost.analytics.fullname" -}}
+{{- define "ghost.trafficAnalytics.fullname" -}}
 {{- include "ghost.componentName" (dict "component" "traffic-analytics" "Chart" .Chart "Values" .Values "Release" .Release "Capabilities" .Capabilities "Template" .Template) -}}
 {{- end -}}
 
-{{- define "ghost.analyticsIngress.fullname" -}}
-{{- include "ghost.componentName" (dict "component" "analytics" "Chart" .Chart "Values" .Values "Release" .Release "Capabilities" .Capabilities "Template" .Template) -}}
+{{- define "ghost.trafficAnalyticsIngress.fullname" -}}
+{{- include "ghost.trafficAnalytics.fullname" . -}}
 {{- end -}}
 
 {{- define "ghost.activitypubIngress.fullname" -}}
 {{- include "ghost.activitypub.fullname" . -}}
 {{- end -}}
 
-{{- define "ghost.analyticsStripPrefixMiddlewareName" -}}
-{{- printf "%s-strip-prefix" (include "ghost.analyticsIngress.fullname" .) | trunc 63 | trimSuffix "-" -}}
+{{- define "ghost.trafficAnalyticsStripPrefixMiddlewareName" -}}
+{{- printf "%s-strip-prefix" (include "ghost.trafficAnalyticsIngress.fullname" .) | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
-{{- define "ghost.analyticsStripPrefixMiddlewareRef" -}}
-{{- printf "%s-%s@kubernetescrd" (include "common.names.namespace" .) (include "ghost.analyticsStripPrefixMiddlewareName" .) -}}
+{{- define "ghost.trafficAnalyticsStripPrefixMiddlewareRef" -}}
+{{- printf "%s-%s@kubernetescrd" (include "common.names.namespace" .) (include "ghost.trafficAnalyticsStripPrefixMiddlewareName" .) -}}
 {{- end -}}
 
 {{- define "ghost.ingress.controllerMode" -}}
@@ -103,30 +103,30 @@ generic
 {{- end -}}
 {{- end -}}
 
-{{- define "ghost.analytics.useTraefikAnnotations" -}}
+{{- define "ghost.trafficAnalytics.useTraefikAnnotations" -}}
 {{- $mode := include "ghost.ingress.controllerMode" . -}}
 {{- if or (eq $mode "traefik") (eq $mode "both") -}}
 true
 {{- end -}}
 {{- end -}}
 
-{{- define "ghost.analytics.useNginxAnnotations" -}}
+{{- define "ghost.trafficAnalytics.useNginxAnnotations" -}}
 {{- $mode := include "ghost.ingress.controllerMode" . -}}
 {{- if or (eq $mode "nginx") (eq $mode "both") -}}
 true
 {{- end -}}
 {{- end -}}
 
-{{- define "ghost.analytics.path" -}}
+{{- define "ghost.trafficAnalytics.path" -}}
 /.ghost/analytics/api/v1/page_hit
 {{- end -}}
 
-{{- define "ghost.analytics.pathType" -}}
+{{- define "ghost.trafficAnalytics.pathType" -}}
 Exact
 {{- end -}}
 
-{{- define "ghost.analytics.renderTraefikMiddleware" -}}
-{{- if and (include "ghost.analytics.useTraefikAnnotations" .) (.Capabilities.APIVersions.Has "traefik.io/v1alpha1/Middleware") -}}
+{{- define "ghost.trafficAnalytics.renderTraefikMiddleware" -}}
+{{- if and (include "ghost.trafficAnalytics.useTraefikAnnotations" .) (.Capabilities.APIVersions.Has "traefik.io/v1alpha1/Middleware") -}}
 true
 {{- end -}}
 {{- end -}}
@@ -279,30 +279,30 @@ database__connection__password
 {{- end -}}
 {{- end -}}
 
-{{- define "ghost.analytics.secretName" -}}
-{{- if .Values.analytics.tinybird.existingSecret -}}
-{{- tpl .Values.analytics.tinybird.existingSecret $ -}}
+{{- define "ghost.trafficAnalytics.secretName" -}}
+{{- if .Values.trafficAnalytics.tinybird.existingSecret -}}
+{{- tpl .Values.trafficAnalytics.tinybird.existingSecret $ -}}
 {{- else -}}
 {{- printf "%s-tinybird" (include "ghost.fullname" .) | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 {{- end -}}
 
-{{- define "ghost.analytics.createSecret" -}}
-{{- if and .Values.analytics.enabled (not .Values.analytics.tinybird.existingSecret) -}}
+{{- define "ghost.trafficAnalytics.createSecret" -}}
+{{- if and .Values.trafficAnalytics.enabled (not .Values.trafficAnalytics.tinybird.existingSecret) -}}
 true
 {{- end -}}
 {{- end -}}
 
-{{- define "ghost.analytics.trackerTokenKey" -}}
-{{- default "tinybird-tracker-token" .Values.analytics.tinybird.secretKeys.trackerTokenKey -}}
+{{- define "ghost.trafficAnalytics.trackerTokenKey" -}}
+{{- default "tinybird-tracker-token" .Values.trafficAnalytics.tinybird.secretKeys.trackerTokenKey -}}
 {{- end -}}
 
-{{- define "ghost.analytics.adminTokenKey" -}}
-{{- default "tinybird-admin-token" .Values.analytics.tinybird.secretKeys.adminTokenKey -}}
+{{- define "ghost.trafficAnalytics.adminTokenKey" -}}
+{{- default "tinybird-admin-token" .Values.trafficAnalytics.tinybird.secretKeys.adminTokenKey -}}
 {{- end -}}
 
-{{- define "ghost.analytics.workspaceIdKey" -}}
-{{- default "tinybird-workspace-id" .Values.analytics.tinybird.secretKeys.workspaceIdKey -}}
+{{- define "ghost.trafficAnalytics.workspaceIdKey" -}}
+{{- default "tinybird-workspace-id" .Values.trafficAnalytics.tinybird.secretKeys.workspaceIdKey -}}
 {{- end -}}
 
 {{- define "ghost.activitypubStorageUrl" -}}

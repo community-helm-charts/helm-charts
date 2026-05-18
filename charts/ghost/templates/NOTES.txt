@@ -13,30 +13,30 @@ Ingress host:
   {{ .Values.ingress.hostname }}
 {{- end }}
 
-{{- if .Values.analytics.enabled }}
+{{- if .Values.trafficAnalytics.enabled }}
 
 Analytics is enabled. Route public requests for this endpoint to the traffic analytics service:
 
-  {{ include "ghost.publicUrl" . }}{{ include "ghost.analytics.path" . }}
-{{- if .Values.analytics.tinybird.existingSecret }}
+  {{ include "ghost.publicUrl" . }}{{ include "ghost.trafficAnalytics.path" . }}
+{{- if .Values.trafficAnalytics.tinybird.existingSecret }}
 
-Tinybird credentials are read from Secret {{ include "ghost.analytics.secretName" . }}.
+Tinybird credentials are read from Secret {{ include "ghost.trafficAnalytics.secretName" . }}.
 Ensure it contains these keys:
 
-  {{ include "ghost.analytics.trackerTokenKey" . }}
-  {{ include "ghost.analytics.adminTokenKey" . }}
-  {{ include "ghost.analytics.workspaceIdKey" . }}
-{{- else if not .Values.analytics.tinybird.trackerToken }}
+  {{ include "ghost.trafficAnalytics.trackerTokenKey" . }}
+  {{ include "ghost.trafficAnalytics.adminTokenKey" . }}
+  {{ include "ghost.trafficAnalytics.workspaceIdKey" . }}
+{{- else if not .Values.trafficAnalytics.tinybird.trackerToken }}
 
 Tinybird tracker token is not configured yet.
 After deploying the Ghost Tinybird datafiles, get the token named "tracker"
 from the Tinybird workspace Tokens page, then set:
 
-  analytics.tinybird.trackerToken
+  trafficAnalytics.tinybird.trackerToken
 
 or create a Secret with key:
 
-  {{ include "ghost.analytics.trackerTokenKey" . }}
+  {{ include "ghost.trafficAnalytics.trackerTokenKey" . }}
 {{- end }}
 {{- end }}
 

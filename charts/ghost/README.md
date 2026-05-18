@@ -41,7 +41,7 @@ The public Service points directly at Ghost. When `ingress.enabled=true`, the ch
 
 | Path | Destination |
 | --- | --- |
-| `/.ghost/analytics` | `traffic-analytics`, when `analytics.enabled=true` |
+| `/.ghost/analytics` | `traffic-analytics`, when `trafficAnalytics.enabled=true` |
 | `/.ghost/activitypub` | ActivityPub, when `activitypub.enabled=true` |
 | `/.well-known/webfinger` | ActivityPub, when `activitypub.enabled=true` |
 | `/.well-known/nodeinfo` | ActivityPub, when `activitypub.enabled=true` |
@@ -104,7 +104,7 @@ ghost:
 Ghost analytics uses Tinybird plus the `ghost/traffic-analytics` proxy service.
 
 ```yaml
-analytics:
+trafficAnalytics:
   enabled: true
   tinybird:
     apiUrl: https://api.tinybird.co
@@ -116,7 +116,7 @@ analytics:
 You can also reference an existing Secret:
 
 ```yaml
-analytics:
+trafficAnalytics:
   enabled: true
   tinybird:
     existingSecret: ghost-tinybird
@@ -125,7 +125,7 @@ analytics:
 The optional Tinybird deploy Job copies the Tinybird datafiles from the Ghost image and runs the Tinybird Forward CLI deploy command. The Job uses the admin token and allows destructive operations so the deployed Tinybird schema matches Ghost's bundled datafiles:
 
 ```yaml
-analytics:
+trafficAnalytics:
   tinybird:
     deploy:
       enabled: true
@@ -206,10 +206,10 @@ ghost:
 | `mysql.initdb.scriptsConfigMap` | Initdb ConfigMap mounted by the MySQL subchart | `{{ .Release.Name }}-mysql-initdb` |
 | `mysql.resourcesPreset` | MySQL resource preset | `small` |
 | `mysql.resources` | MySQL resource requests and limits | `{}` |
-| `analytics.enabled` | Enable Tinybird traffic analytics | `false` |
-| `analytics.tinybird.apiUrl` | Tinybird API URL | `https://api.tinybird.co` |
-| `analytics.tinybird.existingSecret` | Secret containing Tinybird tokens | `""` |
-| `analytics.tinybird.deploy.enabled` | Run Tinybird deploy hook Job | `false` |
+| `trafficAnalytics.enabled` | Enable Tinybird traffic analytics | `false` |
+| `trafficAnalytics.tinybird.apiUrl` | Tinybird API URL | `https://api.tinybird.co` |
+| `trafficAnalytics.tinybird.existingSecret` | Secret containing Tinybird tokens | `""` |
+| `trafficAnalytics.tinybird.deploy.enabled` | Run Tinybird deploy hook Job | `false` |
 | `activitypub.enabled` | Enable self-hosted ActivityPub | `false` |
 | `activitypub.database` | MySQL database name for ActivityPub | `activitypub` |
 | `ghost.extraEnvVars` | Extra environment variables for Ghost | `[]` |

@@ -5,7 +5,7 @@ annotations:
     - name: mysql
       image: docker.io/library/mysql:8.0.44
     - name: traffic-analytics
-      image: docker.io/ghost/traffic-analytics:1.0.219
+      image: docker.io/ghost/traffic-analytics:1.0.231
     - name: activitypub
       image: ghcr.io/tryghost/activitypub:1.2.2
     - name: activitypub-migrations
@@ -39,4 +39,4 @@ name: ghost
 sources:
 - https://github.com/community-helm-charts/helm-charts/tree/main/charts/ghost
 - https://github.com/TryGhost/ghost-docker
-version: 0.0.10
+version: 0.0.11

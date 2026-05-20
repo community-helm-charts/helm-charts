@@ -1,16 +1,16 @@
 {{/* vim: set filetype=mustache: */}}
 
 {{/*
-Return  the proper Storage Class
-{{ include "common.storage.class" ( dict "persistence" .Values.path.to.the.persistence "global" $) }}
+Return the proper storageClassName
+{{ include "common.storage.className" ( dict "persistence" .Values.path.to.the.persistence "global" $) }}
 */}}
-{{- define "common.storage.class" -}}
-{{- $storageClass := (.global).storageClass | default .persistence.storageClass | default (.global).defaultStorageClass | default "" -}}
-{{- if $storageClass -}}
-  {{- if (eq "-" $storageClass) -}}
+{{- define "common.storage.className" -}}
+{{- $storageClassName := (.global).storageClassName | default .persistence.storageClassName | default (.global).defaultStorageClassName | default "" -}}
+{{- if $storageClassName -}}
+  {{- if (eq "-" $storageClassName) -}}
       {{- printf "storageClassName: \"\"" -}}
   {{- else -}}
-      {{- printf "storageClassName: %s" $storageClass -}}
+      {{- printf "storageClassName: %s" $storageClassName -}}
   {{- end -}}
 {{- end -}}
 {{- end -}}

@@ -1,5 +1,5 @@
 {{- if and .Values.ingress.enabled (or (and .Values.ghost.enabled .Values.ghost.service.enabled) .Values.ingress.extraPaths) }}
-apiVersion: networking.k8s.io/v1
+apiVersion: {{ default (include "common.capabilities.ingress.apiVersion" .) .Values.ingress.apiVersion }}
 kind: Ingress
 metadata:
   name: {{ include "ghost.fullname" . }}
@@ -10,11 +10,11 @@ metadata:
   annotations: {{- include "common.tplvalues.render" (dict "value" $annotations "context" $) | nindent 4 }}
   {{- end }}
 spec:
-  {{- if .Values.ingress.className }}
-  ingressClassName: {{ .Values.ingress.className | quote }}
+  {{- if .Values.ingress.ingressClassName }}
+  ingressClassName: {{ .Values.ingress.ingressClassName | quote }}
   {{- end }}
   rules:
-    - host: {{ .Values.ingress.hostname | quote }}
+    - host: {{ tpl .Values.ingress.hostname $ | quote }}
       http:
         paths:
           {{- if .Values.ingress.extraPaths }}
@@ -23,32 +23,27 @@ spec:
           {{- if and .Values.ghost.enabled .Values.ghost.service.enabled }}
           - path: {{ .Values.ingress.path | quote }}
             pathType: {{ .Values.ingress.pathType }}
-            backend:
-              service:
-                name: {{ include "ghost.serviceName" . }}
-                port:
-                  name: http
+            backend: {{- include "common.ingress.backend" (dict "serviceName" (include "ghost.serviceName" .) "servicePort" "http" "context" $) | nindent 14 }}
           {{- end }}
     {{- range .Values.ingress.extraHosts }}
     {{- if and $.Values.ghost.enabled $.Values.ghost.service.enabled }}
-    - host: {{ .name | quote }}
+    - host: {{ tpl .name $ | quote }}
       http:
         paths:
           - path: {{ default "/" .path | quote }}
-            pathType: {{ default "Prefix" .pathType }}
-            backend:
-              service:
-                name: {{ include "ghost.serviceName" $ }}
-                port:
-                  name: http
+            pathType: {{ default "ImplementationSpecific" .pathType }}
+            backend: {{- include "common.ingress.backend" (dict "serviceName" (include "ghost.serviceName" $) "servicePort" "http" "context" $) | nindent 14 }}
     {{- end }}
+    {{- end }}
+    {{- if .Values.ingress.extraRules }}
+    {{- include "common.tplvalues.render" (dict "value" .Values.ingress.extraRules "context" $) | nindent 4 }}
     {{- end }}
   {{- if or .Values.ingress.tls .Values.ingress.extraTls }}
   tls:
     {{- if .Values.ingress.tls }}
     - hosts:
-        - {{ .Values.ingress.hostname | quote }}
-      secretName: {{ printf "%s-tls" .Values.ingress.hostname | trunc 63 | trimSuffix "-" }}
+        - {{ tpl .Values.ingress.hostname $ | quote }}
+      secretName: {{ printf "%s-tls" ((tpl .Values.ingress.hostname $) | replace "*." "") | trunc 63 | trimSuffix "-" }}
     {{- end }}
     {{- if .Values.ingress.extraTls }}
     {{- include "common.tplvalues.render" (dict "value" .Values.ingress.extraTls "context" $) | nindent 4 }}

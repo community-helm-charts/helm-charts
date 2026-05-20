@@ -1,8 +1,8 @@
 global:
   imageRegistry: ""
   imagePullSecrets: []
-  defaultStorageClass: ""
-  storageClass: ""
+  defaultStorageClassName: ""
+  storageClassName: ""
 
 kubeVersion: ""
 nameOverride: ""
@@ -57,7 +57,7 @@ persistence:
   volumeName: data
   mountPath: /var/lib/mysql
   subPath: ""
-  storageClass: ""
+  storageClassName: ""
   accessModes:
     - ReadWriteOnce
   size: 8Gi

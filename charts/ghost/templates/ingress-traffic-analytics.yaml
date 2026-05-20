@@ -15,7 +15,7 @@ spec:
       - /.ghost/analytics
 ---
 {{- end }}
-apiVersion: networking.k8s.io/v1
+apiVersion: {{ default (include "common.capabilities.ingress.apiVersion" .) .Values.ingress.apiVersion }}
 kind: Ingress
 metadata:
   name: {{ include "ghost.trafficAnalyticsIngress.fullname" . }}
@@ -35,26 +35,22 @@ metadata:
     {{- end }}
   {{- end }}
 spec:
-  {{- if .Values.ingress.className }}
-  ingressClassName: {{ .Values.ingress.className | quote }}
+  {{- if .Values.ingress.ingressClassName }}
+  ingressClassName: {{ .Values.ingress.ingressClassName | quote }}
   {{- end }}
   rules:
-    - host: {{ .Values.ingress.hostname | quote }}
+    - host: {{ tpl .Values.ingress.hostname $ | quote }}
       http:
         paths:
           - path: {{ include "ghost.trafficAnalytics.path" . | quote }}
             pathType: {{ include "ghost.trafficAnalytics.pathType" . }}
-            backend:
-              service:
-                name: {{ include "ghost.trafficAnalytics.fullname" . }}
-                port:
-                  name: http
+            backend: {{- include "common.ingress.backend" (dict "serviceName" (include "ghost.trafficAnalytics.fullname" .) "servicePort" "http" "context" $) | nindent 14 }}
   {{- if or .Values.ingress.tls .Values.ingress.extraTls }}
   tls:
     {{- if .Values.ingress.tls }}
     - hosts:
-        - {{ .Values.ingress.hostname | quote }}
-      secretName: {{ printf "%s-tls" .Values.ingress.hostname | trunc 63 | trimSuffix "-" }}
+        - {{ tpl .Values.ingress.hostname $ | quote }}
+      secretName: {{ printf "%s-tls" ((tpl .Values.ingress.hostname $) | replace "*." "") | trunc 63 | trimSuffix "-" }}
     {{- end }}
     {{- if .Values.ingress.extraTls }}
     {{- include "common.tplvalues.render" (dict "value" .Values.ingress.extraTls "context" $) | nindent 4 }}

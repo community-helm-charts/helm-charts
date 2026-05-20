@@ -135,8 +135,8 @@ If you manage Tinybird datafiles outside Helm, leave the deploy Job disabled and
 
 The chart creates a dedicated analytics Ingress because Ghost sends browser traffic to
 `/.ghost/analytics/api/v1/page_hit`, while the analytics service expects `/api/v1/page_hit`.
-When `ingress.className` is set to a Traefik or nginx class, only the matching rewrite annotations are rendered.
-When `ingress.className` is empty, both Traefik and ingress-nginx annotations are rendered so the default IngressClass can handle the route.
+When `ingress.ingressClassName` is set to a Traefik or nginx class, only the matching rewrite annotations are rendered.
+When `ingress.ingressClassName` is empty, both Traefik and ingress-nginx annotations are rendered so the default IngressClass can handle the route.
 The route matches the concrete `page_hit` endpoint instead of using a regex path; nginx rewrites it directly to `/api/v1/page_hit`, and Traefik strips the `/.ghost/analytics` prefix.
 
 ## ActivityPub
@@ -191,7 +191,9 @@ ghost:
 | `ghost.service.type` | Ghost Service type | `ClusterIP` |
 | `ghost.service.ports.http` | Ghost Service HTTP port | `80` |
 | `ingress.enabled` | Create an Ingress | `true` |
+| `ingress.ingressClassName` | IngressClass name | `""` |
 | `ingress.hostname` | Ingress hostname | `ghost.local` |
+| `ingress.pathType` | Ingress path type | `ImplementationSpecific` |
 | `persistence.enabled` | Persist the shared site content volume used by Ghost and ActivityPub | `true` |
 | `persistence.size` | Shared site content PVC size | `5Gi` |
 | `mysql.enabled` | Deploy built-in MySQL | `true` |

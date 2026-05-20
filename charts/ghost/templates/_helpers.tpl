@@ -91,7 +91,7 @@
 {{- end -}}
 
 {{- define "ghost.ingress.controllerMode" -}}
-{{- $className := lower (default "" .Values.ingress.className) -}}
+{{- $className := lower (default "" .Values.ingress.ingressClassName) -}}
 {{- if not $className -}}
 both
 {{- else if contains "traefik" $className -}}

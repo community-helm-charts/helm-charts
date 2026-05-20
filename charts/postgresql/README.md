@@ -117,7 +117,7 @@ initdb:
 | `containerPorts.postgresql` | Container port | `5432` |
 | `persistence.enabled` | Enable persistent storage | `true` |
 | `persistence.size` | PVC size | `8Gi` |
-| `persistence.storageClass` | StorageClass override | `""` |
+| `persistence.storageClassName` | StorageClassName override | `""` |
 | `persistence.existingClaim` | Existing PVC name | `""` |
 | `persistence.mountPath` | Data volume mount path | `/var/lib/postgresql` |
 | `initdb.args` | Extra arguments for `initdb` | `""` |

@@ -1,8 +1,8 @@
 global:
   imageRegistry: ""
   imagePullSecrets: []
-  defaultStorageClass: ""
-  storageClass: ""
+  defaultStorageClassName: ""
+  storageClassName: ""
   postgresql:
     fullnameOverride: ""
     auth:
@@ -67,7 +67,7 @@ persistence:
   volumeName: data
   mountPath: /var/lib/postgresql
   subPath: ""
-  storageClass: ""
+  storageClassName: ""
   accessModes:
     - ReadWriteOnce
   size: 8Gi

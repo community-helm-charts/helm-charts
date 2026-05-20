@@ -1,5 +1,5 @@
 {{- if and .Values.ingress.enabled .Values.activitypub.enabled }}
-apiVersion: networking.k8s.io/v1
+apiVersion: {{ default (include "common.capabilities.ingress.apiVersion" .) .Values.ingress.apiVersion }}
 kind: Ingress
 metadata:
   name: {{ include "ghost.activitypubIngress.fullname" . }}
@@ -10,40 +10,28 @@ metadata:
   annotations: {{- include "common.tplvalues.render" (dict "value" $annotations "context" $) | nindent 4 }}
   {{- end }}
 spec:
-  {{- if .Values.ingress.className }}
-  ingressClassName: {{ .Values.ingress.className | quote }}
+  {{- if .Values.ingress.ingressClassName }}
+  ingressClassName: {{ .Values.ingress.ingressClassName | quote }}
   {{- end }}
   rules:
-    - host: {{ .Values.ingress.hostname | quote }}
+    - host: {{ tpl .Values.ingress.hostname $ | quote }}
       http:
         paths:
           - path: /.ghost/activitypub
             pathType: Prefix
-            backend:
-              service:
-                name: {{ include "ghost.activitypub.fullname" . }}
-                port:
-                  name: http
+            backend: {{- include "common.ingress.backend" (dict "serviceName" (include "ghost.activitypub.fullname" .) "servicePort" "http" "context" $) | nindent 14 }}
           - path: /.well-known/webfinger
             pathType: Exact
-            backend:
-              service:
-                name: {{ include "ghost.activitypub.fullname" . }}
-                port:
-                  name: http
+            backend: {{- include "common.ingress.backend" (dict "serviceName" (include "ghost.activitypub.fullname" .) "servicePort" "http" "context" $) | nindent 14 }}
           - path: /.well-known/nodeinfo
             pathType: Exact
-            backend:
-              service:
-                name: {{ include "ghost.activitypub.fullname" . }}
-                port:
-                  name: http
+            backend: {{- include "common.ingress.backend" (dict "serviceName" (include "ghost.activitypub.fullname" .) "servicePort" "http" "context" $) | nindent 14 }}
   {{- if or .Values.ingress.tls .Values.ingress.extraTls }}
   tls:
     {{- if .Values.ingress.tls }}
     - hosts:
-        - {{ .Values.ingress.hostname | quote }}
-      secretName: {{ printf "%s-tls" .Values.ingress.hostname | trunc 63 | trimSuffix "-" }}
+        - {{ tpl .Values.ingress.hostname $ | quote }}
+      secretName: {{ printf "%s-tls" ((tpl .Values.ingress.hostname $) | replace "*." "") | trunc 63 | trimSuffix "-" }}
     {{- end }}
     {{- if .Values.ingress.extraTls }}
     {{- include "common.tplvalues.render" (dict "value" .Values.ingress.extraTls "context" $) | nindent 4 }}

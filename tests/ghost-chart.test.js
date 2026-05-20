@@ -104,12 +104,44 @@ test("ingress can route side services without the Ghost backend", () => {
       "trafficAnalytics.enabled=true",
       "--set",
       "ingress.hostname=blog.example.com",
+      "--set",
+      "ingress.ingressClassName=traefik",
     );
 
     assert.deepEqual(resourceNames(manifest, "StatefulSet"), ["ghost-mysql"]);
+    assert.match(manifest, /ingressClassName: "traefik"/);
     assert.match(manifest, /path: "\/\.ghost\/analytics\/api\/v1\/page_hit"/);
     assert.match(manifest, /name: ghost-traffic-analytics/);
+    assert.match(manifest, /traefik\.ingress\.kubernetes\.io\/router\.middlewares/);
+    assert.doesNotMatch(manifest, /nginx\.ingress\.kubernetes\.io\/rewrite-target/);
     assert.doesNotMatch(manifest, new RegExp('path: "/"[\\s\\S]*?name: ghost\\n\\s+port:\\n\\s+name: http'));
+  } finally {
+    chart.cleanup();
+  }
+});
+
+test("primary ingress uses Bitnami-style ingressClassName and extra host values", () => {
+  const chart = makeGhostChart();
+  try {
+    const manifest = chart.render(
+      "--set",
+      "ingress.hostname=blog.example.com",
+      "--set",
+      "ingress.ingressClassName=nginx",
+      "--set",
+      "ingress.extraHosts[0].name=admin.example.com",
+      "--set",
+      "ingress.extraHosts[0].path=/admin",
+      "--set",
+      "ingress.extraHosts[0].pathType=Prefix",
+    );
+
+    assert.deepEqual(resourceNames(manifest, "Ingress"), ["ghost"]);
+    assert.match(manifest, /ingressClassName: "nginx"/);
+    assert.match(manifest, /host: "blog\.example\.com"/);
+    assert.match(manifest, /pathType: ImplementationSpecific/);
+    assert.match(manifest, /host: "admin\.example\.com"/);
+    assert.match(manifest, /path: "\/admin"/);
   } finally {
     chart.cleanup();
   }

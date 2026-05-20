@@ -1,0 +1,45 @@
+{{- $namespace := include "common.names.namespace" . }}
+OpenViking can be reached inside the cluster at:
+
+  {{ include "openviking.serviceName" . }}.{{ $namespace }}.svc.{{ .Values.clusterDomain }}:{{ include "openviking.service.port" . }}
+
+{{- if .Values.ingress.enabled }}
+
+Ingress hosts:
+  http{{ if .Values.ingress.tls }}s{{ end }}://{{ tpl .Values.ingress.hostname $ }}
+{{- range .Values.ingress.extraHosts }}
+  http{{ if $.Values.ingress.tls }}s{{ end }}://{{ tpl .name $ }}
+{{- end }}
+{{- else if contains "NodePort" .Values.service.type }}
+
+To get the NodePort URL:
+
+  export NODE_PORT=$(kubectl get --namespace {{ $namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ include "openviking.serviceName" . }})
+  export NODE_IP=$(kubectl get nodes --namespace {{ $namespace }} -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo "http://$NODE_IP:$NODE_PORT"
+{{- else if contains "LoadBalancer" .Values.service.type }}
+
+It may take a few minutes for the LoadBalancer IP to be available:
+
+  kubectl get --namespace {{ $namespace }} svc {{ include "openviking.serviceName" . }} -w
+{{- else }}
+
+To access the API locally:
+
+  kubectl port-forward --namespace {{ $namespace }} svc/{{ include "openviking.serviceName" . }} {{ include "openviking.service.port" . }}:{{ include "openviking.service.port" . }}
+  echo "Visit http://127.0.0.1:{{ include "openviking.service.port" . }}/health to verify the server."
+{{- end }}
+
+{{- if not .Values.config.existingSecret }}
+
+The ov.conf file is stored in Secret {{ include "openviking.configSecretName" . }}.
+{{- else }}
+
+The ov.conf file is read from existing Secret {{ include "openviking.configSecretName" . }} key {{ include "openviking.configSecretKey" . }}.
+{{- end }}
+
+{{- if and (not .Values.config.existingSecret) (not .Values.config.server.root_api_key) }}
+
+WARNING: config.server.root_api_key is not set. OpenViking requires a root API key
+when the server binds to 0.0.0.0.
+{{- end }}

@@ -1,0 +1,158 @@
+global:
+  imageRegistry: ""
+  imagePullSecrets: []
+  defaultStorageClassName: ""
+  storageClassName: ""
+
+kubeVersion: ""
+nameOverride: ""
+fullnameOverride: ""
+namespaceOverride: ""
+clusterDomain: cluster.local
+commonLabels: {}
+commonAnnotations: {}
+secretAnnotations: {}
+extraDeploy: []
+
+image:
+  registry: ghcr.io
+  repository: volcengine/openviking
+  tag: v0.3.17
+  digest: ""
+  pullPolicy: IfNotPresent
+  pullSecrets: []
+
+containerPorts:
+  http: 1933
+
+service:
+  enabled: true
+  type: ClusterIP
+  ports:
+    http: 1933
+  nodePorts:
+    http: ""
+  clusterIP: ""
+  annotations: {}
+  labels: {}
+  loadBalancerClass: ""
+  loadBalancerIP: ""
+  loadBalancerSourceRanges: []
+  externalTrafficPolicy: Cluster
+  sessionAffinity: None
+  sessionAffinityConfig: {}
+  extraPorts: []
+
+ingress:
+  enabled: false
+  pathType: ImplementationSpecific
+  apiVersion: ""
+  hostname: openviking.local
+  path: /
+  annotations: {}
+  ingressClassName: ""
+  tls: false
+  selfSigned: false
+  extraHosts: []
+  extraPaths: []
+  extraTls: []
+  extraRules: []
+  secrets: []
+
+persistence:
+  enabled: true
+  volumeName: data
+  mountPath: /app/data
+  subPath: ""
+  storageClassName: ""
+  accessModes:
+    - ReadWriteOnce
+  size: 10Gi
+  annotations: {}
+  labels: {}
+  selector: {}
+  dataSource: {}
+  existingClaim: ""
+
+config:
+  existingSecret: ""
+  existingSecretKey: ov.conf
+  storage:
+    workspace: ./data
+    agfs:
+      backend: local
+    vectordb:
+      backend: local
+  log:
+    level: INFO
+    output: stdout
+  server:
+    host: "0.0.0.0"
+    port: 1933
+    root_api_key: "${ROOT_API_KEY}"
+  embedding:
+    dense:
+      api_base: https://ark.cn-beijing.volces.com/api/v3
+      api_key: "${EMBEDDING_API_KEY}"
+      provider: volcengine
+      dimension: 1024
+      model: doubao-embedding-vision
+      input: multimodal
+  vlm:
+    api_base: https://ark.cn-beijing.volces.com/api/v3
+    api_key: "${VLM_API_KEY}"
+    provider: volcengine
+    model: doubao-seed-2-0-pro
+    timeout: 600
+
+updateStrategy:
+  type: RollingUpdate
+
+args: []
+extraEnvVars: []
+extraEnvVarsCM: ""
+extraEnvVarsSecret: ""
+extraVolumes: []
+extraVolumeMounts: []
+initContainers: []
+sidecars: []
+
+podLabels: {}
+podAnnotations: {}
+podSecurityContext:
+  enabled: false
+  fsGroupChangePolicy: Always
+  sysctls: []
+  supplementalGroups: []
+  fsGroup: 1000
+containerSecurityContext:
+  enabled: false
+  runAsUser: 1000
+  runAsGroup: 1000
+  runAsNonRoot: true
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  seccompProfile:
+    type: RuntimeDefault
+
+resourcesPreset: medium
+resources: {}
+
+priorityClassName: ""
+schedulerName: ""
+terminationGracePeriodSeconds: ""
+hostAliases: []
+affinity: {}
+nodeSelector: {}
+tolerations: []
+topologySpreadConstraints: []
+
+serviceAccount:
+  create: true
+  name: ""
+  automountServiceAccountToken: false
+  annotations: {}
+
+automountServiceAccountToken: false

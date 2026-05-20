@@ -1,0 +1,27 @@
+annotations:
+  images: |
+    - name: openviking
+      image: ghcr.io/volcengine/openviking:v0.3.17
+  licenses: AGPL-3.0
+apiVersion: v2
+appVersion: "v0.3.17"
+dependencies:
+- name: common
+  repository: oci://ghcr.io/community-helm-charts
+  version: 1.x.x
+description: OpenViking - The Context Database for AI Agents.
+home: https://github.com/community-helm-charts/helm-charts
+keywords:
+- openviking
+- ai
+- agents
+- context-database
+- rag
+maintainers:
+- name: community-helm-charts
+  url: https://github.com/community-helm-charts/helm-charts
+name: openviking
+sources:
+- https://github.com/community-helm-charts/helm-charts/tree/main/charts/openviking
+- https://github.com/volcengine/OpenViking
+version: 1.0.0

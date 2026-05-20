@@ -24,4 +24,4 @@ name: openviking
 sources:
 - https://github.com/community-helm-charts/helm-charts/tree/main/charts/openviking
 - https://github.com/volcengine/OpenViking
-version: 1.0.0
+version: 1.0.1

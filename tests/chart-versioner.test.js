@@ -201,3 +201,27 @@ test("existing expected chart version is not bumped twice", () => {
     ctx.cleanup();
   }
 });
+
+test("automated version bump commits can be released after a failed run", () => {
+  const ctx = makeRepo();
+  try {
+    const redis = ctx.chart("redis");
+    ctx.commitAll("chore: initial charts");
+    writeFileSync(join(redis, "values.yaml"), "enabled: true\n", "utf8");
+    const changed = ctx.commitAll("fix: adjust redis defaults");
+    writeFileSync(join(redis, "Chart.yaml"), "apiVersion: v2\nname: redis\nversion: 0.0.1\n", "utf8");
+    const bumped = ctx.commitAll("chore: bump chart versions");
+
+    const output = join(ctx.repo, "plan.json");
+    ctx.runVersioner("write", "--base", changed, "--head", bumped, "--output", output);
+
+    assert.match(readFileSync(join(redis, "Chart.yaml"), "utf8"), /version: 0\.0\.1/);
+    const plan = JSON.parse(readFileSync(output, "utf8"));
+    assert.deepEqual(plan.changed_charts, ["redis"]);
+    assert.equal(plan.charts[0].bump, "recovery");
+    assert.equal(plan.charts[0].next_version, "0.0.1");
+    assert.equal(plan.charts[0].needs_update, false);
+  } finally {
+    ctx.cleanup();
+  }
+});

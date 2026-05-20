@@ -11,6 +11,11 @@ on:
       - "scripts/**"
       - "tests/**"
   workflow_dispatch:
+    inputs:
+      chart_versioner_base:
+        description: Optional git base ref for chart version detection
+        required: false
+        type: string
 
 env:
   REGISTRY: ghcr.io
@@ -62,7 +67,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          base_sha="${{ github.event.before || '' }}"
+          base_sha="${{ inputs.chart_versioner_base || github.event.before || '' }}"
           head_sha="${{ github.sha }}"
 
           if [[ -z "${base_sha}" || "${base_sha}" =~ ^0+$ ]]; then
@@ -127,7 +132,13 @@ jobs:
             mkdir -p "${chart_dir}/charts"
             rm -rf "${chart_dir}/charts"/*
             cp "${common_package}" "${chart_dir}/charts/"
-            if grep -q '^[[:space:]]*- name: mysql' "${chart_dir}/Chart.yaml"; then
+            if awk '
+              /^dependencies:/ { in_dependencies=1; next }
+              in_dependencies && /^[^[:space:]-][^:]*:/ { in_dependencies=0 }
+              in_dependencies && /^[[:space:]]*-[[:space:]]*name:[[:space:]]*mysql[[:space:]]*$/ { found=1 }
+              in_dependencies && /^[[:space:]]*name:[[:space:]]*mysql[[:space:]]*$/ { found=1 }
+              END { exit found ? 0 : 1 }
+            ' "${chart_dir}/Chart.yaml"; then
               cp "${mysql_package}" "${chart_dir}/charts/"
             fi
           done

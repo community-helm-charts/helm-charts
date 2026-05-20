@@ -8,6 +8,7 @@ const VERSION_RE = /^version:\s*['"]?([^'"\s#]+)['"]?\s*(?:#.*)?$/m;
 const SEMVER_RE = /^(\d+)\.(\d+)\.(\d+)(?:[-+].*)?$/;
 const TYPE_RE = /^(?<type>[a-zA-Z]+)(?:\([^)]+\))?(?<breaking>!)?:/;
 const BUMP_ORDER = { patch: 1, minor: 2, major: 3 };
+const VERSION_BUMP_SUBJECT = "chore: bump chart versions";
 
 class ChartVersionerError extends Error {}
 
@@ -151,6 +152,13 @@ function bumpFromMessages(messages) {
   return selected;
 }
 
+function hasAutomatedVersionBump(messages) {
+  return messages.some((message) => {
+    const firstLine = message.split(/\r?\n/, 1)[0] || "";
+    return firstLine === VERSION_BUMP_SUBJECT;
+  });
+}
+
 function replaceWorktreeVersion(chartPath, nextVersion) {
   const chartYaml = join(chartPath, "Chart.yaml");
   const text = readFileSync(chartYaml, "utf8");
@@ -193,6 +201,18 @@ function buildPlan(base, head, chartsDir, cwd) {
     const messages = commitMessagesForChart(base, head, chart, chartsDir, cwd);
     const bump = bumpFromMessages(messages);
     if (!bump) {
+      if (baseVersion !== null && currentVersion !== baseVersion && hasAutomatedVersionBump(messages)) {
+        chartPlans.push({
+          name: chart,
+          path: `${chartsDir}/${chart}`,
+          files: filesByChart.get(chart),
+          bump: "recovery",
+          base_version: baseVersion,
+          current_version: currentVersion,
+          next_version: currentVersion,
+          needs_update: false,
+        });
+      }
       continue;
     }
 

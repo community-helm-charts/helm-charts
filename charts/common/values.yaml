@@ -1,5 +1,5 @@
-## common
-## It is required by CI/CD tools and processes.
+## @section Common chart parameters
+## Example value required by CI/CD tools and chart validation processes.
 ## @skip exampleValue
 ##
 exampleValue: common-chart

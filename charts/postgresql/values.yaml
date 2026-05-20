@@ -1,3 +1,16 @@
+## @section Global parameters
+## @param global.imageRegistry Global Docker image registry
+## @param global.imagePullSecrets Global Docker registry secret names as an array
+## @param global.defaultStorageClassName Global default StorageClass for Persistent Volume(s)
+## @param global.storageClassName Global StorageClass override kept for compatibility
+## @param global.postgresql.fullnameOverride Global PostgreSQL fullname override used by dependent charts
+## @param global.postgresql.auth.username Global PostgreSQL username
+## @param global.postgresql.auth.password Global PostgreSQL password
+## @param global.postgresql.auth.database Global PostgreSQL database name
+## @param global.postgresql.auth.existingSecret Global existing Secret containing PostgreSQL credentials
+## @param global.postgresql.auth.existingSecretPasswordKey Secret key containing the PostgreSQL password
+## @param global.postgresql.service.ports.postgresql Global PostgreSQL service port
+##
 global:
   imageRegistry: ""
   imagePullSecrets: []
@@ -15,6 +28,17 @@ global:
       ports:
         postgresql: ""
 
+## @section Common parameters
+## @param kubeVersion Override Kubernetes version
+## @param nameOverride String to partially override common.names.fullname
+## @param fullnameOverride String to fully override common.names.fullname
+## @param namespaceOverride String to fully override common.names.namespace
+## @param clusterDomain Kubernetes cluster domain name
+## @param commonLabels Labels to add to all deployed objects
+## @param commonAnnotations Annotations to add to all deployed objects
+## @param secretAnnotations Annotations to add to chart-managed Secret objects
+## @param extraDeploy Array of extra objects to deploy with the release
+##
 kubeVersion: ""
 nameOverride: ""
 fullnameOverride: ""
@@ -25,6 +49,14 @@ commonAnnotations: {}
 secretAnnotations: {}
 extraDeploy: []
 
+## @section PostgreSQL image parameters
+## @param image.registry PostgreSQL image registry
+## @param image.repository PostgreSQL image repository
+## @param image.tag PostgreSQL image tag
+## @param image.digest PostgreSQL image digest in the way sha256:aa...
+## @param image.pullPolicy PostgreSQL image pull policy
+## @param image.pullSecrets PostgreSQL image pull secrets
+##
 image:
   registry: docker.io
   repository: library/postgres
@@ -33,6 +65,14 @@ image:
   pullPolicy: IfNotPresent
   pullSecrets: []
 
+## @section PostgreSQL authentication parameters
+## @param auth.trustAuthentication Enable trust authentication by setting POSTGRES_HOST_AUTH_METHOD=trust
+## @param auth.username Name for the PostgreSQL user
+## @param auth.password Password for the PostgreSQL user
+## @param auth.database Name for a custom PostgreSQL database to create
+## @param auth.existingSecret Name of an existing Secret containing PostgreSQL credentials
+## @param auth.existingSecretPasswordKey Secret key containing the PostgreSQL password
+##
 auth:
   trustAuthentication: false
   username: postgres
@@ -41,9 +81,28 @@ auth:
   existingSecret: ""
   existingSecretPasswordKey: postgresql-password
 
+## @section PostgreSQL container parameters
+## @param containerPorts.postgresql PostgreSQL container port
+##
 containerPorts:
   postgresql: 5432
 
+## @section PostgreSQL service parameters
+## @param service.enabled Enable PostgreSQL service
+## @param service.type PostgreSQL service type
+## @param service.ports.postgresql PostgreSQL service port
+## @param service.nodePorts.postgresql Node port for PostgreSQL when service.type is NodePort or LoadBalancer
+## @param service.clusterIP PostgreSQL service Cluster IP
+## @param service.annotations Additional custom annotations for the PostgreSQL service
+## @param service.labels Additional custom labels for the PostgreSQL service
+## @param service.loadBalancerClass Load balancer class for the PostgreSQL service
+## @param service.loadBalancerIP Load balancer IP for the PostgreSQL service
+## @param service.loadBalancerSourceRanges Addresses allowed when service.type is LoadBalancer
+## @param service.externalTrafficPolicy PostgreSQL service external traffic policy
+## @param service.sessionAffinity Session affinity for the Kubernetes service
+## @param service.sessionAffinityConfig Additional settings for session affinity
+## @param service.extraPorts Extra ports to expose on the PostgreSQL service
+##
 service:
   enabled: true
   type: ClusterIP
@@ -62,6 +121,20 @@ service:
   sessionAffinityConfig: {}
   extraPorts: []
 
+## @section PostgreSQL persistence parameters
+## @param persistence.enabled Enable persistence using a PersistentVolumeClaim
+## @param persistence.volumeName Name of the volume used for PostgreSQL data
+## @param persistence.mountPath Path where the data volume is mounted
+## @param persistence.subPath Subdirectory of the volume to mount
+## @param persistence.storageClassName StorageClass for the PVC
+## @param persistence.accessModes Persistent Volume access modes
+## @param persistence.size Persistent Volume size
+## @param persistence.annotations Additional custom annotations for the PVC
+## @param persistence.labels Additional custom labels for the PVC
+## @param persistence.selector Selector to match an existing PersistentVolume
+## @param persistence.dataSource Custom PVC data source
+## @param persistence.existingClaim Existing PVC name to use instead of creating one
+##
 persistence:
   enabled: true
   volumeName: data
@@ -77,6 +150,13 @@ persistence:
   dataSource: {}
   existingClaim: ""
 
+## @section PostgreSQL initialization parameters
+## @param initdb.args Arguments for PostgreSQL initdb
+## @param initdb.walDir Custom write-ahead log directory for initdb
+## @param initdb.scripts Dictionary of initdb scripts to run at first boot
+## @param initdb.scriptsConfigMap ConfigMap with initdb scripts; overrides initdb.scripts
+## @param initdb.scriptsSecret Secret with additional initdb scripts
+##
 initdb:
   args: ""
   walDir: ""
@@ -84,6 +164,17 @@ initdb:
   scriptsConfigMap: ""
   scriptsSecret: ""
 
+## @section PostgreSQL deployment parameters
+## @param command Override default container command
+## @param args Override default container args
+## @param extraEnvVars Array with extra environment variables for the PostgreSQL container
+## @param extraEnvVarsCM Name of existing ConfigMap containing extra environment variables
+## @param extraEnvVarsSecret Name of existing Secret containing extra environment variables
+## @param extraVolumes Optionally specify extra volumes for the pod
+## @param extraVolumeMounts Optionally specify extra volumeMounts for the container
+## @param initContainers Add additional init containers to the pod
+## @param sidecars Add additional sidecar containers to the pod
+##
 command: []
 args: []
 extraEnvVars: []
@@ -94,6 +185,22 @@ extraVolumeMounts: []
 initContainers: []
 sidecars: []
 
+## @section PostgreSQL pod parameters
+## @param podLabels Extra labels for PostgreSQL pods
+## @param podAnnotations Extra annotations for PostgreSQL pods
+## @param podSecurityContext.enabled Enable PostgreSQL pod security context
+## @param podSecurityContext.fsGroupChangePolicy Set filesystem group change policy
+## @param podSecurityContext.sysctls Set kernel settings using the sysctl interface
+## @param podSecurityContext.supplementalGroups Set filesystem extra groups
+## @param podSecurityContext.fsGroup Set PostgreSQL pod security context fsGroup
+## @param containerSecurityContext.enabled Enable PostgreSQL container security context
+## @param containerSecurityContext.runAsUser Set PostgreSQL container runAsUser
+## @param containerSecurityContext.runAsGroup Set PostgreSQL container runAsGroup
+## @param containerSecurityContext.runAsNonRoot Set PostgreSQL container runAsNonRoot
+## @param containerSecurityContext.allowPrivilegeEscalation Set PostgreSQL container allowPrivilegeEscalation
+## @param containerSecurityContext.capabilities.drop List of capabilities to drop
+## @param containerSecurityContext.seccompProfile.type Set PostgreSQL container seccomp profile type
+##
 podLabels: {}
 podAnnotations: {}
 podSecurityContext:
@@ -114,9 +221,36 @@ containerSecurityContext:
   seccompProfile:
     type: RuntimeDefault
 
+## @section PostgreSQL resource parameters
+## @param resourcesPreset Set container resources according to one common preset
+## @param resources Set container resource requests and limits
+##
 resourcesPreset: none
 resources: {}
 
+## @section PostgreSQL probe parameters
+## @param startupProbe.enabled Enable startupProbe
+## @param startupProbe.initialDelaySeconds Initial delay seconds for startupProbe
+## @param startupProbe.periodSeconds Period seconds for startupProbe
+## @param startupProbe.timeoutSeconds Timeout seconds for startupProbe
+## @param startupProbe.failureThreshold Failure threshold for startupProbe
+## @param startupProbe.successThreshold Success threshold for startupProbe
+## @param livenessProbe.enabled Enable livenessProbe
+## @param livenessProbe.initialDelaySeconds Initial delay seconds for livenessProbe
+## @param livenessProbe.periodSeconds Period seconds for livenessProbe
+## @param livenessProbe.timeoutSeconds Timeout seconds for livenessProbe
+## @param livenessProbe.failureThreshold Failure threshold for livenessProbe
+## @param livenessProbe.successThreshold Success threshold for livenessProbe
+## @param readinessProbe.enabled Enable readinessProbe
+## @param readinessProbe.initialDelaySeconds Initial delay seconds for readinessProbe
+## @param readinessProbe.periodSeconds Period seconds for readinessProbe
+## @param readinessProbe.timeoutSeconds Timeout seconds for readinessProbe
+## @param readinessProbe.failureThreshold Failure threshold for readinessProbe
+## @param readinessProbe.successThreshold Success threshold for readinessProbe
+## @param customStartupProbe Custom startupProbe that overrides the default one
+## @param customLivenessProbe Custom livenessProbe that overrides the default one
+## @param customReadinessProbe Custom readinessProbe that overrides the default one
+##
 startupProbe:
   enabled: true
   initialDelaySeconds: 10
@@ -142,6 +276,17 @@ customStartupProbe: {}
 customLivenessProbe: {}
 customReadinessProbe: {}
 
+## @section PostgreSQL scheduling parameters
+## @param updateStrategy.type PostgreSQL StatefulSet strategy type
+## @param priorityClassName PostgreSQL pod priority class name
+## @param schedulerName Alternate scheduler name
+## @param terminationGracePeriodSeconds Optional duration in seconds the pod needs to terminate gracefully
+## @param hostAliases PostgreSQL pod host aliases
+## @param affinity Affinity for pod assignment
+## @param nodeSelector Node labels for pod assignment
+## @param tolerations Tolerations for pod assignment
+## @param topologySpreadConstraints Topology spread constraints for pod assignment
+##
 updateStrategy:
   type: RollingUpdate
 priorityClassName: ""
@@ -153,6 +298,13 @@ nodeSelector: {}
 tolerations: []
 topologySpreadConstraints: []
 
+## @section PostgreSQL service account parameters
+## @param serviceAccount.create Enable ServiceAccount creation
+## @param serviceAccount.name Name of the ServiceAccount to use
+## @param serviceAccount.automountServiceAccountToken Automount API credentials for the ServiceAccount
+## @param serviceAccount.annotations Additional custom annotations for the ServiceAccount
+## @param automountServiceAccountToken Automount service account token in workload pods
+##
 serviceAccount:
   create: true
   name: ""

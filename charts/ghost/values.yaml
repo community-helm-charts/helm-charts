@@ -1,9 +1,26 @@
+## @section Global parameters
+## @param global.imageRegistry Global Docker image registry
+## @param global.imagePullSecrets Global Docker registry secret names as an array
+## @param global.defaultStorageClassName Global default StorageClass for Persistent Volume(s)
+## @param global.storageClassName Global StorageClass override kept for compatibility
+##
 global:
   imageRegistry: ""
   imagePullSecrets: []
   defaultStorageClassName: ""
   storageClassName: ""
 
+## @section Common parameters
+## @param kubeVersion Override Kubernetes version
+## @param nameOverride String to partially override common.names.fullname
+## @param fullnameOverride String to fully override common.names.fullname
+## @param namespaceOverride String to fully override common.names.namespace
+## @param clusterDomain Kubernetes cluster domain name
+## @param commonLabels Labels to add to all deployed objects
+## @param commonAnnotations Annotations to add to all deployed objects
+## @param secretAnnotations Annotations to add to chart-managed Secret objects
+## @param extraDeploy Array of extra objects to deploy with the release
+##
 kubeVersion: ""
 nameOverride: ""
 fullnameOverride: ""
@@ -14,6 +31,18 @@ commonAnnotations: {}
 secretAnnotations: {}
 extraDeploy: []
 
+## @section Shared Ghost content persistence parameters
+## @param persistence.enabled Enable persistence using a PersistentVolumeClaim for Ghost content
+## @param persistence.storageClassName StorageClass for the content PVC
+## @param persistence.annotations Additional custom annotations for the content PVC
+## @param persistence.labels Additional custom labels for the content PVC
+## @param persistence.accessModes Persistent Volume access modes
+## @param persistence.size Persistent Volume size
+## @param persistence.existingClaim Existing PVC name to use instead of creating one
+## @param persistence.subPath Subdirectory of the volume to mount
+## @param persistence.selector Selector to match an existing PersistentVolume
+## @param persistence.dataSource Custom PVC data source
+##
 persistence:
   enabled: true
   storageClassName: ""
@@ -27,6 +56,24 @@ persistence:
   selector: {}
   dataSource: {}
 
+## @section Ghost application parameters
+## @param ghost.enabled Deploy the Ghost StatefulSet and Service
+## @param ghost.image.registry Ghost image registry
+## @param ghost.image.repository Ghost image repository
+## @param ghost.image.tag Ghost image tag
+## @param ghost.image.digest Ghost image digest in the way sha256:aa...
+## @param ghost.image.pullPolicy Ghost image pull policy
+## @param ghost.image.pullSecrets Ghost image pull secrets
+## @param ghost.config.url Public Ghost site URL
+## @param ghost.config.admin.url Public Ghost Admin URL
+## @param ghost.config.database.client Ghost database client
+## @param ghost.config.database.connection.host External database host; defaults to the built-in MySQL service when mysql.enabled=true
+## @param ghost.config.database.connection.port External database port
+## @param ghost.config.database.connection.user Database user for Ghost
+## @param ghost.config.database.connection.password External database password; required when mysql.enabled=false
+## @param ghost.config.database.connection.database Database name for Ghost
+## @param ghost.containerPorts.http Ghost HTTP container port
+##
 ghost:
   enabled: true
   image:
@@ -50,6 +97,22 @@ ghost:
         database: ghost
   containerPorts:
     http: 2368
+
+  ## @param ghost.service.enabled Enable Ghost service
+  ## @param ghost.service.type Ghost service type
+  ## @param ghost.service.ports.http Ghost service HTTP port
+  ## @param ghost.service.nodePorts.http Node port for HTTP when ghost.service.type is NodePort or LoadBalancer
+  ## @param ghost.service.clusterIP Ghost service Cluster IP
+  ## @param ghost.service.annotations Additional custom annotations for the Ghost service
+  ## @param ghost.service.labels Additional custom labels for the Ghost service
+  ## @param ghost.service.loadBalancerClass Load balancer class for the Ghost service
+  ## @param ghost.service.loadBalancerIP Load balancer IP for the Ghost service
+  ## @param ghost.service.loadBalancerSourceRanges Addresses allowed when ghost.service.type is LoadBalancer
+  ## @param ghost.service.externalTrafficPolicy Ghost service external traffic policy
+  ## @param ghost.service.sessionAffinity Session affinity for the Kubernetes service
+  ## @param ghost.service.sessionAffinityConfig Additional settings for session affinity
+  ## @param ghost.service.extraPorts Extra ports to expose on the Ghost service
+  ##
   service:
     enabled: true
     type: ClusterIP
@@ -67,6 +130,18 @@ ghost:
     sessionAffinity: None
     sessionAffinityConfig: {}
     extraPorts: []
+
+  ## @param ghost.updateStrategy.type Ghost StatefulSet strategy type
+  ## @param ghost.command Override default Ghost container command
+  ## @param ghost.args Override default Ghost container args
+  ## @param ghost.extraEnvVars Array with extra environment variables for the Ghost container
+  ## @param ghost.extraEnvVarsCM Name of existing ConfigMap containing extra environment variables
+  ## @param ghost.extraEnvVarsSecret Name of existing Secret containing extra environment variables
+  ## @param ghost.extraVolumes Optionally specify extra volumes for the Ghost pod
+  ## @param ghost.extraVolumeMounts Optionally specify extra volumeMounts for the Ghost container
+  ## @param ghost.initContainers Add additional init containers to the Ghost pod
+  ## @param ghost.sidecars Add additional sidecar containers to the Ghost pod
+  ##
   updateStrategy:
     type: RollingUpdate
   command: []
@@ -78,6 +153,22 @@ ghost:
   extraVolumeMounts: []
   initContainers: []
   sidecars: []
+
+  ## @param ghost.podLabels Extra labels for Ghost pods
+  ## @param ghost.podAnnotations Extra annotations for Ghost pods
+  ## @param ghost.podSecurityContext.enabled Enable Ghost pod security context
+  ## @param ghost.podSecurityContext.fsGroupChangePolicy Set filesystem group change policy
+  ## @param ghost.podSecurityContext.sysctls Set kernel settings using the sysctl interface
+  ## @param ghost.podSecurityContext.supplementalGroups Set filesystem extra groups
+  ## @param ghost.podSecurityContext.fsGroup Set Ghost pod security context fsGroup
+  ## @param ghost.containerSecurityContext.enabled Enable Ghost container security context
+  ## @param ghost.containerSecurityContext.runAsUser Set Ghost container runAsUser
+  ## @param ghost.containerSecurityContext.runAsGroup Set Ghost container runAsGroup
+  ## @param ghost.containerSecurityContext.runAsNonRoot Set Ghost container runAsNonRoot
+  ## @param ghost.containerSecurityContext.allowPrivilegeEscalation Set Ghost container allowPrivilegeEscalation
+  ## @param ghost.containerSecurityContext.capabilities.drop List of capabilities to drop
+  ## @param ghost.containerSecurityContext.seccompProfile.type Set Ghost container seccomp profile type
+  ##
   podLabels: {}
   podAnnotations: {}
   podSecurityContext:
@@ -97,8 +188,35 @@ ghost:
         - ALL
     seccompProfile:
       type: RuntimeDefault
+
+  ## @param ghost.resourcesPreset Set Ghost container resources according to one common preset
+  ## @param ghost.resources Set Ghost container resource requests and limits
+  ##
   resourcesPreset: none
   resources: {}
+
+  ## @param ghost.startupProbe.enabled Enable startupProbe
+  ## @param ghost.startupProbe.initialDelaySeconds Initial delay seconds for startupProbe
+  ## @param ghost.startupProbe.periodSeconds Period seconds for startupProbe
+  ## @param ghost.startupProbe.timeoutSeconds Timeout seconds for startupProbe
+  ## @param ghost.startupProbe.failureThreshold Failure threshold for startupProbe
+  ## @param ghost.startupProbe.successThreshold Success threshold for startupProbe
+  ## @param ghost.livenessProbe.enabled Enable livenessProbe
+  ## @param ghost.livenessProbe.initialDelaySeconds Initial delay seconds for livenessProbe
+  ## @param ghost.livenessProbe.periodSeconds Period seconds for livenessProbe
+  ## @param ghost.livenessProbe.timeoutSeconds Timeout seconds for livenessProbe
+  ## @param ghost.livenessProbe.failureThreshold Failure threshold for livenessProbe
+  ## @param ghost.livenessProbe.successThreshold Success threshold for livenessProbe
+  ## @param ghost.readinessProbe.enabled Enable readinessProbe
+  ## @param ghost.readinessProbe.initialDelaySeconds Initial delay seconds for readinessProbe
+  ## @param ghost.readinessProbe.periodSeconds Period seconds for readinessProbe
+  ## @param ghost.readinessProbe.timeoutSeconds Timeout seconds for readinessProbe
+  ## @param ghost.readinessProbe.failureThreshold Failure threshold for readinessProbe
+  ## @param ghost.readinessProbe.successThreshold Success threshold for readinessProbe
+  ## @param ghost.customStartupProbe Custom startupProbe that overrides the default one
+  ## @param ghost.customLivenessProbe Custom livenessProbe that overrides the default one
+  ## @param ghost.customReadinessProbe Custom readinessProbe that overrides the default one
+  ##
   startupProbe:
     enabled: true
     initialDelaySeconds: 30
@@ -123,6 +241,16 @@ ghost:
   customStartupProbe: {}
   customLivenessProbe: {}
   customReadinessProbe: {}
+
+  ## @param ghost.priorityClassName Ghost pod priority class name
+  ## @param ghost.schedulerName Alternate scheduler name
+  ## @param ghost.terminationGracePeriodSeconds Optional duration in seconds the pod needs to terminate gracefully
+  ## @param ghost.hostAliases Ghost pod host aliases
+  ## @param ghost.affinity Affinity for pod assignment
+  ## @param ghost.nodeSelector Node labels for pod assignment
+  ## @param ghost.tolerations Tolerations for pod assignment
+  ## @param ghost.topologySpreadConstraints Topology spread constraints for pod assignment
+  ##
   priorityClassName: ""
   schedulerName: ""
   terminationGracePeriodSeconds: ""
@@ -132,6 +260,21 @@ ghost:
   tolerations: []
   topologySpreadConstraints: []
 
+## @section Ghost ingress parameters
+## @param ingress.enabled Enable ingress record generation for Ghost
+## @param ingress.pathType Ingress path type
+## @param ingress.apiVersion Force Ingress API version; detected automatically when empty
+## @param ingress.ingressClassName IngressClass that will be used to implement the Ingress
+## @param ingress.hostname Default host for the ingress record
+## @param ingress.path Default path for the ingress record
+## @param ingress.annotations Additional annotations for the Ingress resource. Add cert-manager annotations here to request certificate automation
+## @param ingress.tls Enable TLS configuration for ingress.hostname. The generated TLS secret name is <hostname>-tls unless overridden with ingress.extraTls
+## @param ingress.extraHosts Additional hostnames to be covered with the ingress record
+## @param ingress.extraPaths Additional arbitrary paths to add under the main host
+## @param ingress.extraTls TLS configuration for additional hostnames
+## @param ingress.secrets Custom TLS certificates as Kubernetes secrets
+## @param ingress.extraRules Additional rules to be covered with this ingress record
+##
 ingress:
   enabled: true
   pathType: ImplementationSpecific
@@ -141,13 +284,39 @@ ingress:
   path: /
   annotations: {}
   tls: false
-  selfSigned: false
   extraHosts: []
   extraPaths: []
   extraTls: []
   secrets: []
   extraRules: []
 
+## @section MySQL subchart parameters
+## @param mysql.enabled Deploy a MySQL server to satisfy Ghost database requirements
+## @param mysql.image.registry MySQL image registry
+## @param mysql.image.repository MySQL image repository
+## @param mysql.image.tag MySQL image tag
+## @param mysql.image.digest MySQL image digest in the way sha256:aa...
+## @param mysql.image.pullPolicy MySQL image pull policy
+## @param mysql.image.pullSecrets MySQL image pull secrets
+## @param mysql.auth.rootPassword Password for the MySQL root user
+## @param mysql.auth.username Name for the MySQL user
+## @param mysql.auth.password Password for the MySQL user
+## @param mysql.auth.database Name for the MySQL database
+## @param mysql.auth.existingSecret Name of an existing Secret containing MySQL passwords
+## @param mysql.auth.existingSecretRootPasswordKey Secret key containing the root password
+## @param mysql.auth.existingSecretPasswordKey Secret key containing the user password
+## @param mysql.service.ports.mysql MySQL service port
+## @param mysql.persistence.enabled Enable persistence for the built-in MySQL server
+## @param mysql.persistence.volumeName Name of the MySQL data volume
+## @param mysql.persistence.mountPath Path where the MySQL data volume is mounted
+## @param mysql.persistence.storageClassName StorageClass for the MySQL PVC
+## @param mysql.persistence.accessModes Persistent Volume access modes for MySQL
+## @param mysql.persistence.size Persistent Volume size for MySQL
+## @param mysql.persistence.existingClaim Existing PVC name to use for MySQL data
+## @param mysql.initdb.scriptsConfigMap ConfigMap with MySQL initdb scripts
+## @param mysql.resourcesPreset Set MySQL container resources according to one common preset
+## @param mysql.resources Set MySQL container resource requests and limits
+##
 mysql:
   enabled: true
   image:
@@ -182,10 +351,46 @@ mysql:
   resourcesPreset: small
   resources: {}
 
+## @section Database wait parameters
+## @param databaseWait.enabled Wait for the configured database before starting Ghost
+## @param databaseWait.timeoutSeconds Maximum seconds to wait for the database
+##
 databaseWait:
   enabled: true
   timeoutSeconds: 300
 
+## @section Traffic analytics parameters
+## @param trafficAnalytics.enabled Enable Ghost traffic analytics service
+## @param trafficAnalytics.image.registry Traffic analytics image registry
+## @param trafficAnalytics.image.repository Traffic analytics image repository
+## @param trafficAnalytics.image.tag Traffic analytics image tag
+## @param trafficAnalytics.image.digest Traffic analytics image digest in the way sha256:aa...
+## @param trafficAnalytics.image.pullPolicy Traffic analytics image pull policy
+## @param trafficAnalytics.image.pullSecrets Traffic analytics image pull secrets
+## @param trafficAnalytics.tinybird.apiUrl Tinybird API URL
+## @param trafficAnalytics.tinybird.trackerToken Tinybird tracker token
+## @param trafficAnalytics.tinybird.adminToken Tinybird admin token
+## @param trafficAnalytics.tinybird.workspaceId Tinybird workspace ID
+## @param trafficAnalytics.tinybird.existingSecret Name of an existing Secret containing Tinybird credentials
+## @param trafficAnalytics.tinybird.secretKeys.trackerTokenKey Secret key containing the Tinybird tracker token
+## @param trafficAnalytics.tinybird.secretKeys.adminTokenKey Secret key containing the Tinybird admin token
+## @param trafficAnalytics.tinybird.secretKeys.workspaceIdKey Secret key containing the Tinybird workspace ID
+## @param trafficAnalytics.tinybird.deploy.enabled Enable the Tinybird deploy Job
+## @param trafficAnalytics.tinybird.deploy.image.registry Tinybird CLI image registry
+## @param trafficAnalytics.tinybird.deploy.image.repository Tinybird CLI image repository
+## @param trafficAnalytics.tinybird.deploy.image.tag Tinybird CLI image tag
+## @param trafficAnalytics.tinybird.deploy.image.digest Tinybird CLI image digest in the way sha256:aa...
+## @param trafficAnalytics.tinybird.deploy.image.pullPolicy Tinybird CLI image pull policy
+## @param trafficAnalytics.tinybird.deploy.image.pullSecrets Tinybird CLI image pull secrets
+## @param trafficAnalytics.tinybird.deploy.backoffLimit Tinybird deploy Job backoff limit
+## @param trafficAnalytics.tinybird.deploy.activeDeadlineSeconds Tinybird deploy Job active deadline in seconds
+## @param trafficAnalytics.tinybird.deploy.annotations Additional annotations for the Tinybird deploy Job
+## @param trafficAnalytics.tinybird.deploy.podAnnotations Additional annotations for the Tinybird deploy Job pod
+## @param trafficAnalytics.tinybird.deploy.resources Tinybird deploy Job resource requests and limits
+## @param trafficAnalytics.containerPorts.http Traffic analytics HTTP container port
+## @param trafficAnalytics.logLevel Traffic analytics log level
+## @param trafficAnalytics.saltStoreType Traffic analytics salt store type
+##
 trafficAnalytics:
   enabled: false
   image:
@@ -223,6 +428,19 @@ trafficAnalytics:
     http: 3000
   logLevel: debug
   saltStoreType: file
+
+  ## @param trafficAnalytics.persistence.enabled Enable persistence for traffic analytics salts
+  ## @param trafficAnalytics.persistence.volumeName Name of the traffic analytics data volume
+  ## @param trafficAnalytics.persistence.mountPath Path where the traffic analytics data volume is mounted
+  ## @param trafficAnalytics.persistence.storageClassName StorageClass for the traffic analytics PVC
+  ## @param trafficAnalytics.persistence.accessModes Persistent Volume access modes
+  ## @param trafficAnalytics.persistence.size Persistent Volume size
+  ## @param trafficAnalytics.persistence.annotations Additional custom annotations for the PVC
+  ## @param trafficAnalytics.persistence.labels Additional custom labels for the PVC
+  ## @param trafficAnalytics.persistence.selector Selector to match an existing PersistentVolume
+  ## @param trafficAnalytics.persistence.dataSource Custom PVC data source
+  ## @param trafficAnalytics.persistence.existingClaim Existing PVC name to use instead of creating one
+  ##
   persistence:
     enabled: true
     volumeName: traffic-analytics-data
@@ -236,11 +454,31 @@ trafficAnalytics:
     selector: {}
     dataSource: {}
     existingClaim: ""
+
+  ## @param trafficAnalytics.service.ports.http Traffic analytics service HTTP port
+  ## @param trafficAnalytics.service.annotations Additional custom annotations for the traffic analytics service
+  ## @param trafficAnalytics.service.labels Additional custom labels for the traffic analytics service
+  ##
   service:
     ports:
       http: 3000
     annotations: {}
     labels: {}
+
+  ## @param trafficAnalytics.extraEnvVars Array with extra environment variables for the traffic analytics container
+  ## @param trafficAnalytics.extraVolumes Optionally specify extra volumes for the traffic analytics pod
+  ## @param trafficAnalytics.extraVolumeMounts Optionally specify extra volumeMounts for the traffic analytics container
+  ## @param trafficAnalytics.podLabels Extra labels for traffic analytics pods
+  ## @param trafficAnalytics.podAnnotations Extra annotations for traffic analytics pods
+  ## @param trafficAnalytics.podSecurityContext.enabled Enable traffic analytics pod security context
+  ## @param trafficAnalytics.containerSecurityContext.enabled Enable traffic analytics container security context
+  ## @param trafficAnalytics.containerSecurityContext.runAsUser Set traffic analytics container runAsUser
+  ## @param trafficAnalytics.containerSecurityContext.runAsGroup Set traffic analytics container runAsGroup
+  ## @param trafficAnalytics.containerSecurityContext.runAsNonRoot Set traffic analytics container runAsNonRoot
+  ## @param trafficAnalytics.containerSecurityContext.allowPrivilegeEscalation Set traffic analytics container allowPrivilegeEscalation
+  ## @param trafficAnalytics.containerSecurityContext.capabilities.drop List of capabilities to drop
+  ## @param trafficAnalytics.containerSecurityContext.seccompProfile.type Set traffic analytics container seccomp profile type
+  ##
   extraEnvVars: []
   extraVolumes: []
   extraVolumeMounts: []
@@ -259,6 +497,24 @@ trafficAnalytics:
         - ALL
     seccompProfile:
       type: RuntimeDefault
+
+  ## @param trafficAnalytics.resourcesPreset Set traffic analytics container resources according to one common preset
+  ## @param trafficAnalytics.resources Set traffic analytics container resource requests and limits
+  ## @param trafficAnalytics.livenessProbe.enabled Enable livenessProbe
+  ## @param trafficAnalytics.livenessProbe.initialDelaySeconds Initial delay seconds for livenessProbe
+  ## @param trafficAnalytics.livenessProbe.periodSeconds Period seconds for livenessProbe
+  ## @param trafficAnalytics.livenessProbe.timeoutSeconds Timeout seconds for livenessProbe
+  ## @param trafficAnalytics.livenessProbe.failureThreshold Failure threshold for livenessProbe
+  ## @param trafficAnalytics.livenessProbe.successThreshold Success threshold for livenessProbe
+  ## @param trafficAnalytics.readinessProbe.enabled Enable readinessProbe
+  ## @param trafficAnalytics.readinessProbe.initialDelaySeconds Initial delay seconds for readinessProbe
+  ## @param trafficAnalytics.readinessProbe.periodSeconds Period seconds for readinessProbe
+  ## @param trafficAnalytics.readinessProbe.timeoutSeconds Timeout seconds for readinessProbe
+  ## @param trafficAnalytics.readinessProbe.failureThreshold Failure threshold for readinessProbe
+  ## @param trafficAnalytics.readinessProbe.successThreshold Success threshold for readinessProbe
+  ## @param trafficAnalytics.customLivenessProbe Custom livenessProbe that overrides the default one
+  ## @param trafficAnalytics.customReadinessProbe Custom readinessProbe that overrides the default one
+  ##
   resourcesPreset: none
   resources: {}
   livenessProbe:
@@ -277,11 +533,36 @@ trafficAnalytics:
     successThreshold: 1
   customLivenessProbe: {}
   customReadinessProbe: {}
+
+  ## @param trafficAnalytics.affinity Affinity for pod assignment
+  ## @param trafficAnalytics.nodeSelector Node labels for pod assignment
+  ## @param trafficAnalytics.tolerations Tolerations for pod assignment
+  ## @param trafficAnalytics.topologySpreadConstraints Topology spread constraints for pod assignment
+  ##
   affinity: {}
   nodeSelector: {}
   tolerations: []
   topologySpreadConstraints: []
 
+## @section ActivityPub parameters
+## @param activitypub.enabled Enable self-hosted Ghost ActivityPub service
+## @param activitypub.image.registry ActivityPub image registry
+## @param activitypub.image.repository ActivityPub image repository
+## @param activitypub.image.tag ActivityPub image tag
+## @param activitypub.image.digest ActivityPub image digest in the way sha256:aa...
+## @param activitypub.image.pullPolicy ActivityPub image pull policy
+## @param activitypub.image.pullSecrets ActivityPub image pull secrets
+## @param activitypub.migration.image.registry ActivityPub migration image registry
+## @param activitypub.migration.image.repository ActivityPub migration image repository
+## @param activitypub.migration.image.tag ActivityPub migration image tag
+## @param activitypub.migration.image.digest ActivityPub migration image digest in the way sha256:aa...
+## @param activitypub.migration.image.pullPolicy ActivityPub migration image pull policy
+## @param activitypub.migration.image.pullSecrets ActivityPub migration image pull secrets
+## @param activitypub.migration.resources ActivityPub migration init container resource requests and limits
+## @param activitypub.database ActivityPub database name
+## @param activitypub.localStoragePath Local storage path for ActivityPub image content
+## @param activitypub.containerPorts.http ActivityPub HTTP container port
+##
 activitypub:
   enabled: false
   image:
@@ -304,11 +585,31 @@ activitypub:
   localStoragePath: /opt/activitypub/content/images/activitypub
   containerPorts:
     http: 8080
+
+  ## @param activitypub.service.ports.http ActivityPub service HTTP port
+  ## @param activitypub.service.annotations Additional custom annotations for the ActivityPub service
+  ## @param activitypub.service.labels Additional custom labels for the ActivityPub service
+  ##
   service:
     ports:
       http: 8080
     annotations: {}
     labels: {}
+
+  ## @param activitypub.extraEnvVars Array with extra environment variables for the ActivityPub container
+  ## @param activitypub.extraVolumes Optionally specify extra volumes for the ActivityPub pod
+  ## @param activitypub.extraVolumeMounts Optionally specify extra volumeMounts for the ActivityPub container
+  ## @param activitypub.podLabels Extra labels for ActivityPub pods
+  ## @param activitypub.podAnnotations Extra annotations for ActivityPub pods
+  ## @param activitypub.podSecurityContext.enabled Enable ActivityPub pod security context
+  ## @param activitypub.containerSecurityContext.enabled Enable ActivityPub container security context
+  ## @param activitypub.containerSecurityContext.runAsUser Set ActivityPub container runAsUser
+  ## @param activitypub.containerSecurityContext.runAsGroup Set ActivityPub container runAsGroup
+  ## @param activitypub.containerSecurityContext.runAsNonRoot Set ActivityPub container runAsNonRoot
+  ## @param activitypub.containerSecurityContext.allowPrivilegeEscalation Set ActivityPub container allowPrivilegeEscalation
+  ## @param activitypub.containerSecurityContext.capabilities.drop List of capabilities to drop
+  ## @param activitypub.containerSecurityContext.seccompProfile.type Set ActivityPub container seccomp profile type
+  ##
   extraEnvVars: []
   extraVolumes: []
   extraVolumeMounts: []
@@ -327,6 +628,24 @@ activitypub:
         - ALL
     seccompProfile:
       type: RuntimeDefault
+
+  ## @param activitypub.resourcesPreset Set ActivityPub container resources according to one common preset
+  ## @param activitypub.resources Set ActivityPub container resource requests and limits
+  ## @param activitypub.livenessProbe.enabled Enable livenessProbe
+  ## @param activitypub.livenessProbe.initialDelaySeconds Initial delay seconds for livenessProbe
+  ## @param activitypub.livenessProbe.periodSeconds Period seconds for livenessProbe
+  ## @param activitypub.livenessProbe.timeoutSeconds Timeout seconds for livenessProbe
+  ## @param activitypub.livenessProbe.failureThreshold Failure threshold for livenessProbe
+  ## @param activitypub.livenessProbe.successThreshold Success threshold for livenessProbe
+  ## @param activitypub.readinessProbe.enabled Enable readinessProbe
+  ## @param activitypub.readinessProbe.initialDelaySeconds Initial delay seconds for readinessProbe
+  ## @param activitypub.readinessProbe.periodSeconds Period seconds for readinessProbe
+  ## @param activitypub.readinessProbe.timeoutSeconds Timeout seconds for readinessProbe
+  ## @param activitypub.readinessProbe.failureThreshold Failure threshold for readinessProbe
+  ## @param activitypub.readinessProbe.successThreshold Success threshold for readinessProbe
+  ## @param activitypub.customLivenessProbe Custom livenessProbe that overrides the default one
+  ## @param activitypub.customReadinessProbe Custom readinessProbe that overrides the default one
+  ##
   resourcesPreset: none
   resources: {}
   livenessProbe:
@@ -345,11 +664,24 @@ activitypub:
     successThreshold: 1
   customLivenessProbe: {}
   customReadinessProbe: {}
+
+  ## @param activitypub.affinity Affinity for pod assignment
+  ## @param activitypub.nodeSelector Node labels for pod assignment
+  ## @param activitypub.tolerations Tolerations for pod assignment
+  ## @param activitypub.topologySpreadConstraints Topology spread constraints for pod assignment
+  ##
   affinity: {}
   nodeSelector: {}
   tolerations: []
   topologySpreadConstraints: []
 
+## @section Service account parameters
+## @param serviceAccount.create Enable ServiceAccount creation
+## @param serviceAccount.name Name of the ServiceAccount to use
+## @param serviceAccount.automountServiceAccountToken Automount API credentials for the ServiceAccount
+## @param serviceAccount.annotations Additional custom annotations for the ServiceAccount
+## @param automountServiceAccountToken Automount service account token in workload pods
+##
 serviceAccount:
   create: true
   name: ""

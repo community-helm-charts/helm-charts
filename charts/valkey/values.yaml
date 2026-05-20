@@ -1,9 +1,26 @@
+## @section Global parameters
+## @param global.imageRegistry Global Docker image registry
+## @param global.imagePullSecrets Global Docker registry secret names as an array
+## @param global.defaultStorageClassName Global default StorageClass for Persistent Volume(s)
+## @param global.storageClassName Global StorageClass override kept for compatibility
+##
 global:
   imageRegistry: ""
   imagePullSecrets: []
   defaultStorageClassName: ""
   storageClassName: ""
 
+## @section Common parameters
+## @param kubeVersion Override Kubernetes version
+## @param nameOverride String to partially override common.names.fullname
+## @param fullnameOverride String to fully override common.names.fullname
+## @param namespaceOverride String to fully override common.names.namespace
+## @param clusterDomain Kubernetes cluster domain name
+## @param commonLabels Labels to add to all deployed objects
+## @param commonAnnotations Annotations to add to all deployed objects
+## @param secretAnnotations Annotations to add to chart-managed Secret objects
+## @param extraDeploy Array of extra objects to deploy with the release
+##
 kubeVersion: ""
 nameOverride: ""
 fullnameOverride: ""
@@ -14,6 +31,14 @@ commonAnnotations: {}
 secretAnnotations: {}
 extraDeploy: []
 
+## @section Valkey image parameters
+## @param image.registry Valkey image registry
+## @param image.repository Valkey image repository
+## @param image.tag Valkey image tag
+## @param image.digest Valkey image digest in the way sha256:aa...
+## @param image.pullPolicy Valkey image pull policy
+## @param image.pullSecrets Valkey image pull secrets
+##
 image:
   registry: docker.io
   repository: valkey/valkey
@@ -22,15 +47,40 @@ image:
   pullPolicy: IfNotPresent
   pullSecrets: []
 
+## @section Valkey authentication parameters
+## @param auth.enabled Enable Valkey password authentication
+## @param auth.password Valkey password
+## @param auth.existingSecret Name of an existing Secret containing the Valkey password
+## @param auth.existingSecretPasswordKey Secret key containing the Valkey password
+##
 auth:
   enabled: true
   password: ""
   existingSecret: ""
   existingSecretPasswordKey: valkey-password
 
+## @section Valkey container parameters
+## @param containerPorts.valkey Valkey container port
+##
 containerPorts:
   valkey: 6379
 
+## @section Valkey service parameters
+## @param service.enabled Enable Valkey service
+## @param service.type Valkey service type
+## @param service.ports.valkey Valkey service port
+## @param service.nodePorts.valkey Node port for Valkey when service.type is NodePort or LoadBalancer
+## @param service.clusterIP Valkey service Cluster IP
+## @param service.annotations Additional custom annotations for the Valkey service
+## @param service.labels Additional custom labels for the Valkey service
+## @param service.loadBalancerClass Load balancer class for the Valkey service
+## @param service.loadBalancerIP Load balancer IP for the Valkey service
+## @param service.loadBalancerSourceRanges Addresses allowed when service.type is LoadBalancer
+## @param service.externalTrafficPolicy Valkey service external traffic policy
+## @param service.sessionAffinity Session affinity for the Kubernetes service
+## @param service.sessionAffinityConfig Additional settings for session affinity
+## @param service.extraPorts Extra ports to expose on the Valkey service
+##
 service:
   enabled: true
   type: ClusterIP
@@ -49,6 +99,20 @@ service:
   sessionAffinityConfig: {}
   extraPorts: []
 
+## @section Valkey persistence parameters
+## @param persistence.enabled Enable persistence using a PersistentVolumeClaim
+## @param persistence.volumeName Name of the volume used for Valkey data
+## @param persistence.mountPath Path where the data volume is mounted
+## @param persistence.subPath Subdirectory of the volume to mount
+## @param persistence.storageClassName StorageClass for the PVC
+## @param persistence.accessModes Persistent Volume access modes
+## @param persistence.size Persistent Volume size
+## @param persistence.annotations Additional custom annotations for the PVC
+## @param persistence.labels Additional custom labels for the PVC
+## @param persistence.selector Selector to match an existing PersistentVolume
+## @param persistence.dataSource Custom PVC data source
+## @param persistence.existingClaim Existing PVC name to use instead of creating one
+##
 persistence:
   enabled: true
   volumeName: data
@@ -64,9 +128,24 @@ persistence:
   dataSource: {}
   existingClaim: ""
 
+## @section Valkey configuration parameters
+## @param configuration Valkey configuration file content
+## @param existingConfigmap Existing ConfigMap containing valkey.conf; overrides configuration
+##
 configuration: ""
 existingConfigmap: ""
 
+## @section Valkey deployment parameters
+## @param command Override default container command
+## @param args Override default container args
+## @param extraEnvVars Array with extra environment variables for the Valkey container
+## @param extraEnvVarsCM Name of existing ConfigMap containing extra environment variables
+## @param extraEnvVarsSecret Name of existing Secret containing extra environment variables
+## @param extraVolumes Optionally specify extra volumes for the pod
+## @param extraVolumeMounts Optionally specify extra volumeMounts for the container
+## @param initContainers Add additional init containers to the pod
+## @param sidecars Add additional sidecar containers to the pod
+##
 command: []
 args: []
 extraEnvVars: []
@@ -77,6 +156,22 @@ extraVolumeMounts: []
 initContainers: []
 sidecars: []
 
+## @section Valkey pod parameters
+## @param podLabels Extra labels for Valkey pods
+## @param podAnnotations Extra annotations for Valkey pods
+## @param podSecurityContext.enabled Enable Valkey pod security context
+## @param podSecurityContext.fsGroupChangePolicy Set filesystem group change policy
+## @param podSecurityContext.sysctls Set kernel settings using the sysctl interface
+## @param podSecurityContext.supplementalGroups Set filesystem extra groups
+## @param podSecurityContext.fsGroup Set Valkey pod security context fsGroup
+## @param containerSecurityContext.enabled Enable Valkey container security context
+## @param containerSecurityContext.runAsUser Set Valkey container runAsUser
+## @param containerSecurityContext.runAsGroup Set Valkey container runAsGroup
+## @param containerSecurityContext.runAsNonRoot Set Valkey container runAsNonRoot
+## @param containerSecurityContext.allowPrivilegeEscalation Set Valkey container allowPrivilegeEscalation
+## @param containerSecurityContext.capabilities.drop List of capabilities to drop
+## @param containerSecurityContext.seccompProfile.type Set Valkey container seccomp profile type
+##
 podLabels: {}
 podAnnotations: {}
 podSecurityContext:
@@ -97,9 +192,36 @@ containerSecurityContext:
   seccompProfile:
     type: RuntimeDefault
 
+## @section Valkey resource parameters
+## @param resourcesPreset Set container resources according to one common preset
+## @param resources Set container resource requests and limits
+##
 resourcesPreset: none
 resources: {}
 
+## @section Valkey probe parameters
+## @param startupProbe.enabled Enable startupProbe
+## @param startupProbe.initialDelaySeconds Initial delay seconds for startupProbe
+## @param startupProbe.periodSeconds Period seconds for startupProbe
+## @param startupProbe.timeoutSeconds Timeout seconds for startupProbe
+## @param startupProbe.failureThreshold Failure threshold for startupProbe
+## @param startupProbe.successThreshold Success threshold for startupProbe
+## @param livenessProbe.enabled Enable livenessProbe
+## @param livenessProbe.initialDelaySeconds Initial delay seconds for livenessProbe
+## @param livenessProbe.periodSeconds Period seconds for livenessProbe
+## @param livenessProbe.timeoutSeconds Timeout seconds for livenessProbe
+## @param livenessProbe.failureThreshold Failure threshold for livenessProbe
+## @param livenessProbe.successThreshold Success threshold for livenessProbe
+## @param readinessProbe.enabled Enable readinessProbe
+## @param readinessProbe.initialDelaySeconds Initial delay seconds for readinessProbe
+## @param readinessProbe.periodSeconds Period seconds for readinessProbe
+## @param readinessProbe.timeoutSeconds Timeout seconds for readinessProbe
+## @param readinessProbe.failureThreshold Failure threshold for readinessProbe
+## @param readinessProbe.successThreshold Success threshold for readinessProbe
+## @param customStartupProbe Custom startupProbe that overrides the default one
+## @param customLivenessProbe Custom livenessProbe that overrides the default one
+## @param customReadinessProbe Custom readinessProbe that overrides the default one
+##
 startupProbe:
   enabled: true
   initialDelaySeconds: 10
@@ -125,6 +247,17 @@ customStartupProbe: {}
 customLivenessProbe: {}
 customReadinessProbe: {}
 
+## @section Valkey scheduling parameters
+## @param updateStrategy.type Valkey StatefulSet strategy type
+## @param priorityClassName Valkey pod priority class name
+## @param schedulerName Alternate scheduler name
+## @param terminationGracePeriodSeconds Optional duration in seconds the pod needs to terminate gracefully
+## @param hostAliases Valkey pod host aliases
+## @param affinity Affinity for pod assignment
+## @param nodeSelector Node labels for pod assignment
+## @param tolerations Tolerations for pod assignment
+## @param topologySpreadConstraints Topology spread constraints for pod assignment
+##
 updateStrategy:
   type: RollingUpdate
 priorityClassName: ""
@@ -136,6 +269,13 @@ nodeSelector: {}
 tolerations: []
 topologySpreadConstraints: []
 
+## @section Valkey service account parameters
+## @param serviceAccount.create Enable ServiceAccount creation
+## @param serviceAccount.name Name of the ServiceAccount to use
+## @param serviceAccount.automountServiceAccountToken Automount API credentials for the ServiceAccount
+## @param serviceAccount.annotations Additional custom annotations for the ServiceAccount
+## @param automountServiceAccountToken Automount service account token in workload pods
+##
 serviceAccount:
   create: true
   name: ""

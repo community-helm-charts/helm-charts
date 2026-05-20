@@ -1,9 +1,26 @@
+## @section Global parameters
+## @param global.imageRegistry Global Docker image registry
+## @param global.imagePullSecrets Global Docker registry secret names as an array
+## @param global.defaultStorageClassName Global default StorageClass for Persistent Volume(s)
+## @param global.storageClassName Global StorageClass override kept for compatibility
+##
 global:
   imageRegistry: ""
   imagePullSecrets: []
   defaultStorageClassName: ""
   storageClassName: ""
 
+## @section Common parameters
+## @param kubeVersion Override Kubernetes version
+## @param nameOverride String to partially override common.names.fullname
+## @param fullnameOverride String to fully override common.names.fullname
+## @param namespaceOverride String to fully override common.names.namespace
+## @param clusterDomain Kubernetes cluster domain name
+## @param commonLabels Labels to add to all deployed objects
+## @param commonAnnotations Annotations to add to all deployed objects
+## @param secretAnnotations Annotations to add to chart-managed Secret objects
+## @param extraDeploy Array of extra objects to deploy with the release
+##
 kubeVersion: ""
 nameOverride: ""
 fullnameOverride: ""
@@ -14,6 +31,14 @@ commonAnnotations: {}
 secretAnnotations: {}
 extraDeploy: []
 
+## @section MySQL image parameters
+## @param image.registry MySQL image registry
+## @param image.repository MySQL image repository
+## @param image.tag MySQL image tag
+## @param image.digest MySQL image digest in the way sha256:aa...
+## @param image.pullPolicy MySQL image pull policy
+## @param image.pullSecrets MySQL image pull secrets
+##
 image:
   registry: docker.io
   repository: library/mysql
@@ -22,6 +47,15 @@ image:
   pullPolicy: IfNotPresent
   pullSecrets: []
 
+## @section MySQL authentication parameters
+## @param auth.rootPassword Password for the MySQL root user
+## @param auth.username Name for a custom MySQL user to create
+## @param auth.password Password for the custom MySQL user
+## @param auth.database Name for a custom MySQL database to create
+## @param auth.existingSecret Name of an existing Secret containing MySQL passwords
+## @param auth.existingSecretRootPasswordKey Secret key containing the root password
+## @param auth.existingSecretPasswordKey Secret key containing the custom user password
+##
 auth:
   rootPassword: ""
   username: ""
@@ -31,9 +65,28 @@ auth:
   existingSecretRootPasswordKey: mysql-root-password
   existingSecretPasswordKey: mysql-password
 
+## @section MySQL container parameters
+## @param containerPorts.mysql MySQL container port
+##
 containerPorts:
   mysql: 3306
 
+## @section MySQL service parameters
+## @param service.enabled Enable MySQL service
+## @param service.type MySQL service type
+## @param service.ports.mysql MySQL service port
+## @param service.nodePorts.mysql Node port for MySQL when service.type is NodePort or LoadBalancer
+## @param service.clusterIP MySQL service Cluster IP
+## @param service.annotations Additional custom annotations for the MySQL service
+## @param service.labels Additional custom labels for the MySQL service
+## @param service.loadBalancerClass Load balancer class for the MySQL service
+## @param service.loadBalancerIP Load balancer IP for the MySQL service
+## @param service.loadBalancerSourceRanges Addresses allowed when service.type is LoadBalancer
+## @param service.externalTrafficPolicy MySQL service external traffic policy
+## @param service.sessionAffinity Session affinity for the Kubernetes service
+## @param service.sessionAffinityConfig Additional settings for session affinity
+## @param service.extraPorts Extra ports to expose on the MySQL service
+##
 service:
   enabled: true
   type: ClusterIP
@@ -52,6 +105,20 @@ service:
   sessionAffinityConfig: {}
   extraPorts: []
 
+## @section MySQL persistence parameters
+## @param persistence.enabled Enable persistence using a PersistentVolumeClaim
+## @param persistence.volumeName Name of the volume used for MySQL data
+## @param persistence.mountPath Path where the data volume is mounted
+## @param persistence.subPath Subdirectory of the volume to mount
+## @param persistence.storageClassName StorageClass for the PVC
+## @param persistence.accessModes Persistent Volume access modes
+## @param persistence.size Persistent Volume size
+## @param persistence.annotations Additional custom annotations for the PVC
+## @param persistence.labels Additional custom labels for the PVC
+## @param persistence.selector Selector to match an existing PersistentVolume
+## @param persistence.dataSource Custom PVC data source
+## @param persistence.existingClaim Existing PVC name to use instead of creating one
+##
 persistence:
   enabled: true
   volumeName: data
@@ -67,11 +134,27 @@ persistence:
   dataSource: {}
   existingClaim: ""
 
+## @section MySQL initialization parameters
+## @param initdb.scripts Dictionary of initdb scripts to run at first boot
+## @param initdb.scriptsConfigMap ConfigMap with initdb scripts; overrides initdb.scripts
+## @param initdb.scriptsSecret Secret with additional initdb scripts
+##
 initdb:
   scripts: {}
   scriptsConfigMap: ""
   scriptsSecret: ""
 
+## @section MySQL deployment parameters
+## @param command Override default container command
+## @param args Override default container args
+## @param extraEnvVars Array with extra environment variables for the MySQL container
+## @param extraEnvVarsCM Name of existing ConfigMap containing extra environment variables
+## @param extraEnvVarsSecret Name of existing Secret containing extra environment variables
+## @param extraVolumes Optionally specify extra volumes for the pod
+## @param extraVolumeMounts Optionally specify extra volumeMounts for the container
+## @param initContainers Add additional init containers to the pod
+## @param sidecars Add additional sidecar containers to the pod
+##
 command: []
 args: []
 extraEnvVars: []
@@ -82,6 +165,22 @@ extraVolumeMounts: []
 initContainers: []
 sidecars: []
 
+## @section MySQL pod parameters
+## @param podLabels Extra labels for MySQL pods
+## @param podAnnotations Extra annotations for MySQL pods
+## @param podSecurityContext.enabled Enable MySQL pod security context
+## @param podSecurityContext.fsGroupChangePolicy Set filesystem group change policy
+## @param podSecurityContext.sysctls Set kernel settings using the sysctl interface
+## @param podSecurityContext.supplementalGroups Set filesystem extra groups
+## @param podSecurityContext.fsGroup Set MySQL pod security context fsGroup
+## @param containerSecurityContext.enabled Enable MySQL container security context
+## @param containerSecurityContext.runAsUser Set MySQL container runAsUser
+## @param containerSecurityContext.runAsGroup Set MySQL container runAsGroup
+## @param containerSecurityContext.runAsNonRoot Set MySQL container runAsNonRoot
+## @param containerSecurityContext.allowPrivilegeEscalation Set MySQL container allowPrivilegeEscalation
+## @param containerSecurityContext.capabilities.drop List of capabilities to drop
+## @param containerSecurityContext.seccompProfile.type Set MySQL container seccomp profile type
+##
 podLabels: {}
 podAnnotations: {}
 podSecurityContext:
@@ -102,9 +201,36 @@ containerSecurityContext:
   seccompProfile:
     type: RuntimeDefault
 
+## @section MySQL resource parameters
+## @param resourcesPreset Set container resources according to one common preset
+## @param resources Set container resource requests and limits
+##
 resourcesPreset: none
 resources: {}
 
+## @section MySQL probe parameters
+## @param startupProbe.enabled Enable startupProbe
+## @param startupProbe.initialDelaySeconds Initial delay seconds for startupProbe
+## @param startupProbe.periodSeconds Period seconds for startupProbe
+## @param startupProbe.timeoutSeconds Timeout seconds for startupProbe
+## @param startupProbe.failureThreshold Failure threshold for startupProbe
+## @param startupProbe.successThreshold Success threshold for startupProbe
+## @param livenessProbe.enabled Enable livenessProbe
+## @param livenessProbe.initialDelaySeconds Initial delay seconds for livenessProbe
+## @param livenessProbe.periodSeconds Period seconds for livenessProbe
+## @param livenessProbe.timeoutSeconds Timeout seconds for livenessProbe
+## @param livenessProbe.failureThreshold Failure threshold for livenessProbe
+## @param livenessProbe.successThreshold Success threshold for livenessProbe
+## @param readinessProbe.enabled Enable readinessProbe
+## @param readinessProbe.initialDelaySeconds Initial delay seconds for readinessProbe
+## @param readinessProbe.periodSeconds Period seconds for readinessProbe
+## @param readinessProbe.timeoutSeconds Timeout seconds for readinessProbe
+## @param readinessProbe.failureThreshold Failure threshold for readinessProbe
+## @param readinessProbe.successThreshold Success threshold for readinessProbe
+## @param customStartupProbe Custom startupProbe that overrides the default one
+## @param customLivenessProbe Custom livenessProbe that overrides the default one
+## @param customReadinessProbe Custom readinessProbe that overrides the default one
+##
 startupProbe:
   enabled: true
   initialDelaySeconds: 10
@@ -130,6 +256,17 @@ customStartupProbe: {}
 customLivenessProbe: {}
 customReadinessProbe: {}
 
+## @section MySQL scheduling parameters
+## @param updateStrategy.type MySQL StatefulSet strategy type
+## @param priorityClassName MySQL pod priority class name
+## @param schedulerName Alternate scheduler name
+## @param terminationGracePeriodSeconds Optional duration in seconds the pod needs to terminate gracefully
+## @param hostAliases MySQL pod host aliases
+## @param affinity Affinity for pod assignment
+## @param nodeSelector Node labels for pod assignment
+## @param tolerations Tolerations for pod assignment
+## @param topologySpreadConstraints Topology spread constraints for pod assignment
+##
 updateStrategy:
   type: RollingUpdate
 priorityClassName: ""
@@ -141,6 +278,13 @@ nodeSelector: {}
 tolerations: []
 topologySpreadConstraints: []
 
+## @section MySQL service account parameters
+## @param serviceAccount.create Enable ServiceAccount creation
+## @param serviceAccount.name Name of the ServiceAccount to use
+## @param serviceAccount.automountServiceAccountToken Automount API credentials for the ServiceAccount
+## @param serviceAccount.annotations Additional custom annotations for the ServiceAccount
+## @param automountServiceAccountToken Automount service account token in workload pods
+##
 serviceAccount:
   create: true
   name: ""

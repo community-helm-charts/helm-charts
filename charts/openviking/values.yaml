@@ -1,9 +1,26 @@
+## @section Global parameters
+## @param global.imageRegistry Global Docker image registry
+## @param global.imagePullSecrets Global Docker registry secret names as an array
+## @param global.defaultStorageClassName Global default StorageClass for Persistent Volume(s)
+## @param global.storageClassName Global StorageClass override kept for compatibility
+##
 global:
   imageRegistry: ""
   imagePullSecrets: []
   defaultStorageClassName: ""
   storageClassName: ""
 
+## @section Common parameters
+## @param kubeVersion Override Kubernetes version
+## @param nameOverride String to partially override common.names.fullname
+## @param fullnameOverride String to fully override common.names.fullname
+## @param namespaceOverride String to fully override common.names.namespace
+## @param clusterDomain Kubernetes cluster domain name
+## @param commonLabels Labels to add to all deployed objects
+## @param commonAnnotations Annotations to add to all deployed objects
+## @param secretAnnotations Annotations to add to chart-managed Secret objects
+## @param extraDeploy Array of extra objects to deploy with the release
+##
 kubeVersion: ""
 nameOverride: ""
 fullnameOverride: ""
@@ -14,6 +31,14 @@ commonAnnotations: {}
 secretAnnotations: {}
 extraDeploy: []
 
+## @section OpenViking image parameters
+## @param image.registry OpenViking image registry
+## @param image.repository OpenViking image repository
+## @param image.tag OpenViking image tag
+## @param image.digest OpenViking image digest in the way sha256:aa...
+## @param image.pullPolicy OpenViking image pull policy
+## @param image.pullSecrets OpenViking image pull secrets
+##
 image:
   registry: ghcr.io
   repository: volcengine/openviking
@@ -22,9 +47,28 @@ image:
   pullPolicy: IfNotPresent
   pullSecrets: []
 
+## @section OpenViking container parameters
+## @param containerPorts.http OpenViking HTTP container port
+##
 containerPorts:
   http: 1933
 
+## @section OpenViking service parameters
+## @param service.enabled Enable OpenViking service
+## @param service.type OpenViking service type
+## @param service.ports.http OpenViking service HTTP port
+## @param service.nodePorts.http Node port for HTTP when service.type is NodePort or LoadBalancer
+## @param service.clusterIP OpenViking service Cluster IP
+## @param service.annotations Additional custom annotations for the OpenViking service
+## @param service.labels Additional custom labels for the OpenViking service
+## @param service.loadBalancerClass Load balancer class for the OpenViking service
+## @param service.loadBalancerIP Load balancer IP for the OpenViking service
+## @param service.loadBalancerSourceRanges Addresses allowed when service.type is LoadBalancer
+## @param service.externalTrafficPolicy OpenViking service external traffic policy
+## @param service.sessionAffinity Session affinity for the Kubernetes service
+## @param service.sessionAffinityConfig Additional settings for session affinity
+## @param service.extraPorts Extra ports to expose on the OpenViking service
+##
 service:
   enabled: true
   type: ClusterIP
@@ -43,6 +87,21 @@ service:
   sessionAffinityConfig: {}
   extraPorts: []
 
+## @section OpenViking ingress parameters
+## @param ingress.enabled Enable ingress record generation for OpenViking
+## @param ingress.pathType Ingress path type
+## @param ingress.apiVersion Force Ingress API version; detected automatically when empty
+## @param ingress.hostname Default host for the ingress record
+## @param ingress.path Default path for the ingress record
+## @param ingress.annotations Additional annotations for the Ingress resource. Add cert-manager annotations here to request certificate automation
+## @param ingress.ingressClassName IngressClass that will be used to implement the Ingress
+## @param ingress.tls Enable TLS configuration for ingress.hostname. The generated TLS secret name is <hostname>-tls unless overridden with ingress.extraTls
+## @param ingress.extraHosts Additional hostnames to be covered with the ingress record
+## @param ingress.extraPaths Additional arbitrary paths to add under the main host
+## @param ingress.extraTls TLS configuration for additional hostnames
+## @param ingress.extraRules Additional rules to be covered with this ingress record
+## @param ingress.secrets Custom TLS certificates as Kubernetes secrets
+##
 ingress:
   enabled: false
   pathType: ImplementationSpecific
@@ -52,13 +111,26 @@ ingress:
   annotations: {}
   ingressClassName: ""
   tls: false
-  selfSigned: false
   extraHosts: []
   extraPaths: []
   extraTls: []
   extraRules: []
   secrets: []
 
+## @section OpenViking persistence parameters
+## @param persistence.enabled Enable persistence using a PersistentVolumeClaim
+## @param persistence.volumeName Name of the volume used for OpenViking data
+## @param persistence.mountPath Path where the data volume is mounted
+## @param persistence.subPath Subdirectory of the volume to mount
+## @param persistence.storageClassName StorageClass for the PVC
+## @param persistence.accessModes Persistent Volume access modes
+## @param persistence.size Persistent Volume size
+## @param persistence.annotations Additional custom annotations for the PVC
+## @param persistence.labels Additional custom labels for the PVC
+## @param persistence.selector Selector to match an existing PersistentVolume
+## @param persistence.dataSource Custom PVC data source
+## @param persistence.existingClaim Existing PVC name to use instead of creating one
+##
 persistence:
   enabled: true
   volumeName: data
@@ -74,6 +146,29 @@ persistence:
   dataSource: {}
   existingClaim: ""
 
+## @section OpenViking configuration parameters
+## @param config.existingSecret Name of an existing Secret containing ov.conf
+## @param config.existingSecretKey Key in config.existingSecret that contains ov.conf
+## @param config.storage.workspace Workspace directory used by OpenViking
+## @param config.storage.agfs.backend AGFS storage backend
+## @param config.storage.vectordb.backend Vector database backend
+## @param config.log.level OpenViking log level
+## @param config.log.output OpenViking log output target
+## @param config.server.host OpenViking server listen host
+## @param config.server.port OpenViking server listen port
+## @param config.server.root_api_key Root API key value or environment placeholder
+## @param config.embedding.dense.api_base Dense embedding API base URL
+## @param config.embedding.dense.api_key Dense embedding API key value or environment placeholder
+## @param config.embedding.dense.provider Dense embedding provider
+## @param config.embedding.dense.dimension Dense embedding vector dimension
+## @param config.embedding.dense.model Dense embedding model name
+## @param config.embedding.dense.input Dense embedding input type
+## @param config.vlm.api_base Vision-language model API base URL
+## @param config.vlm.api_key Vision-language model API key value or environment placeholder
+## @param config.vlm.provider Vision-language model provider
+## @param config.vlm.model Vision-language model name
+## @param config.vlm.timeout Vision-language model request timeout in seconds
+##
 config:
   existingSecret: ""
   existingSecretKey: ov.conf
@@ -105,6 +200,17 @@ config:
     model: doubao-seed-2-0-pro
     timeout: 600
 
+## @section OpenViking deployment parameters
+## @param updateStrategy.type OpenViking StatefulSet strategy type
+## @param args Override default container args
+## @param extraEnvVars Array with extra environment variables for the OpenViking container
+## @param extraEnvVarsCM Name of existing ConfigMap containing extra environment variables
+## @param extraEnvVarsSecret Name of existing Secret containing extra environment variables
+## @param extraVolumes Optionally specify extra volumes for the pod
+## @param extraVolumeMounts Optionally specify extra volumeMounts for the container
+## @param initContainers Add additional init containers to the pod
+## @param sidecars Add additional sidecar containers to the pod
+##
 updateStrategy:
   type: RollingUpdate
 
@@ -117,6 +223,22 @@ extraVolumeMounts: []
 initContainers: []
 sidecars: []
 
+## @section OpenViking pod parameters
+## @param podLabels Extra labels for OpenViking pods
+## @param podAnnotations Extra annotations for OpenViking pods
+## @param podSecurityContext.enabled Enable OpenViking pod security context
+## @param podSecurityContext.fsGroupChangePolicy Set filesystem group change policy
+## @param podSecurityContext.sysctls Set kernel settings using the sysctl interface
+## @param podSecurityContext.supplementalGroups Set filesystem extra groups
+## @param podSecurityContext.fsGroup Set OpenViking pod security context fsGroup
+## @param containerSecurityContext.enabled Enable OpenViking container security context
+## @param containerSecurityContext.runAsUser Set OpenViking container runAsUser
+## @param containerSecurityContext.runAsGroup Set OpenViking container runAsGroup
+## @param containerSecurityContext.runAsNonRoot Set OpenViking container runAsNonRoot
+## @param containerSecurityContext.allowPrivilegeEscalation Set OpenViking container allowPrivilegeEscalation
+## @param containerSecurityContext.capabilities.drop List of capabilities to drop
+## @param containerSecurityContext.seccompProfile.type Set OpenViking container seccomp profile type
+##
 podLabels: {}
 podAnnotations: {}
 podSecurityContext:
@@ -137,9 +259,23 @@ containerSecurityContext:
   seccompProfile:
     type: RuntimeDefault
 
+## @section OpenViking resource parameters
+## @param resourcesPreset Set container resources according to one common preset
+## @param resources Set container resource requests and limits
+##
 resourcesPreset: medium
 resources: {}
 
+## @section OpenViking scheduling parameters
+## @param priorityClassName OpenViking pod priority class name
+## @param schedulerName Alternate scheduler name
+## @param terminationGracePeriodSeconds Optional duration in seconds the pod needs to terminate gracefully
+## @param hostAliases OpenViking pod host aliases
+## @param affinity Affinity for pod assignment
+## @param nodeSelector Node labels for pod assignment
+## @param tolerations Tolerations for pod assignment
+## @param topologySpreadConstraints Topology spread constraints for pod assignment
+##
 priorityClassName: ""
 schedulerName: ""
 terminationGracePeriodSeconds: ""
@@ -149,6 +285,13 @@ nodeSelector: {}
 tolerations: []
 topologySpreadConstraints: []
 
+## @section OpenViking service account parameters
+## @param serviceAccount.create Enable ServiceAccount creation
+## @param serviceAccount.name Name of the ServiceAccount to use
+## @param serviceAccount.automountServiceAccountToken Automount API credentials for the ServiceAccount
+## @param serviceAccount.annotations Additional custom annotations for the ServiceAccount
+## @param automountServiceAccountToken Automount service account token in workload pods
+##
 serviceAccount:
   create: true
   name: ""

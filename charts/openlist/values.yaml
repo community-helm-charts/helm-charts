@@ -1,0 +1,324 @@
+## @section Global parameters
+## @param global.imageRegistry Global Docker image registry
+## @param global.imagePullSecrets Global Docker registry secret names as an array
+## @param global.defaultStorageClassName Global default StorageClass for Persistent Volume(s)
+## @param global.storageClassName Global StorageClass override kept for compatibility
+##
+global:
+  imageRegistry: ""
+  imagePullSecrets: []
+  defaultStorageClassName: ""
+  storageClassName: ""
+
+## @section Common parameters
+## @param kubeVersion Override Kubernetes version
+## @param nameOverride String to partially override common.names.fullname
+## @param fullnameOverride String to fully override common.names.fullname
+## @param namespaceOverride String to fully override common.names.namespace
+## @param clusterDomain Kubernetes cluster domain name
+## @param commonLabels Labels to add to all deployed objects
+## @param commonAnnotations Annotations to add to all deployed objects
+## @param extraDeploy Array of extra objects to deploy with the release
+##
+kubeVersion: ""
+nameOverride: ""
+fullnameOverride: ""
+namespaceOverride: ""
+clusterDomain: cluster.local
+commonLabels: {}
+commonAnnotations: {}
+extraDeploy: []
+
+## @section OpenList image parameters
+## @param image.registry OpenList image registry
+## @param image.repository OpenList image repository
+## @param image.tag OpenList image tag
+## @param image.digest OpenList image digest in the way sha256:aa...
+## @param image.pullPolicy OpenList image pull policy
+## @param image.pullSecrets OpenList image pull secrets
+##
+image:
+  registry: docker.io
+  repository: openlistteam/openlist
+  tag: v4.2.1
+  digest: ""
+  pullPolicy: IfNotPresent
+  pullSecrets: []
+
+## @section OpenList container parameters
+## @param containerPorts.http OpenList HTTP container port
+## @param containerPorts.https OpenList HTTPS container port
+##
+containerPorts:
+  http: 5244
+  https: 5245
+
+## @section OpenList service parameters
+## @param service.enabled Enable OpenList service
+## @param service.type OpenList service type
+## @param service.ports.http OpenList service HTTP port
+## @param service.ports.https OpenList service HTTPS port
+## @param service.nodePorts.http Node port for HTTP when service.type is NodePort or LoadBalancer
+## @param service.nodePorts.https Node port for HTTPS when service.type is NodePort or LoadBalancer
+## @param service.clusterIP OpenList service Cluster IP
+## @param service.annotations Additional custom annotations for the OpenList service
+## @param service.labels Additional custom labels for the OpenList service
+## @param service.loadBalancerClass Load balancer class for the OpenList service
+## @param service.loadBalancerIP Load balancer IP for the OpenList service
+## @param service.loadBalancerSourceRanges Addresses allowed when service.type is LoadBalancer
+## @param service.externalTrafficPolicy OpenList service external traffic policy
+## @param service.sessionAffinity Session affinity for the Kubernetes service
+## @param service.sessionAffinityConfig Additional settings for session affinity
+## @param service.extraPorts Extra ports to expose on the OpenList service
+##
+service:
+  enabled: true
+  type: ClusterIP
+  ports:
+    http: 5244
+    https: 5245
+  nodePorts:
+    http: ""
+    https: ""
+  clusterIP: ""
+  annotations: {}
+  labels: {}
+  loadBalancerClass: ""
+  loadBalancerIP: ""
+  loadBalancerSourceRanges: []
+  externalTrafficPolicy: Cluster
+  sessionAffinity: None
+  sessionAffinityConfig: {}
+  extraPorts: []
+
+## @section OpenList ingress parameters
+## @param ingress.enabled Enable ingress record generation for OpenList
+## @param ingress.pathType Ingress path type
+## @param ingress.apiVersion Force Ingress API version; detected automatically when empty
+## @param ingress.hostname Default host for the ingress record
+## @param ingress.path Default path for the ingress record
+## @param ingress.annotations Additional annotations for the Ingress resource. Add cert-manager annotations here to request certificate automation
+## @param ingress.ingressClassName IngressClass that will be used to implement the Ingress
+## @param ingress.tls Enable TLS configuration for ingress.hostname. The generated TLS secret name is <hostname>-tls unless overridden with ingress.extraTls
+## @param ingress.extraHosts Additional hostnames to be covered with the ingress record
+## @param ingress.extraPaths Additional arbitrary paths to add under the main host
+## @param ingress.extraTls TLS configuration for additional hostnames
+## @param ingress.extraRules Additional rules to be covered with this ingress record
+## @param ingress.secrets Custom TLS certificates as Kubernetes secrets
+##
+ingress:
+  enabled: false
+  pathType: ImplementationSpecific
+  apiVersion: ""
+  hostname: openlist.local
+  path: /
+  annotations: {}
+  ingressClassName: ""
+  tls: false
+  extraHosts: []
+  extraPaths: []
+  extraTls: []
+  extraRules: []
+  secrets: []
+
+## @section OpenList persistence parameters
+## @param persistence.enabled Enable persistence using a PersistentVolumeClaim
+## @param persistence.volumeName Name of the volume used for OpenList data
+## @param persistence.mountPath Path where the data volume is mounted
+## @param persistence.subPath Subdirectory of the volume to mount
+## @param persistence.storageClassName StorageClass for the PVC
+## @param persistence.accessModes Persistent Volume access modes
+## @param persistence.size Persistent Volume size
+## @param persistence.annotations Additional custom annotations for the PVC
+## @param persistence.labels Additional custom labels for the PVC
+## @param persistence.selector Selector to match an existing PersistentVolume
+## @param persistence.dataSource Custom PVC data source
+## @param persistence.existingClaim Existing PVC name to use instead of creating one
+##
+persistence:
+  enabled: true
+  volumeName: data
+  mountPath: /opt/openlist/data
+  subPath: ""
+  storageClassName: ""
+  accessModes:
+    - ReadWriteOnce
+  size: 5Gi
+  annotations: {}
+  labels: {}
+  selector: {}
+  dataSource: {}
+  existingClaim: ""
+
+## @section OpenList configuration parameters
+## @param openlist.umask UMASK environment value for the OpenList container
+## @param openlist.timezone TZ environment value for the OpenList container
+##
+openlist:
+  umask: "022"
+  timezone: Asia/Shanghai
+
+## @section OpenList deployment parameters
+## @param updateStrategy.type OpenList StatefulSet strategy type
+## @param command Override default container command
+## @param args Override default container args
+## @param extraEnvVars Array with extra environment variables for the OpenList container
+## @param extraEnvVarsCM Name of existing ConfigMap containing extra environment variables
+## @param extraEnvVarsSecret Name of existing Secret containing extra environment variables
+## @param extraVolumes Optionally specify extra volumes for the pod
+## @param extraVolumeMounts Optionally specify extra volumeMounts for the container
+## @param initContainers Add additional init containers to the pod
+## @param sidecars Add additional sidecar containers to the pod
+##
+updateStrategy:
+  type: RollingUpdate
+
+command: []
+args: []
+extraEnvVars: []
+extraEnvVarsCM: ""
+extraEnvVarsSecret: ""
+extraVolumes: []
+extraVolumeMounts: []
+initContainers: []
+sidecars: []
+
+## @section OpenList pod parameters
+## @param podLabels Extra labels for OpenList pods
+## @param podAnnotations Extra annotations for OpenList pods
+## @param podSecurityContext.enabled Enable OpenList pod security context
+## @param podSecurityContext.fsGroupChangePolicy Set filesystem group change policy
+## @param podSecurityContext.sysctls Set kernel settings using the sysctl interface
+## @param podSecurityContext.supplementalGroups Set filesystem extra groups
+## @param podSecurityContext.fsGroup Set OpenList pod security context fsGroup
+## @param containerSecurityContext.enabled Enable OpenList container security context
+## @param containerSecurityContext.runAsUser Set OpenList container runAsUser
+## @param containerSecurityContext.runAsGroup Set OpenList container runAsGroup
+## @param containerSecurityContext.runAsNonRoot Set OpenList container runAsNonRoot
+## @param containerSecurityContext.allowPrivilegeEscalation Set OpenList container allowPrivilegeEscalation
+## @param containerSecurityContext.capabilities.drop List of capabilities to drop
+## @param containerSecurityContext.seccompProfile.type Set OpenList container seccomp profile type
+##
+podLabels: {}
+podAnnotations: {}
+podSecurityContext:
+  enabled: true
+  fsGroupChangePolicy: Always
+  sysctls: []
+  supplementalGroups: []
+  fsGroup: 1001
+containerSecurityContext:
+  enabled: true
+  runAsUser: 1001
+  runAsGroup: 1001
+  runAsNonRoot: true
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  seccompProfile:
+    type: RuntimeDefault
+
+## @section OpenList resource parameters
+## @param resourcesPreset Set container resources according to one common preset
+## @param resources Set container resource requests and limits
+##
+resourcesPreset: none
+resources: {}
+
+## @section OpenList probe parameters
+## @param startupProbe.enabled Enable startupProbe
+## @param startupProbe.initialDelaySeconds Initial delay seconds for startupProbe
+## @param startupProbe.periodSeconds Period seconds for startupProbe
+## @param startupProbe.timeoutSeconds Timeout seconds for startupProbe
+## @param startupProbe.failureThreshold Failure threshold for startupProbe
+## @param startupProbe.successThreshold Success threshold for startupProbe
+## @param startupProbe.httpGet.path HTTP path for startupProbe
+## @param startupProbe.httpGet.port HTTP port name for startupProbe
+## @param livenessProbe.enabled Enable livenessProbe
+## @param livenessProbe.initialDelaySeconds Initial delay seconds for livenessProbe
+## @param livenessProbe.periodSeconds Period seconds for livenessProbe
+## @param livenessProbe.timeoutSeconds Timeout seconds for livenessProbe
+## @param livenessProbe.failureThreshold Failure threshold for livenessProbe
+## @param livenessProbe.successThreshold Success threshold for livenessProbe
+## @param livenessProbe.httpGet.path HTTP path for livenessProbe
+## @param livenessProbe.httpGet.port HTTP port name for livenessProbe
+## @param readinessProbe.enabled Enable readinessProbe
+## @param readinessProbe.initialDelaySeconds Initial delay seconds for readinessProbe
+## @param readinessProbe.periodSeconds Period seconds for readinessProbe
+## @param readinessProbe.timeoutSeconds Timeout seconds for readinessProbe
+## @param readinessProbe.failureThreshold Failure threshold for readinessProbe
+## @param readinessProbe.successThreshold Success threshold for readinessProbe
+## @param readinessProbe.httpGet.path HTTP path for readinessProbe
+## @param readinessProbe.httpGet.port HTTP port name for readinessProbe
+## @param customStartupProbe Custom startupProbe that overrides the default one
+## @param customLivenessProbe Custom livenessProbe that overrides the default one
+## @param customReadinessProbe Custom readinessProbe that overrides the default one
+##
+startupProbe:
+  enabled: false
+  initialDelaySeconds: 10
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 30
+  successThreshold: 1
+  httpGet:
+    path: /
+    port: http
+livenessProbe:
+  enabled: true
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 6
+  successThreshold: 1
+  httpGet:
+    path: /
+    port: http
+readinessProbe:
+  enabled: true
+  initialDelaySeconds: 5
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 6
+  successThreshold: 1
+  httpGet:
+    path: /
+    port: http
+customStartupProbe: {}
+customLivenessProbe: {}
+customReadinessProbe: {}
+
+## @section OpenList scheduling parameters
+## @param priorityClassName OpenList pod priority class name
+## @param schedulerName Alternate scheduler name
+## @param terminationGracePeriodSeconds Optional duration in seconds the pod needs to terminate gracefully
+## @param hostAliases OpenList pod host aliases
+## @param affinity Affinity for pod assignment
+## @param nodeSelector Node labels for pod assignment
+## @param tolerations Tolerations for pod assignment
+## @param topologySpreadConstraints Topology spread constraints for pod assignment
+##
+priorityClassName: ""
+schedulerName: ""
+terminationGracePeriodSeconds: ""
+hostAliases: []
+affinity: {}
+nodeSelector: {}
+tolerations: []
+topologySpreadConstraints: []
+
+## @section OpenList service account parameters
+## @param serviceAccount.create Enable ServiceAccount creation
+## @param serviceAccount.name Name of the ServiceAccount to use
+## @param serviceAccount.automountServiceAccountToken Automount API credentials for the ServiceAccount
+## @param serviceAccount.annotations Additional custom annotations for the ServiceAccount
+## @param automountServiceAccountToken Automount service account token in workload pods
+##
+serviceAccount:
+  create: true
+  name: ""
+  automountServiceAccountToken: false
+  annotations: {}
+
+automountServiceAccountToken: false

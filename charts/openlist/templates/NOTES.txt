@@ -1,0 +1,50 @@
+{{- $namespace := include "common.names.namespace" . }}
+OpenList can be reached inside the cluster at:
+
+  {{ include "openlist.serviceName" . }}.{{ $namespace }}.svc.{{ .Values.clusterDomain }}:{{ include "openlist.service.port" . }}
+
+{{- if .Values.ingress.enabled }}
+
+Ingress hosts:
+  http{{ if .Values.ingress.tls }}s{{ end }}://{{ tpl .Values.ingress.hostname $ }}
+{{- range .Values.ingress.extraHosts }}
+  http{{ if $.Values.ingress.tls }}s{{ end }}://{{ tpl .name $ }}
+{{- end }}
+{{- else if contains "NodePort" .Values.service.type }}
+
+To get the NodePort URL:
+
+  export NODE_PORT=$(kubectl get --namespace {{ $namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ include "openlist.serviceName" . }})
+  export NODE_IP=$(kubectl get nodes --namespace {{ $namespace }} -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo "http://$NODE_IP:$NODE_PORT"
+{{- else if contains "LoadBalancer" .Values.service.type }}
+
+It may take a few minutes for the LoadBalancer IP to be available:
+
+  kubectl get --namespace {{ $namespace }} svc {{ include "openlist.serviceName" . }} -w
+{{- else }}
+
+To access the API locally:
+
+  kubectl port-forward --namespace {{ $namespace }} svc/{{ include "openlist.serviceName" . }} {{ include "openlist.service.port" . }}:{{ include "openlist.service.port" . }}
+  echo "Visit http://127.0.0.1:{{ include "openlist.service.port" . }} to open OpenList."
+{{- end }}
+
+The default admin username is:
+
+  admin
+
+OpenList only prints the generated admin password during the first startup.
+After that, the password is stored as a hash and cannot be recovered.
+
+To show admin account information:
+
+  kubectl exec --namespace {{ $namespace }} {{ include "openlist.fullname" . }}-0 -- sh -lc 'cd /opt/openlist && ./openlist admin'
+
+To reset the admin password to a random value:
+
+  kubectl exec --namespace {{ $namespace }} {{ include "openlist.fullname" . }}-0 -- sh -lc 'cd /opt/openlist && ./openlist admin random'
+
+To set a new admin password:
+
+  kubectl exec --namespace {{ $namespace }} {{ include "openlist.fullname" . }}-0 -- sh -lc 'cd /opt/openlist && ./openlist admin set NEW_PASSWORD'

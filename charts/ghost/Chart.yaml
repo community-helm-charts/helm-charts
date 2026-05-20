@@ -39,4 +39,4 @@ name: ghost
 sources:
 - https://github.com/community-helm-charts/helm-charts/tree/main/charts/ghost
 - https://github.com/TryGhost/ghost-docker
-version: 0.0.12
+version: 0.1.0

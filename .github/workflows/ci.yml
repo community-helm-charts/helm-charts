@@ -177,6 +177,13 @@ jobs:
 
           chart_repository="oci://${REGISTRY}/${CHART_NAMESPACE}"
 
+          for package in dist/common-*.tgz; do
+            helm push "${package}" "${chart_repository}"
+          done
+
           for package in dist/*.tgz; do
+            if [[ "$(basename "${package}")" == common-* ]]; then
+              continue
+            fi
             helm push "${package}" "${chart_repository}"
           done

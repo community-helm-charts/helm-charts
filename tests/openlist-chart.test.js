@@ -1,12 +1,92 @@
 import assert from "node:assert/strict";
-import { execFileSync } from "node:child_process";
+import { execFile, execFileSync } from "node:child_process";
 import { cpSync, mkdtempSync, mkdirSync, rmSync } from "node:fs";
+import { createServer } from "node:http";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
+import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const execFileAsync = promisify(execFile);
+
+function apiResource(name, kind) {
+  return {
+    name,
+    singularName: "",
+    namespaced: true,
+    kind,
+    verbs: ["get", "list", "create", "update", "patch", "delete"],
+  };
+}
+
+async function withFakeKubeApi(fn) {
+  const server = createServer((req, res) => {
+    const pathname = new URL(req.url ?? "/", "http://127.0.0.1").pathname;
+    res.setHeader("content-type", "application/json");
+
+    if (pathname === "/version") {
+      res.end(JSON.stringify({ major: "1", minor: "30", gitVersion: "v1.30.0" }));
+      return;
+    }
+
+    if (pathname === "/api") {
+      res.end(JSON.stringify({ kind: "APIVersions", versions: ["v1"], serverAddressByClientCIDRs: [] }));
+      return;
+    }
+
+    if (pathname === "/api/v1") {
+      res.end(
+        JSON.stringify({
+          kind: "APIResourceList",
+          groupVersion: "v1",
+          resources: [apiResource("serviceaccounts", "ServiceAccount"), apiResource("services", "Service")],
+        }),
+      );
+      return;
+    }
+
+    if (pathname === "/apis") {
+      res.end(
+        JSON.stringify({
+          kind: "APIGroupList",
+          groups: [
+            {
+              name: "apps",
+              versions: [{ groupVersion: "apps/v1", version: "v1" }],
+              preferredVersion: { groupVersion: "apps/v1", version: "v1" },
+            },
+          ],
+        }),
+      );
+      return;
+    }
+
+    if (pathname === "/apis/apps/v1") {
+      res.end(
+        JSON.stringify({
+          kind: "APIResourceList",
+          groupVersion: "apps/v1",
+          resources: [apiResource("statefulsets", "StatefulSet")],
+        }),
+      );
+      return;
+    }
+
+    res.statusCode = 404;
+    res.end(JSON.stringify({ message: "not found" }));
+  });
+
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+
+  try {
+    const { port } = server.address();
+    return await fn(`http://127.0.0.1:${port}`);
+  } finally {
+    await new Promise((resolve, reject) => server.close((error) => (error ? reject(error) : resolve())));
+  }
+}
 
 function makeOpenListChart() {
   const dir = mkdtempSync(join(tmpdir(), "openlist-chart-"));
@@ -29,10 +109,29 @@ function makeOpenListChart() {
   }
 
   function notes(...args) {
-    return execFileSync("helm", ["install", "openlist", chart, "--namespace", "default", "--dry-run=client", "--debug", ...args], {
-      encoding: "utf8",
-      maxBuffer: 10 * 1024 * 1024,
-      stdio: ["ignore", "pipe", "pipe"],
+    return withFakeKubeApi(async (apiServer) => {
+      const { stdout } = await execFileAsync(
+        "helm",
+        [
+          "install",
+          "openlist",
+          chart,
+          "--namespace",
+          "default",
+          "--dry-run=client",
+          "--debug",
+          "--disable-openapi-validation",
+          "--kube-apiserver",
+          apiServer,
+          ...args,
+        ],
+        {
+          encoding: "utf8",
+          env: { ...process.env, KUBECONFIG: "/tmp/nonexistent-kubeconfig" },
+          maxBuffer: 10 * 1024 * 1024,
+        },
+      );
+      return stdout;
     });
   }
 
@@ -210,10 +309,10 @@ test("ingress supports Bitnami-style extra hosts, extra paths, and TLS", () => {
   }
 });
 
-test("notes include admin account recovery commands", () => {
+test("notes include admin account recovery commands", async () => {
   const chart = makeOpenListChart();
   try {
-    const notes = chart.notes();
+    const notes = await chart.notes();
 
     assert.match(notes, /The default admin username is:\n\n  admin/);
     assert.match(notes, /password is stored as a hash and cannot be recovered/);

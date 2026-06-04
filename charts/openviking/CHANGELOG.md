@@ -1,0 +1,18 @@
+## 1.1.0 (2026-06-04)
+
+### 🚀 Features
+
+- migrate helm charts to nx release ([47cd187](https://github.com/community-helm-charts/helm-charts/commit/47cd187))
+- **openviking:** add chart ([2a5178f](https://github.com/community-helm-charts/helm-charts/commit/2a5178f))
+
+### 🩹 Fixes
+
+- sync chart dependencies ([4863f20](https://github.com/community-helm-charts/helm-charts/commit/4863f20))
+
+### 🧱 Updated Dependencies
+
+- Updated common to 0.2.0
+
+### ❤️ Thank You
+
+- Xudong Huang @xudongcc

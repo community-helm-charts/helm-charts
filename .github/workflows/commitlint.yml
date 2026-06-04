@@ -2,6 +2,13 @@ name: Commitlint
 
 on:
   push:
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - reopened
+      - synchronize
 
 permissions:
   contents: read
@@ -38,4 +45,12 @@ jobs:
           pnpm exec commitlint --version
 
       - name: Validate current commit with commitlint
+        if: github.event_name == 'push'
         run: pnpm exec commitlint --last --verbose
+
+      - name: Validate PR commits with commitlint
+        if: github.event_name == 'pull_request'
+        run: pnpm exec commitlint --from "$COMMITLINT_FROM" --to "$COMMITLINT_TO" --verbose
+        env:
+          COMMITLINT_FROM: ${{ github.event.pull_request.base.sha }}
+          COMMITLINT_TO: ${{ github.event.pull_request.head.sha }}

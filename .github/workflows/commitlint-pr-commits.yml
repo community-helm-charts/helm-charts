@@ -1,15 +1,22 @@
-name: PR Title Lint
+name: Commitlint PR commits
 
 on:
   pull_request:
-    types: [opened, reopened, edited, ready_for_review]
+    branches:
+      - main
+    types:
+      - opened
+      - reopened
+      - synchronize
 
 permissions:
   contents: read
 
 jobs:
-  commitlint:
+  commitlint-pr-commits:
+    name: Commitlint PR commits
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -31,14 +38,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Print versions
-        run: |
-          git --version
-          node --version
-          pnpm --version
-          pnpm exec commitlint --version
-
-      - name: Validate PR title with commitlint
+      - name: Commitlint PR commits
+        run: pnpm exec commitlint --from "$COMMITLINT_FROM" --to "$COMMITLINT_TO" --verbose
         env:
-          PR_TITLE: ${{ github.event.pull_request.title }}
-        run: printf '%s\n' "$PR_TITLE" | pnpm exec commitlint --verbose
+          COMMITLINT_FROM: ${{ github.event.pull_request.base.sha }}
+          COMMITLINT_TO: ${{ github.event.pull_request.head.sha }}

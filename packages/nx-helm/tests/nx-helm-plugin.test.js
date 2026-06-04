@@ -47,7 +47,7 @@ test("configures Nx release to version Helm charts", () => {
     git: {
       commit: true,
       tag: true,
-      push: true,
+      push: false,
     },
     version: {
       conventionalCommits: true,

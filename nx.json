@@ -41,7 +41,7 @@
     "git": {
       "commit": true,
       "tag": true,
-      "push": true
+      "push": false
     },
     "version": {
       "conventionalCommits": true,

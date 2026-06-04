@@ -1,3 +1,17 @@
+## 1.1.1 (2026-06-04)
+
+### 🚀 Features
+
+- **nx-helm:** package local chart dependencies ([0b0418d](https://github.com/community-helm-charts/helm-charts/commit/0b0418d))
+
+### 🧱 Updated Dependencies
+
+- Updated common to 0.2.1
+
+### ❤️ Thank You
+
+- Xudong Huang @xudongcc
+
 ## 1.1.0 (2026-06-04)
 
 ### 🚀 Features

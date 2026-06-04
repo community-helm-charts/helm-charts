@@ -2,8 +2,6 @@ name: Commitlint PR title
 
 on:
   pull_request:
-    branches:
-      - main
     types:
       - opened
       - reopened
@@ -28,7 +26,6 @@ jobs:
       - name: Set up pnpm
         uses: pnpm/action-setup@v6
         with:
-          version: 11.5.1
           run_install: false
 
       - name: Set up Node.js

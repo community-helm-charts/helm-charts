@@ -15,6 +15,12 @@ on:
       - "tests/**"
       - "tsconfig.json"
   workflow_dispatch:
+    inputs:
+      publish_existing:
+        description: Publish the current chart versions even when no release commit is generated.
+        required: false
+        default: false
+        type: boolean
 
 jobs:
   release:
@@ -66,15 +72,22 @@ jobs:
             --password-stdin
 
       - name: Release Helm charts
+        env:
+          PUBLISH_EXISTING: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_existing == true }}
         run: |
           before_release="$(git rev-parse HEAD)"
           pnpm exec nx release --skip-publish
           after_release="$(git rev-parse HEAD)"
 
           if [ "$after_release" = "$before_release" ]; then
-            echo "No release changes detected; skipping publish."
-            exit 0
+            if [ "$PUBLISH_EXISTING" = "true" ]; then
+              echo "No release changes detected; publishing current chart versions."
+            else
+              echo "No release changes detected; skipping publish."
+              exit 0
+            fi
+          else
+            git push --follow-tags --atomic origin main
           fi
 
-          git push --follow-tags --atomic origin main
           pnpm exec nx release publish --yes

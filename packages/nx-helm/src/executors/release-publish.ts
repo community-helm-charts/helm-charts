@@ -16,6 +16,7 @@ export interface ReleasePublishExecutorOptions {
   access?: string;
   otp?: number;
   firstRelease?: boolean;
+  yes?: boolean;
   nxReleaseVersionData?: unknown;
   repository?: string;
 }

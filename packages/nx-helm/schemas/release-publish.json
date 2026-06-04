@@ -46,6 +46,10 @@
       "type": "boolean",
       "description": "Accepted for Nx release publish compatibility and ignored for Helm charts."
     },
+    "yes": {
+      "type": "boolean",
+      "description": "Nx release publish confirmation flag passthrough."
+    },
     "nxReleaseVersionData": {
       "type": "object",
       "description": "Nx release version metadata passed through by nx release publish."

@@ -8,6 +8,13 @@ import releasePublishExecutor, {
   resolveReleasePublishPlan,
 } from "../src/executors/release-publish.ts";
 
+test("release-publish schema accepts Nx release yes passthrough", () => {
+  const schema = JSON.parse(readFileSync(join(import.meta.dirname, "..", "schemas", "release-publish.json"), "utf8"));
+
+  assert.equal(schema.additionalProperties, false);
+  assert.equal(schema.properties.yes.type, "boolean");
+});
+
 test("resolveReleasePublishPlan selects the versioned chart package and registry override", () => {
   const workspaceRoot = mkdtempSync(join(tmpdir(), "nx-helm-release-publish-"));
   mkdirSync(join(workspaceRoot, "charts", "ghost"), { recursive: true });

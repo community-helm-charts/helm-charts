@@ -1,16 +1,21 @@
 {
   "$schema": "https://json-schema.org/schema",
   "version": 2,
-  "title": "Nx Helm Dependency Build Executor",
+  "title": "Nx Helm Package Executor",
   "type": "object",
   "properties": {
+    "repository": {
+      "type": "string",
+      "description": "Published Helm chart repository URL written into internal dependency metadata.",
+      "default": "oci://ghcr.io/community-helm-charts"
+    },
     "chartRoot": {
       "type": "string",
       "description": "Workspace-relative chart directory."
     },
     "distDir": {
       "type": "string",
-      "description": "Workspace-relative directory containing packaged dependency charts.",
+      "description": "Workspace-relative directory to write packaged charts.",
       "default": "dist"
     }
   },

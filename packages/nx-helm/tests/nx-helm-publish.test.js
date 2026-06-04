@@ -19,9 +19,9 @@ test("resolveReleasePublishPlan selects the versioned chart package and registry
     resolveReleasePublishPlan(
       {
         chartName: "ghost",
-        chartRepository: "oci://ghcr.io/community-helm-charts",
         chartRoot: "charts/ghost",
         distDir: "dist",
+        repository: "oci://ghcr.io/community-helm-charts",
         registry: "oci://example.invalid/charts",
       },
       workspaceRoot,
@@ -29,7 +29,7 @@ test("resolveReleasePublishPlan selects the versioned chart package and registry
     {
       chartName: "ghost",
       chartPackage: join(workspaceRoot, "dist", "ghost-0.1.2.tgz"),
-      chartRepository: "oci://example.invalid/charts",
+      repository: "oci://example.invalid/charts",
       dryRun: false,
       version: "0.1.2",
     },
@@ -47,10 +47,10 @@ test("releasePublishExecutor dry-run does not execute helm push", async () => {
   const result = await releasePublishExecutor(
     {
       chartName: "ghost",
-      chartRepository: "oci://ghcr.io/community-helm-charts",
       chartRoot: "charts/ghost",
       distDir: "dist",
       dryRun: true,
+      repository: "oci://ghcr.io/community-helm-charts",
     },
     { root: workspaceRoot },
     (command, args) => {
@@ -71,10 +71,10 @@ test("releasePublishExecutor dry-run does not require the chart package to exist
   const result = await releasePublishExecutor(
     {
       chartName: "ghost",
-      chartRepository: "oci://ghcr.io/community-helm-charts",
       chartRoot: "charts/ghost",
       distDir: "dist",
       dryRun: true,
+      repository: "oci://ghcr.io/community-helm-charts",
     },
     { root: workspaceRoot },
     () => {
@@ -96,9 +96,9 @@ test("releasePublishExecutor executes helm push for the resolved package", async
   const result = await releasePublishExecutor(
     {
       chartName: "ghost",
-      chartRepository: "oci://ghcr.io/community-helm-charts",
       chartRoot: "charts/ghost",
       distDir: "dist",
+      repository: "oci://ghcr.io/community-helm-charts",
     },
     { root: workspaceRoot },
     (command, args) => {

@@ -7,7 +7,7 @@ apiVersion: v2
 appVersion: "v0.3.17"
 dependencies:
 - name: common
-  repository: oci://ghcr.io/community-helm-charts
+  repository: file://../common
   version: 0.2.0
 description: OpenViking - The Context Database for AI Agents.
 home: https://github.com/community-helm-charts/helm-charts

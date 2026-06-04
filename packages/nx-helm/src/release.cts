@@ -1,10 +1,8 @@
 const path = require("node:path");
-const { createHash } = require("node:crypto");
-const { isMap, isScalar, isSeq, parseDocument } = require("yaml");
+const { isMap, isSeq, parseDocument } = require("yaml");
 const { VersionActions } = require("nx/release");
 
 const CHART_YAML = "Chart.yaml";
-const CHART_LOCK = "Chart.lock";
 
 interface TreeLike {
   read(path: string, encoding: BufferEncoding): string | null;
@@ -22,12 +20,10 @@ interface YamlSequenceLike {
 
 interface YamlMapLike {
   get(key: string, keepScalar?: boolean): unknown;
-  items?: { key: unknown; value: unknown }[];
 }
 
 interface YamlScalarLike {
   range?: [number, number, number];
-  value?: unknown;
 }
 
 function normalizePath(filePath: string) {
@@ -36,10 +32,6 @@ function normalizePath(filePath: string) {
 
 function chartManifestPath(projectRoot: string) {
   return normalizePath(path.join(projectRoot, CHART_YAML));
-}
-
-function chartLockPath(projectRoot: string) {
-  return normalizePath(path.join(projectRoot, CHART_LOCK));
 }
 
 function readText(tree: TreeLike, filePath: string) {
@@ -74,90 +66,6 @@ function replaceRanges(source: string, replacements: { start: number; end: numbe
     .reduce((content, replacement) => {
       return `${content.slice(0, replacement.start)}${replacement.value}${content.slice(replacement.end)}`;
     }, source);
-}
-
-function yamlValueToJson(value: unknown): unknown {
-  if (isScalar(value)) {
-    return (value as YamlScalarLike).value;
-  }
-
-  if (isSeq(value)) {
-    return (value as YamlSequenceLike).items.map((item) => yamlValueToJson(item));
-  }
-
-  if (isMap(value)) {
-    return Object.fromEntries(
-      ((value as YamlMapLike).items ?? []).map((item) => [String(yamlValueToJson(item.key)), yamlValueToJson(item.value)]),
-    );
-  }
-
-  return value;
-}
-
-function dependencyJsonValue(dependency: YamlMapLike, key: string) {
-  return yamlValueToJson(dependency.get(key, true));
-}
-
-function dependencyStringValue(dependency: YamlMapLike, key: string) {
-  const value = dependencyJsonValue(dependency, key);
-  return value === undefined || value === null ? "" : String(value);
-}
-
-function dependencyJson(dependency: YamlMapLike) {
-  const result: Record<string, unknown> = {
-    name: dependencyStringValue(dependency, "name"),
-  };
-
-  const version = dependencyStringValue(dependency, "version");
-  if (version) {
-    result.version = version;
-  }
-
-  result.repository = dependencyStringValue(dependency, "repository");
-
-  const condition = dependencyStringValue(dependency, "condition");
-  if (condition) {
-    result.condition = condition;
-  }
-
-  const tags = dependencyJsonValue(dependency, "tags");
-  if (Array.isArray(tags) && tags.length > 0) {
-    result.tags = tags;
-  }
-
-  const enabled = dependencyJsonValue(dependency, "enabled");
-  if (enabled === true) {
-    result.enabled = true;
-  }
-
-  const importValues = dependencyJsonValue(dependency, "import-values");
-  if (Array.isArray(importValues) && importValues.length > 0) {
-    result["import-values"] = importValues;
-  }
-
-  const alias = dependencyStringValue(dependency, "alias");
-  if (alias) {
-    result.alias = alias;
-  }
-
-  return result;
-}
-
-function dependencyJsonList(document: { get(key: string, keepScalar?: boolean): unknown }) {
-  const dependencies = document.get("dependencies", true);
-  if (!isSeq(dependencies)) {
-    return [];
-  }
-
-  return (dependencies as YamlSequenceLike).items.filter(isMap).map((dependency) => dependencyJson(dependency as YamlMapLike));
-}
-
-function hashHelmDependencies(
-  requirements: Record<string, unknown>[],
-  lockedDependencies: Record<string, unknown>[],
-) {
-  const content = JSON.stringify([requirements, lockedDependencies]);
-  return `sha256:${createHash("sha256").update(content).digest("hex")}`;
 }
 
 function readChartName(tree: TreeLike, projectGraph: ProjectGraphLike, projectName: string) {
@@ -276,56 +184,6 @@ class HelmVersionActions extends VersionActions {
     if (replacements.length > 0) {
       tree.write(this.manifestPath, replaceRanges(source, replacements));
     }
-
-    logMessages.push(...this.updateChartLock(tree, projectGraph, dependenciesToUpdate));
-
-    return logMessages;
-  }
-
-  updateChartLock(
-    tree: TreeLike,
-    projectGraph: ProjectGraphLike,
-    dependenciesToUpdate: Record<string, string>,
-  ) {
-    const lockPath = chartLockPath(this.projectGraphNode.data.root);
-    if (!tree.exists(lockPath)) {
-      return [];
-    }
-
-    const source = readText(tree, lockPath);
-    const document = parseDocument(source);
-    const logMessages: string[] = [];
-    const replacements: { start: number; end: number; value: string }[] = [];
-
-    for (const [dependencyProjectName, newVersion] of Object.entries(dependenciesToUpdate)) {
-      const dependencyName = readChartName(tree, projectGraph, dependencyProjectName);
-      const dependency = findDependency(document, dependencyName);
-      if (!dependency) {
-        continue;
-      }
-
-      const versionNode = dependency.get("version", true);
-      const [start, end] = scalarValueRange(versionNode, source, `${dependencyName} lock dependency version`);
-      replacements.push({ start, end, value: newVersion });
-      logMessages.push(`✍️  Updated ${lockPath} dependency ${dependencyName} to ${newVersion}`);
-    }
-
-    if (replacements.length === 0) {
-      return logMessages;
-    }
-
-    const nextLockSource = replaceRanges(source, replacements);
-    const chartDocument = readChartDocument(tree, this.manifestPath);
-    const nextLockDocument = parseDocument(nextLockSource);
-    const nextDigest = hashHelmDependencies(dependencyJsonList(chartDocument), dependencyJsonList(nextLockDocument));
-    const digestNode = nextLockDocument.get("digest", true);
-    const [digestStart, digestEnd] = scalarValueRange(digestNode, nextLockSource, "lock digest");
-
-    tree.write(
-      lockPath,
-      replaceRanges(nextLockSource, [{ start: digestStart, end: digestEnd, value: nextDigest }]),
-    );
-    logMessages.push(`✍️  Updated ${lockPath} digest`);
 
     return logMessages;
   }

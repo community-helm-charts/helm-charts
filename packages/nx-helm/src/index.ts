@@ -12,13 +12,12 @@ import {
 } from "@nx/devkit";
 import { parse } from "yaml";
 
-const DEFAULT_CHART_PATTERN = "charts/*/Chart.yaml";
-const DEFAULT_INTERNAL_REPOSITORY = "oci://ghcr.io/community-helm-charts";
-const DEFAULT_CHART_REPOSITORY = DEFAULT_INTERNAL_REPOSITORY;
+export const DEFAULT_CHART_PATTERN = "charts/*/Chart.yaml";
+export const DEFAULT_REPOSITORY = "oci://ghcr.io/community-helm-charts";
+const FILE_REPOSITORY_PREFIX = "file://";
 
 export interface HelmPluginOptions {
-  chartRepository?: string;
-  internalRepository?: string;
+  repository?: string;
 }
 
 export interface ChartDependency {
@@ -40,19 +39,22 @@ interface CreateHelmProjectDependenciesOptions {
   sourceFile: string;
   chart: ChartYaml;
   chartNameToProjectName: Map<string, string>;
-  internalRepository?: string;
+  chartRootToProjectName?: Map<string, string>;
 }
 
 export interface VendorInternalDependenciesOptions {
   chartRoot: string;
   workspaceRoot: string;
-  internalRepository?: string;
   distDir?: string;
   chartsDir?: string;
 }
 
 function workspacePath(context: Pick<CreateNodesContextV2 | CreateDependenciesContext, "workspaceRoot">, path: string) {
   return join(context.workspaceRoot, path);
+}
+
+function normalizeWorkspacePath(filePath: string) {
+  return filePath.split(/[\\/]+/).join("/");
 }
 
 function normalizeProjectsConfigurations(
@@ -63,13 +65,33 @@ function normalizeProjectsConfigurations(
 
 function chartOptions(options: HelmPluginOptions = {}) {
   return {
-    chartRepository: options.chartRepository ?? DEFAULT_CHART_REPOSITORY,
-    internalRepository: options.internalRepository ?? DEFAULT_INTERNAL_REPOSITORY,
+    repository: options.repository ?? DEFAULT_REPOSITORY,
   };
 }
 
 export function parseChartYaml(content: string): ChartYaml {
   return parse(content) ?? {};
+}
+
+export function isLocalChartRepository(repository?: string) {
+  return Boolean(repository?.startsWith(FILE_REPOSITORY_PREFIX));
+}
+
+export function localChartRoot(sourceRoot: string, repository?: string) {
+  if (!isLocalChartRepository(repository)) {
+    return null;
+  }
+
+  const repositoryPath = repository?.slice(FILE_REPOSITORY_PREFIX.length);
+  if (!repositoryPath || repositoryPath.startsWith("/")) {
+    return null;
+  }
+
+  return normalizeWorkspacePath(join(sourceRoot, repositoryPath));
+}
+
+export function isInternalChartDependency(dependency: ChartDependency, sourceRoot: string) {
+  return localChartRoot(sourceRoot, dependency.repository) !== null;
 }
 
 export function createHelmProjectConfiguration(
@@ -84,7 +106,7 @@ export function createHelmProjectConfiguration(
   }
 
   const isLibrary = chart.type === "library";
-  const { chartRepository, internalRepository } = chartOptions(options);
+  const { repository } = chartOptions(options);
 
   return {
     root: projectRoot,
@@ -107,7 +129,6 @@ export function createHelmProjectConfiguration(
         options: {
           chartRoot: projectRoot,
           distDir: "dist",
-          internalRepository,
         },
         cache: false,
         inputs: ["default", "{workspaceRoot}/pnpm-lock.yaml"],
@@ -120,14 +141,19 @@ export function createHelmProjectConfiguration(
         dependsOn: ["dependency-build"],
       },
       package: {
-        command: `mkdir -p dist && helm package ${projectRoot} --destination dist`,
+        executor: "@community-helm-charts/nx-helm:package",
+        options: {
+          chartRoot: projectRoot,
+          distDir: "dist",
+          repository,
+        },
         cache: true,
         inputs: ["default", "^default", "{workspaceRoot}/pnpm-lock.yaml"],
         outputs: [`{workspaceRoot}/dist/${name}-*.tgz`],
         dependsOn: [{ dependencies: true, target: "package", params: "ignore" }, "dependency-build"],
       },
       publish: {
-        command: `helm push dist/${name}-*.tgz ${chartRepository}`,
+        command: `helm push dist/${name}-*.tgz ${repository}`,
         cache: false,
         dependsOn: ["package"],
       },
@@ -135,9 +161,9 @@ export function createHelmProjectConfiguration(
         executor: "@community-helm-charts/nx-helm:release-publish",
         options: {
           chartName: name,
-          chartRepository,
           chartRoot: projectRoot,
           distDir: "dist",
+          repository,
         },
         cache: false,
         dependsOn: ["lint", "package"],
@@ -151,15 +177,22 @@ export function createHelmProjectDependencies({
   sourceFile,
   chart,
   chartNameToProjectName,
-  internalRepository = DEFAULT_INTERNAL_REPOSITORY,
+  chartRootToProjectName,
 }: CreateHelmProjectDependenciesOptions) {
+  const sourceRoot = dirname(sourceFile);
+
   return (chart.dependencies ?? [])
-    .filter((dependency) => dependency.repository === internalRepository)
     .map((dependency) => {
       if (!dependency.name) {
         return null;
       }
-      const target = chartNameToProjectName.get(dependency.name);
+
+      const localRoot = localChartRoot(sourceRoot, dependency.repository);
+      if (!localRoot) {
+        return null;
+      }
+
+      const target = chartRootToProjectName?.get(localRoot) ?? chartNameToProjectName.get(dependency.name) ?? null;
       return target ? {
         source: projectName,
         target,
@@ -173,13 +206,12 @@ export function createHelmProjectDependencies({
 export function vendorInternalDependencies({
   chartRoot,
   workspaceRoot,
-  internalRepository = DEFAULT_INTERNAL_REPOSITORY,
   distDir = "dist",
   chartsDir = dirname(chartRoot),
 }: VendorInternalDependenciesOptions) {
   const chart = parseChartYaml(readFileSync(join(workspaceRoot, chartRoot, "Chart.yaml"), "utf8"));
   const internalDependencies = (chart.dependencies ?? []).filter(
-    (dependency) => dependency.repository === internalRepository && dependency.name,
+    (dependency) => isInternalChartDependency(dependency, chartRoot) && dependency.name,
   );
   const copied: string[] = [];
 
@@ -201,7 +233,8 @@ export function vendorInternalDependencies({
       continue;
     }
 
-    const dependencyChartPath = join(workspaceRoot, chartsDir, dependencyName, "Chart.yaml");
+    const dependencyRoot = localChartRoot(chartRoot, dependency.repository) ?? normalizeWorkspacePath(join(chartsDir, dependencyName));
+    const dependencyChartPath = join(workspaceRoot, dependencyRoot, "Chart.yaml");
     if (!existsSync(dependencyChartPath)) {
       throw new Error(`Internal dependency ${dependencyName} does not have a local Chart.yaml at ${dependencyChartPath}`);
     }
@@ -247,10 +280,10 @@ export const createNodesV2: CreateNodesV2<HelmPluginOptions> = [
 export const createNodes = createNodesV2;
 
 export const createDependencies: CreateDependencies<HelmPluginOptions> = (options, context) => {
-  const { internalRepository } = chartOptions(options);
   const projectsConfigurations = normalizeProjectsConfigurations(context.projects);
   const projectsByRoot = new Map(Object.values(projectsConfigurations).map((project) => [project.root, project]));
   const chartNameToProjectName = new Map<string, string>();
+  const chartRootToProjectName = new Map<string, string>();
 
   for (const project of projectsByRoot.values()) {
     const chartYamlPath = workspacePath(context, join(project.root, "Chart.yaml"));
@@ -261,6 +294,7 @@ export const createDependencies: CreateDependencies<HelmPluginOptions> = (option
     const chart = parseChartYaml(readFileSync(chartYamlPath, "utf8"));
     if (chart.name && project.name) {
       chartNameToProjectName.set(chart.name, project.name);
+      chartRootToProjectName.set(normalizeWorkspacePath(project.root), project.name);
     }
   }
 
@@ -278,7 +312,7 @@ export const createDependencies: CreateDependencies<HelmPluginOptions> = (option
       sourceFile,
       chart,
       chartNameToProjectName,
-      internalRepository,
+      chartRootToProjectName,
     })) {
       validateDependency(dependency, context);
       dependencies.push(dependency);

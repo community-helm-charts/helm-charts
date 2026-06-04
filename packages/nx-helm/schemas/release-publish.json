@@ -8,7 +8,7 @@
       "type": "string",
       "description": "Helm chart name. Defaults to the name declared in Chart.yaml."
     },
-    "chartRepository": {
+    "repository": {
       "type": "string",
       "description": "Default Helm chart repository to publish to."
     },

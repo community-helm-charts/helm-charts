@@ -8,7 +8,6 @@ import { parseChartYaml } from "../index.ts";
 
 export interface ReleasePublishExecutorOptions {
   chartName?: string;
-  chartRepository?: string;
   chartRoot: string;
   distDir?: string;
   dryRun?: boolean;
@@ -18,12 +17,13 @@ export interface ReleasePublishExecutorOptions {
   otp?: number;
   firstRelease?: boolean;
   nxReleaseVersionData?: unknown;
+  repository?: string;
 }
 
 export interface ReleasePublishPlan {
   chartName: string;
   chartPackage: string;
-  chartRepository: string;
+  repository: string;
   dryRun: boolean;
   version: string;
 }
@@ -55,8 +55,8 @@ export function resolveReleasePublishPlan(
     throw new Error(`${chartYamlPath} must declare a chart version`);
   }
 
-  const chartRepository = options.registry ?? options.chartRepository;
-  if (!chartRepository) {
+  const repository = options.registry ?? options.repository;
+  if (!repository) {
     throw new Error(`A chart repository is required to publish ${chartName}`);
   }
 
@@ -70,7 +70,7 @@ export function resolveReleasePublishPlan(
   return {
     chartName,
     chartPackage,
-    chartRepository,
+    repository,
     dryRun,
     version: chart.version,
   };
@@ -82,7 +82,7 @@ export default async function releasePublishExecutor(
   runHelm: HelmRunner = defaultHelmRunner,
 ) {
   const plan = resolveReleasePublishPlan(options, context.root);
-  const args = ["push", plan.chartPackage, plan.chartRepository];
+  const args = ["push", plan.chartPackage, plan.repository];
 
   if (plan.dryRun) {
     console.log(`[dry-run] helm ${args.join(" ")}`);

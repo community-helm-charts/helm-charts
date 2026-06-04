@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join, resolve } from "node:path";
+import { dirname, isAbsolute, join, resolve } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 
@@ -12,6 +12,7 @@ import {
   parseChartYaml,
   vendorInternalDependencies,
 } from "../src/index.ts";
+import packageExecutor from "../src/executors/package.ts";
 
 const PACKAGE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const WORKSPACE_ROOT = resolve(PACKAGE_ROOT, "../..");
@@ -34,6 +35,7 @@ test("is configured as a workspace-local Nx native plugin without a CLI bin", ()
 
   const executorsJson = JSON.parse(readFileSync(join(PACKAGE_ROOT, "executors.json"), "utf8"));
   assert.equal(executorsJson.executors["dependency-build"].schema, "./schemas/dependency-build.json");
+  assert.equal(executorsJson.executors.package.schema, "./schemas/package.json");
   assert.equal(executorsJson.executors["release-publish"].schema, "./schemas/release-publish.json");
   assert.equal(executorsJson.executors.version, undefined);
 });
@@ -92,7 +94,6 @@ version: 0.1.1
         options: {
           chartRoot: "charts/ghost",
           distDir: "dist",
-          internalRepository: "oci://ghcr.io/community-helm-charts",
         },
         cache: false,
         inputs: ["default", "{workspaceRoot}/pnpm-lock.yaml"],
@@ -105,7 +106,12 @@ version: 0.1.1
         dependsOn: ["dependency-build"],
       },
       package: {
-        command: "mkdir -p dist && helm package charts/ghost --destination dist",
+        executor: "@community-helm-charts/nx-helm:package",
+        options: {
+          chartRoot: "charts/ghost",
+          distDir: "dist",
+          repository: "oci://ghcr.io/community-helm-charts",
+        },
         cache: true,
         inputs: ["default", "^default", "{workspaceRoot}/pnpm-lock.yaml"],
         outputs: ["{workspaceRoot}/dist/ghost-*.tgz"],
@@ -120,9 +126,9 @@ version: 0.1.1
         executor: "@community-helm-charts/nx-helm:release-publish",
         options: {
           chartName: "ghost",
-          chartRepository: "oci://ghcr.io/community-helm-charts",
           chartRoot: "charts/ghost",
           distDir: "dist",
+          repository: "oci://ghcr.io/community-helm-charts",
         },
         cache: false,
         dependsOn: ["lint", "package"],
@@ -200,15 +206,14 @@ name: mysql
 version: 1.0.0
 dependencies:
 - name: common
-  repository: oci://ghcr.io/community-helm-charts
-  version: 0.x.x
+  repository: file://../common
+  version: 0.1.0
 `);
   writeFileSync(join(workspaceRoot, "dist", "common-0.1.0.tgz"), "package");
 
   const result = vendorInternalDependencies({
     chartRoot: "charts/mysql",
     workspaceRoot,
-    internalRepository: "oci://ghcr.io/community-helm-charts",
     distDir: "dist",
   });
 
@@ -221,18 +226,58 @@ dependencies:
   assert.equal(readFileSync(vendoredPackage, "utf8"), "package");
 });
 
+test("packages local dependency metadata as OCI dependency metadata", async () => {
+  const workspaceRoot = mkdtempSync(join(tmpdir(), "nx-helm-package-"));
+  mkdirSync(join(workspaceRoot, "charts", "mysql", "charts"), { recursive: true });
+  mkdirSync(join(workspaceRoot, "dist"), { recursive: true });
+  const sourceChartYaml = [
+    "apiVersion: v2",
+    "name: mysql",
+    "version: 1.0.0",
+    "dependencies:",
+    "- name: common",
+    "  repository: file://../common",
+    "  version: 0.1.0",
+    "",
+  ].join("\n");
+  writeFileSync(join(workspaceRoot, "charts", "mysql", "Chart.yaml"), sourceChartYaml);
+  writeFileSync(join(workspaceRoot, "charts", "mysql", "values.yaml"), "{}\n");
+  writeFileSync(join(workspaceRoot, "charts", "mysql", "charts", "common-0.1.0.tgz"), "package");
+
+  let packagedChartYaml = "";
+  const result = await packageExecutor(
+    {
+      chartRoot: "charts/mysql",
+      distDir: "dist",
+      repository: "oci://ghcr.io/community-helm-charts",
+    },
+    { root: workspaceRoot },
+    (_command, args, cwd) => {
+      assert.equal(args[0], "package");
+      const packagedChartRoot = isAbsolute(args[1]) ? args[1] : join(cwd, args[1]);
+      packagedChartYaml = readFileSync(join(packagedChartRoot, "Chart.yaml"), "utf8");
+      return { status: 0 };
+    },
+  );
+
+  assert.deepEqual(result, { success: true });
+  assert.equal(readFileSync(join(workspaceRoot, "charts", "mysql", "Chart.yaml"), "utf8"), sourceChartYaml);
+  assert.match(packagedChartYaml, /repository: oci:\/\/ghcr\.io\/community-helm-charts/);
+  assert.doesNotMatch(packagedChartYaml, /repository: file:\/\//);
+});
+
 test("creates static Nx graph dependencies for internal Helm dependencies", () => {
   const chart = parseChartYaml(`
 apiVersion: v2
 name: ghost
 dependencies:
 - name: common
-  repository: oci://ghcr.io/community-helm-charts
-  version: 0.x.x
+  repository: file://../common
+  version: 0.2.0
 - condition: mysql.enabled
   name: mysql
-  repository: oci://ghcr.io/community-helm-charts
-  version: 1.x.x
+  repository: file://../mysql
+  version: 2.0.0
 - name: external
   repository: https://example.invalid/charts
   version: 1.x.x
@@ -248,7 +293,6 @@ dependencies:
         ["ghost", "ghost"],
         ["mysql", "mysql"],
       ]),
-      internalRepository: "oci://ghcr.io/community-helm-charts",
     }),
     [
       {

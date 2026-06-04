@@ -7,7 +7,7 @@ apiVersion: v2
 appVersion: 8.2.1
 dependencies:
 - name: common
-  repository: oci://ghcr.io/community-helm-charts
+  repository: file://../common
   version: 0.2.0
 description: A simple single-instance Redis Helm chart using the Docker Official Redis image.
 home: https://github.com/community-helm-charts/helm-charts

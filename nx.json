@@ -17,8 +17,7 @@
     {
       "plugin": "@community-helm-charts/nx-helm",
       "options": {
-        "chartRepository": "oci://ghcr.io/community-helm-charts",
-        "internalRepository": "oci://ghcr.io/community-helm-charts"
+        "repository": "oci://ghcr.io/community-helm-charts"
       }
     }
   ],

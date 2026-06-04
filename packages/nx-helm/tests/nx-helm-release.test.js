@@ -94,14 +94,14 @@ test("HelmVersionActions updates Chart.yaml dependency versions", async () => {
     "version: 0.1.1",
     "dependencies:",
     "  - name: common",
-    "    repository: oci://ghcr.io/community-helm-charts",
+    "    repository: file://../common",
     "    version: 0.x.x",
     "",
   ].join("\n");
   const ghostChartLock = [
     "dependencies:",
     "- name: common",
-    "  repository: oci://ghcr.io/community-helm-charts",
+    "  repository: file://../common",
     "  version: 0.1.0",
     "digest: sha256:old",
     'generated: "2026-05-20T22:11:24.782786+08:00"',
@@ -142,17 +142,10 @@ test("HelmVersionActions updates Chart.yaml dependency versions", async () => {
 
   assert.deepEqual(await actions.updateProjectDependencies(tree, projectGraph, { common: "0.2.0" }), [
     "✍️  Updated charts/ghost/Chart.yaml dependency common to 0.2.0",
-    "✍️  Updated charts/ghost/Chart.lock dependency common to 0.2.0",
-    "✍️  Updated charts/ghost/Chart.lock digest",
   ]);
   assert.equal(
     tree.read("charts/ghost/Chart.yaml", "utf8"),
     ghostChartYaml.replace("version: 0.x.x", "version: 0.2.0"),
   );
-  assert.equal(
-    tree.read("charts/ghost/Chart.lock", "utf8"),
-    ghostChartLock
-      .replace("version: 0.1.0", "version: 0.2.0")
-      .replace("sha256:old", "sha256:3e219f2cc69ff1ba3e1dafd032a51580b658d1952e390e2fc710d2b51caaa052"),
-  );
+  assert.equal(tree.read("charts/ghost/Chart.lock", "utf8"), ghostChartLock);
 });

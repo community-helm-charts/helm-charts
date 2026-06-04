@@ -5,6 +5,11 @@
       "schema": "./schemas/dependency-build.json",
       "description": "Vendor packaged local Helm chart dependencies into a chart."
     },
+    "package": {
+      "implementation": "./dist/executors/package",
+      "schema": "./schemas/package.json",
+      "description": "Package a Helm chart while rewriting workspace dependency metadata for publication."
+    },
     "release-publish": {
       "implementation": "./dist/executors/release-publish",
       "schema": "./schemas/release-publish.json",

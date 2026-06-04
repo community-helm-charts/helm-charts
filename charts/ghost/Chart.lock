@@ -1,9 +1,0 @@
-dependencies:
-- name: common
-  repository: oci://ghcr.io/community-helm-charts
-  version: 0.2.0
-- name: mysql
-  repository: oci://ghcr.io/community-helm-charts
-  version: 2.0.0
-digest: sha256:60d615747668fa483f24e2246b466407bf7508ff5cc18de5c1d2844dd538d103
-generated: "2026-05-20T22:11:24.782786+08:00"

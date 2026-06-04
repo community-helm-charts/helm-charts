@@ -5,6 +5,7 @@ import test from "node:test";
 
 const ROOT = resolve(import.meta.dirname, "..");
 const INTERNAL_REPOSITORY = "oci://ghcr.io/community-helm-charts";
+const LOCAL_INTERNAL_REPOSITORY = /^file:\/\/\.\.\//;
 
 function chartFile(chartName, file = "Chart.yaml") {
   return join(ROOT, "charts", chartName, file);
@@ -37,7 +38,9 @@ function internalDependencies(chartName, file = "Chart.yaml") {
   if (!existsSync(path)) {
     return [];
   }
-  return dependencyBlocks(readFileSync(path, "utf8")).filter((dependency) => dependency.repository === INTERNAL_REPOSITORY);
+  return dependencyBlocks(readFileSync(path, "utf8")).filter((dependency) => {
+    return dependency.repository === INTERNAL_REPOSITORY || LOCAL_INTERNAL_REPOSITORY.test(dependency.repository);
+  });
 }
 
 test("internal chart dependency versions match the referenced chart versions", () => {
@@ -59,7 +62,7 @@ test("internal chart dependency versions match the referenced chart versions", (
   assert.deepEqual(mismatches, []);
 });
 
-test("internal Chart.lock entries match the current referenced chart versions", () => {
+test("internal source dependencies use local chart repositories", () => {
   const chartNames = readdirSync(join(ROOT, "charts"), { withFileTypes: true })
     .filter((entry) => entry.isDirectory())
     .map((entry) => entry.name)
@@ -67,26 +70,28 @@ test("internal Chart.lock entries match the current referenced chart versions", 
 
   const mismatches = [];
   for (const chartName of chartNames) {
-    const expectedDependencies = internalDependencies(chartName);
-    if (expectedDependencies.length === 0) {
-      continue;
-    }
-
-    const expectedByName = new Map(expectedDependencies.map((dependency) => [dependency.name, dependency]));
-    const lockedByName = new Map(internalDependencies(chartName, "Chart.lock").map((dependency) => [dependency.name, dependency.version]));
-    for (const dependency of expectedDependencies) {
-      const expectedVersion = chartVersion(dependency.name);
-      const lockedVersion = lockedByName.get(dependency.name);
-      if (lockedVersion !== expectedVersion) {
-        mismatches.push(`${chartName} -> ${dependency.name}: expected lock ${expectedVersion}, got ${lockedVersion || "missing"}`);
-      }
-    }
-    for (const lockedDependency of lockedByName.keys()) {
-      if (!expectedByName.has(lockedDependency)) {
-        mismatches.push(`${chartName} -> ${lockedDependency}: unexpected internal lock entry`);
+    for (const dependency of internalDependencies(chartName)) {
+      if (!LOCAL_INTERNAL_REPOSITORY.test(dependency.repository)) {
+        mismatches.push(`${chartName} -> ${dependency.name}: expected local file repository, got ${dependency.repository}`);
       }
     }
   }
 
   assert.deepEqual(mismatches, []);
+});
+
+test("source charts do not commit Helm dependency locks", () => {
+  const chartNames = readdirSync(join(ROOT, "charts"), { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name)
+    .sort();
+
+  const lockedCharts = [];
+  for (const chartName of chartNames) {
+    if (existsSync(chartFile(chartName, "Chart.lock"))) {
+      lockedCharts.push(chartName);
+    }
+  }
+
+  assert.deepEqual(lockedCharts, []);
 });

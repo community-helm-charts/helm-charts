@@ -1,19 +1,24 @@
 {
+  "name": "workspace",
+  "private": true,
+  "packageManager": "pnpm@11.5.1",
   "devEngines": {
     "packageManager": {
       "name": "pnpm",
-      "version": "11.1.2",
+      "version": "11.5.1",
       "onFail": "download"
     }
   },
   "type": "module",
   "scripts": {
     "prepare": "husky",
-    "test": "node --test tests/*.test.js"
+    "test": "nx run-many -t test --projects=workspace,@community-helm-charts/nx-helm"
   },
   "devDependencies": {
-    "@commitlint/cli": "^21.0.1",
-    "@commitlint/config-conventional": "^21.0.1",
-    "husky": "^9.1.7"
+    "@commitlint/cli": "^21.0.2",
+    "@commitlint/config-conventional": "^21.0.2",
+    "@community-helm-charts/nx-helm": "workspace:*",
+    "husky": "^9.1.7",
+    "nx": "^22.7.5"
   }
 }

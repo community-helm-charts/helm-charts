@@ -8,7 +8,7 @@ appVersion: 8.4.9
 dependencies:
 - name: common
   repository: oci://ghcr.io/community-helm-charts
-  version: 0.x.x
+  version: 0.1.0
 description: A simple single-instance MySQL Helm chart using the Docker Official MySQL image.
 home: https://github.com/community-helm-charts/helm-charts
 keywords:

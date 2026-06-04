@@ -1,0 +1,14 @@
+{
+  "executors": {
+    "dependency-build": {
+      "implementation": "./dist/executors/dependency-build",
+      "schema": "./schemas/dependency-build.json",
+      "description": "Vendor packaged local Helm chart dependencies into a chart."
+    },
+    "release-publish": {
+      "implementation": "./dist/executors/release-publish",
+      "schema": "./schemas/release-publish.json",
+      "description": "Publish a packaged Helm chart through nx release publish."
+    }
+  }
+}

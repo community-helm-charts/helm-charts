@@ -7,6 +7,10 @@
 
 ### Node ###
 node_modules/
+.nx/cache/
+.nx/workspace-data/
+dist/
+packages/*/dist/
 
 # Local operational backups
 .backups/

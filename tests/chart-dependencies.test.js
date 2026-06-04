@@ -40,7 +40,7 @@ function internalDependencies(chartName, file = "Chart.yaml") {
   return dependencyBlocks(readFileSync(path, "utf8")).filter((dependency) => dependency.repository === INTERNAL_REPOSITORY);
 }
 
-test("internal chart dependency ranges match the referenced chart major version", () => {
+test("internal chart dependency versions match the referenced chart versions", () => {
   const chartNames = readdirSync(join(ROOT, "charts"), { withFileTypes: true })
     .filter((entry) => entry.isDirectory())
     .map((entry) => entry.name)
@@ -50,9 +50,8 @@ test("internal chart dependency ranges match the referenced chart major version"
   for (const chartName of chartNames) {
     for (const dependency of internalDependencies(chartName)) {
       const targetVersion = chartVersion(dependency.name);
-      const expectedRange = `${targetVersion.split(".")[0]}.x.x`;
-      if (dependency.version !== expectedRange) {
-        mismatches.push(`${chartName} -> ${dependency.name}: expected ${expectedRange}, got ${dependency.version}`);
+      if (dependency.version !== targetVersion) {
+        mismatches.push(`${chartName} -> ${dependency.name}: expected ${targetVersion}, got ${dependency.version}`);
       }
     }
   }

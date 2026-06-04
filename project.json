@@ -1,0 +1,17 @@
+{
+  "$schema": "./node_modules/nx/schemas/project-schema.json",
+  "name": "workspace",
+  "root": ".",
+  "projectType": "application",
+  "targets": {
+    "test": {
+      "command": "node --test tests/*.test.js",
+      "cache": true,
+      "inputs": [
+        "{workspaceRoot}/tests/**/*.test.js",
+        "{workspaceRoot}/charts/**",
+        "sharedGlobals"
+      ]
+    }
+  }
+}

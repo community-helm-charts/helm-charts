@@ -1,0 +1,58 @@
+{
+  "$schema": "./node_modules/nx/schemas/nx-schema.json",
+  "namedInputs": {
+    "sharedGlobals": [
+      "{workspaceRoot}/package.json",
+      "{workspaceRoot}/pnpm-lock.yaml",
+      "{workspaceRoot}/pnpm-workspace.yaml",
+      "{workspaceRoot}/tsconfig.json",
+      "{workspaceRoot}/nx.json"
+    ],
+    "default": [
+      "{projectRoot}/**/*",
+      "sharedGlobals"
+    ]
+  },
+  "plugins": [
+    {
+      "plugin": "@community-helm-charts/nx-helm",
+      "options": {
+        "chartRepository": "oci://ghcr.io/community-helm-charts",
+        "internalRepository": "oci://ghcr.io/community-helm-charts"
+      }
+    }
+  ],
+  "targetDefaults": {
+    "dependency-build": {
+      "cache": false
+    },
+    "lint": {
+      "cache": true
+    },
+    "package": {
+      "cache": true
+    }
+  },
+  "release": {
+    "projects": [
+      "tag:type:helm-chart"
+    ],
+    "projectsRelationship": "independent",
+    "git": {
+      "commit": true,
+      "tag": true,
+      "push": true
+    },
+    "version": {
+      "conventionalCommits": true,
+      "fallbackCurrentVersionResolver": "disk",
+      "updateDependents": "auto",
+      "versionActions": "@community-helm-charts/nx-helm/release"
+    },
+    "changelog": {
+      "workspaceChangelog": false,
+      "projectChangelogs": true,
+      "automaticFromRef": true
+    }
+  }
+}

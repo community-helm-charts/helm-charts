@@ -213,34 +213,15 @@ importers:
       '@commitlint/config-conventional':
         specifier: ^21.0.2
         version: 21.0.2
-      '@community-helm-charts/nx-helm':
-        specifier: workspace:*
-        version: link:packages/nx-helm
       husky:
         specifier: ^9.1.7
         version: 9.1.7
       nx:
         specifier: ^22.7.5
         version: 22.7.5
-
-  packages/nx-helm:
-    dependencies:
-      '@nx/devkit':
-        specifier: ^22.7.5
-        version: 22.7.5(nx@22.7.5)
-      nx:
-        specifier: ^22.7.5
-        version: 22.7.5
-      yaml:
-        specifier: ^2.9.0
-        version: 2.9.0
-    devDependencies:
-      '@types/node':
-        specifier: ^25.9.1
-        version: 25.9.1
-      typescript:
-        specifier: ^6.0.3
-        version: 6.0.3
+      nx-helm:
+        specifier: ^0.1.0
+        version: 0.1.0(nx@22.7.5)
 
 packages:
 
@@ -835,6 +816,11 @@ packages:
   npm-run-path@4.0.1:
     resolution: {integrity: sha512-S48WzZW777zhNIrn7gxOlISNAqi9ZC/uQFnRdbeIHhZhCA6UqpkOT8T1G7BvfdgP4Er8gF4sUbaS0i7QvIfCWw==}
     engines: {node: '>=8'}
+
+  nx-helm@0.1.0:
+    resolution: {integrity: sha512-UEEn8baoZpdAXHhlAGp+bY9YQ4tyEqlio/vzyPTJ4Z6YlEfB+5HN3Y52g7PjL8LFHND46OV18MR+z8Er7Mk8VA==}
+    peerDependencies:
+      nx: ^22.7.5
 
   nx@22.7.5:
     resolution: {integrity: sha512-zoxsJabb33jl1QYnalDn0bicryrEBgSzdKp90d7VGGv/jDgzKrcLg/hw2ZxeYiOjWPIT/o8QNT9G9vTs4dv3AQ==}
@@ -1582,6 +1568,13 @@ snapshots:
   npm-run-path@4.0.1:
     dependencies:
       path-key: 3.1.1
+
+  nx-helm@0.1.0(nx@22.7.5):
+    dependencies:
+      '@nx/devkit': 22.7.5(nx@22.7.5)
+      nx: 22.7.5
+      tslib: 2.8.1
+      yaml: 2.9.0
 
   nx@22.7.5:
     dependencies:

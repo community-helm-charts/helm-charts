@@ -15,7 +15,7 @@
   },
   "plugins": [
     {
-      "plugin": "@community-helm-charts/nx-helm",
+      "plugin": "nx-helm",
       "options": {
         "repository": "oci://ghcr.io/community-helm-charts"
       }
@@ -46,7 +46,7 @@
       "conventionalCommits": true,
       "fallbackCurrentVersionResolver": "disk",
       "updateDependents": "auto",
-      "versionActions": "@community-helm-charts/nx-helm/release"
+      "versionActions": "nx-helm/release"
     },
     "changelog": {
       "workspaceChangelog": false,

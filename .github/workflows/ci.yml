@@ -12,7 +12,6 @@ on:
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
       - "project.json"
-      - "packages/**"
       - "tests/**"
       - "tsconfig.json"
   pull_request:
@@ -107,11 +106,8 @@ jobs:
         with:
           version: v3.16.4
 
-      - name: Build nx-helm plugin
-        run: pnpm --filter @community-helm-charts/nx-helm build
-
       - name: Run tests
-        run: pnpm exec nx run-many -t test --projects=workspace,@community-helm-charts/nx-helm --output-style=stream
+        run: pnpm test
 
       - name: Configure Git
         run: |

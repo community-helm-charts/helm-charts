@@ -12,13 +12,13 @@
   "type": "module",
   "scripts": {
     "prepare": "husky",
-    "test": "nx run-many -t test --projects=workspace,@community-helm-charts/nx-helm"
+    "test": "nx run workspace:test"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.0.2",
     "@commitlint/config-conventional": "^21.0.2",
-    "@community-helm-charts/nx-helm": "workspace:*",
     "husky": "^9.1.7",
-    "nx": "^22.7.5"
+    "nx": "^22.7.5",
+    "nx-helm": "^0.1.0"
   }
 }

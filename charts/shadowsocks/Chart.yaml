@@ -1,0 +1,26 @@
+annotations:
+  images: |
+    - name: shadowsocks
+      image: ghcr.io/shadowsocks/ssserver-rust:v1.24.0
+  licenses: MIT
+apiVersion: v2
+appVersion: "v1.24.0"
+dependencies:
+  - name: common
+    repository: file://../common
+    version: 0.2.1
+description: A secure SOCKS5 proxy powered by shadowsocks-rust.
+home: https://github.com/community-helm-charts/helm-charts
+keywords:
+  - shadowsocks
+  - proxy
+  - socks5
+maintainers:
+  - name: community-helm-charts
+    url: https://github.com/community-helm-charts/helm-charts
+name: shadowsocks
+sources:
+  - https://github.com/community-helm-charts/helm-charts/tree/main/charts/shadowsocks
+  - https://github.com/shadowsocks/shadowsocks-rust
+type: application
+version: 1.0.0

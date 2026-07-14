@@ -42,22 +42,21 @@ image:
   pullSecrets: []
 
 ## @section Shadowsocks configuration
-## @param config Shadowsocks config.json fields; password is injected from a Secret
+## @param config Shadowsocks config.json fields; password is stored in a Secret and injected through the environment
 ##
 config:
   server: "::"
   server_port: 8388
+  password: changeme
   method: aes-256-gcm
   fast_open: true
   mode: tcp_and_udp
 
 ## @section Shadowsocks authentication
-## @param auth.password Password stored in the chart-managed Secret
 ## @param auth.existingSecret Existing Secret containing the Shadowsocks password
 ## @param auth.existingSecretPasswordKey Password key in the existing Secret
 ##
 auth:
-  password: changeme
   existingSecret: ""
   existingSecretPasswordKey: password
 

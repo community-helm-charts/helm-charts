@@ -26,7 +26,7 @@
 {{- if .Values.auth.existingSecret -}}
 {{- tpl .Values.auth.existingSecret $ -}}
 {{- else -}}
-{{- printf "%s-auth" (include "shadowsocks.fullname" .) | trunc 63 | trimSuffix "-" -}}
+{{- printf "%s-secret" (include "shadowsocks.fullname" .) | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 {{- end -}}
 
@@ -43,9 +43,6 @@
 {{- end -}}
 
 {{- define "shadowsocks.validateValues" -}}
-{{- if hasKey .Values.config "password" -}}
-{{- fail "config.password is reserved; configure auth.password or auth.existingSecret" -}}
-{{- end -}}
 {{- if not (hasKey .Values.config "server_port") -}}
 {{- fail "config.server_port must be an integer from 1 through 65535" -}}
 {{- end -}}
@@ -61,8 +58,8 @@
 {{- if empty .Values.auth.existingSecretPasswordKey -}}
 {{- fail "auth.existingSecretPasswordKey must not be empty when auth.existingSecret is set" -}}
 {{- end -}}
-{{- else if empty .Values.auth.password -}}
-{{- fail "auth.password must not be empty when auth.existingSecret is empty" -}}
+{{- else if empty .Values.config.password -}}
+{{- fail "config.password must not be empty when auth.existingSecret is empty" -}}
 {{- end -}}
 {{- end -}}
 

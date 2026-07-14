@@ -75,7 +75,7 @@ test("default render creates a host-networked Shadowsocks DaemonSet and TCP/UDP 
     const manifest = chart.render();
 
     assert.deepEqual(resourceNames(manifest, "ConfigMap"), ["shadowsocks-config"]);
-    assert.deepEqual(resourceNames(manifest, "Secret"), ["shadowsocks-auth"]);
+    assert.deepEqual(resourceNames(manifest, "Secret"), ["shadowsocks-secret"]);
     assert.deepEqual(resourceNames(manifest, "ServiceAccount"), ["shadowsocks"]);
     assert.deepEqual(resourceNames(manifest, "DaemonSet"), ["shadowsocks"]);
     assert.deepEqual(resourceNames(manifest, "Service"), ["shadowsocks"]);
@@ -91,7 +91,7 @@ test("default render creates a host-networked Shadowsocks DaemonSet and TCP/UDP 
     assert.match(manifest, /stringData:\n\s+password: "changeme"/);
     assert.match(
       manifest,
-      /name: SHADOWSOCKS_PASSWORD[\s\S]*?secretKeyRef:[\s\S]*?name: shadowsocks-auth[\s\S]*?key: password/,
+      /name: SHADOWSOCKS_PASSWORD[\s\S]*?secretKeyRef:[\s\S]*?name: shadowsocks-secret[\s\S]*?key: password/,
     );
     assert.match(manifest, /mountPath: \/etc\/shadowsocks-rust\/config\.json/);
     assert.match(manifest, /- name: tcp\n\s+containerPort: 8388\n\s+protocol: TCP/);
@@ -135,6 +135,8 @@ test("existing Secret is referenced without rendering the chart-managed Secret",
   const chart = makeShadowsocksChart();
   try {
     const manifest = chart.render(
+      "--set-string",
+      "config.password=ignored-password",
       "--set",
       "auth.existingSecret=shared-shadowsocks",
       "--set",
@@ -147,6 +149,7 @@ test("existing Secret is referenced without rendering the chart-managed Secret",
       /name: SHADOWSOCKS_PASSWORD[\s\S]*?secretKeyRef:[\s\S]*?name: shared-shadowsocks[\s\S]*?key: credential/,
     );
     assert.doesNotMatch(manifest, /checksum\/secret:/);
+    assert.doesNotMatch(manifest, /ignored-password/);
   } finally {
     chart.cleanup();
   }
@@ -157,10 +160,10 @@ test("chart-managed Secret always uses its password key", () => {
   try {
     const manifest = chart.render("--set", "auth.existingSecretPasswordKey=credential");
 
-    assert.deepEqual(resourceNames(manifest, "Secret"), ["shadowsocks-auth"]);
+    assert.deepEqual(resourceNames(manifest, "Secret"), ["shadowsocks-secret"]);
     assert.match(
       manifest,
-      /name: SHADOWSOCKS_PASSWORD[\s\S]*?secretKeyRef:[\s\S]*?name: shadowsocks-auth[\s\S]*?key: password/,
+      /name: SHADOWSOCKS_PASSWORD[\s\S]*?secretKeyRef:[\s\S]*?name: shadowsocks-secret[\s\S]*?key: password/,
     );
     assert.doesNotMatch(manifest, /key: credential/);
   } finally {
@@ -168,13 +171,16 @@ test("chart-managed Secret always uses its password key", () => {
   }
 });
 
-test("plaintext config.password is rejected", () => {
+test("config.password creates the managed Secret but is replaced in config.json", () => {
   const chart = makeShadowsocksChart();
   try {
-    const result = chart.renderResult("--set-string", "config.password=plaintext");
+    const manifest = chart.render("--set-string", "config.password=strong-password");
 
-    assert.notEqual(result.status, 0);
-    assert.match(result.stderr, /config\.password is reserved; configure auth\.password or auth\.existingSecret/);
+    assert.deepEqual(resourceNames(manifest, "Secret"), ["shadowsocks-secret"]);
+    assert.match(manifest, /stringData:\n\s+password: "strong-password"/);
+    assert.match(manifest, /"password": "\$\{SHADOWSOCKS_PASSWORD\}"/);
+    assert.match(manifest, /name: shadowsocks-secret[\s\S]*?key: password/);
+    assert.doesNotMatch(manifest, /"password": "strong-password"/);
   } finally {
     chart.cleanup();
   }
@@ -197,10 +203,10 @@ test("invalid config.server_port values are rejected", () => {
 test("empty managed password is rejected", () => {
   const chart = makeShadowsocksChart();
   try {
-    const result = chart.renderResult("--set-string", "auth.password=");
+    const result = chart.renderResult("--set-string", "config.password=");
 
     assert.notEqual(result.status, 0);
-    assert.match(result.stderr, /auth\.password must not be empty when auth\.existingSecret is empty/);
+    assert.match(result.stderr, /config\.password must not be empty when auth\.existingSecret is empty/);
   } finally {
     chart.cleanup();
   }

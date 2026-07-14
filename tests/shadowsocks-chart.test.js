@@ -1,10 +1,62 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { execFileSync, spawnSync } from "node:child_process";
+import { cpSync, mkdtempSync, mkdirSync, readFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+
+function makeShadowsocksChart() {
+  const dir = mkdtempSync(join(tmpdir(), "shadowsocks-chart-"));
+  const chart = join(dir, "shadowsocks");
+  cpSync(join(ROOT, "charts", "shadowsocks"), chart, { recursive: true });
+  rmSync(join(chart, "charts"), { force: true, recursive: true });
+  mkdirSync(join(chart, "charts"), { recursive: true });
+
+  const commonOutput = execFileSync("helm", ["package", join(ROOT, "charts", "common"), "--destination", join(chart, "charts")], {
+    encoding: "utf8",
+  });
+  assert.match(commonOutput, /common-.*\.tgz/);
+
+  function render(...args) {
+    return execFileSync("helm", ["template", "shadowsocks", chart, ...args], {
+      encoding: "utf8",
+      maxBuffer: 10 * 1024 * 1024,
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+  }
+
+  function renderResult(...args) {
+    return spawnSync("helm", ["template", "shadowsocks", chart, ...args], {
+      encoding: "utf8",
+      maxBuffer: 10 * 1024 * 1024,
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+  }
+
+  function cleanup() {
+    rmSync(dir, { force: true, recursive: true });
+  }
+
+  return { cleanup, render, renderResult };
+}
+
+function resourceNames(manifest, kind) {
+  return manifest
+    .split(/^---$/m)
+    .map((doc) => {
+      const lines = doc.split("\n");
+      if (!lines.some((line) => line === `kind: ${kind}`)) {
+        return "";
+      }
+      const name = lines.find((line) => line.startsWith("  name: "));
+      return name ? name.replace("  name: ", "").trim().replaceAll('"', "") : "";
+    })
+    .filter(Boolean)
+    .sort();
+}
 
 test("chart metadata pins shadowsocks-rust v1.24.0 and the local common dependency", () => {
   const chart = readFileSync(join(ROOT, "charts", "shadowsocks", "Chart.yaml"), "utf8");
@@ -15,4 +67,41 @@ test("chart metadata pins shadowsocks-rust v1.24.0 and the local common dependen
   assert.match(chart, /image: ghcr\.io\/shadowsocks\/ssserver-rust:v1\.24\.0/);
   assert.match(chart, /repository: file:\/\/\.\.\/common/);
   assert.match(chart, /version: 0\.2\.1/);
+});
+
+test("default render creates a host-networked Shadowsocks DaemonSet and TCP/UDP Service", () => {
+  const chart = makeShadowsocksChart();
+  try {
+    const manifest = chart.render();
+
+    assert.deepEqual(resourceNames(manifest, "ConfigMap"), ["shadowsocks-config"]);
+    assert.deepEqual(resourceNames(manifest, "Secret"), ["shadowsocks-auth"]);
+    assert.deepEqual(resourceNames(manifest, "ServiceAccount"), ["shadowsocks"]);
+    assert.deepEqual(resourceNames(manifest, "DaemonSet"), ["shadowsocks"]);
+    assert.deepEqual(resourceNames(manifest, "Service"), ["shadowsocks"]);
+    assert.match(manifest, /image: ghcr\.io\/shadowsocks\/ssserver-rust:v1\.24\.0/);
+    assert.match(manifest, /hostNetwork: true/);
+    assert.match(manifest, /dnsPolicy: Default/);
+    assert.match(manifest, /"server": "::"/);
+    assert.match(manifest, /"server_port": 8388/);
+    assert.match(manifest, /"method": "aes-256-gcm"/);
+    assert.match(manifest, /"fast_open": true/);
+    assert.match(manifest, /"mode": "tcp_and_udp"/);
+    assert.match(manifest, /"password": "\$\{SHADOWSOCKS_PASSWORD\}"/);
+    assert.match(manifest, /stringData:\n\s+password: "changeme"/);
+    assert.match(
+      manifest,
+      /name: SHADOWSOCKS_PASSWORD[\s\S]*?secretKeyRef:[\s\S]*?name: shadowsocks-auth[\s\S]*?key: password/,
+    );
+    assert.match(manifest, /mountPath: \/etc\/shadowsocks-rust\/config\.json/);
+    assert.match(manifest, /- name: tcp\n\s+containerPort: 8388\n\s+protocol: TCP/);
+    assert.match(manifest, /- name: udp\n\s+containerPort: 8388\n\s+protocol: UDP/);
+    assert.match(manifest, /livenessProbe:\n\s+tcpSocket:\n\s+port: tcp/);
+    assert.match(manifest, /readinessProbe:\n\s+tcpSocket:\n\s+port: tcp/);
+    assert.match(manifest, /internalTrafficPolicy: Local/);
+    assert.match(manifest, /- name: tcp\n\s+port: 8388\n\s+targetPort: tcp\n\s+protocol: TCP/);
+    assert.match(manifest, /- name: udp\n\s+port: 8388\n\s+targetPort: udp\n\s+protocol: UDP/);
+  } finally {
+    chart.cleanup();
+  }
 });

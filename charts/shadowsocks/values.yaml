@@ -1,0 +1,239 @@
+## @section Global parameters
+## @param global.imageRegistry Global container image registry
+## @param global.imagePullSecrets Global container registry secret names
+##
+global:
+  imageRegistry: ""
+  imagePullSecrets: []
+
+## @section Common parameters
+## @param kubeVersion Override Kubernetes version
+## @param nameOverride Partially override the chart name
+## @param fullnameOverride Fully override the chart name
+## @param namespaceOverride Fully override the release namespace
+## @param clusterDomain Kubernetes cluster domain
+## @param commonLabels Labels added to every resource
+## @param commonAnnotations Annotations added to every resource
+## @param extraDeploy Additional objects to deploy
+##
+kubeVersion: ""
+nameOverride: ""
+fullnameOverride: ""
+namespaceOverride: ""
+clusterDomain: cluster.local
+commonLabels: {}
+commonAnnotations: {}
+extraDeploy: []
+
+## @section Shadowsocks image parameters
+## @param image.registry Shadowsocks image registry
+## @param image.repository Shadowsocks image repository
+## @param image.tag Shadowsocks image tag
+## @param image.digest Shadowsocks image digest in the form sha256:...
+## @param image.pullPolicy Shadowsocks image pull policy
+## @param image.pullSecrets Shadowsocks image pull secrets
+##
+image:
+  registry: ghcr.io
+  repository: shadowsocks/ssserver-rust
+  tag: v1.24.0
+  digest: ""
+  pullPolicy: IfNotPresent
+  pullSecrets: []
+
+## @section Shadowsocks configuration
+## @param config Shadowsocks config.json fields; password is injected from a Secret
+##
+config:
+  server: "::"
+  server_port: 8388
+  method: aes-256-gcm
+  fast_open: true
+  mode: tcp_and_udp
+
+## @section Shadowsocks authentication
+## @param auth.password Password stored in the chart-managed Secret
+## @param auth.existingSecret Existing Secret containing the Shadowsocks password
+## @param auth.existingSecretPasswordKey Password key in the existing Secret
+##
+auth:
+  password: changeme
+  existingSecret: ""
+  existingSecretPasswordKey: password
+
+## @section Shadowsocks pod networking
+## @param hostNetwork Use the host network namespace
+## @param dnsPolicy Pod DNS policy
+##
+hostNetwork: true
+dnsPolicy: Default
+
+## @section Shadowsocks service parameters
+## @param service.enabled Create a Service
+## @param service.type Kubernetes Service type
+## @param service.nodePorts.tcp TCP node port for NodePort or LoadBalancer
+## @param service.nodePorts.udp UDP node port for NodePort or LoadBalancer
+## @param service.clusterIP Service cluster IP
+## @param service.annotations Additional Service annotations
+## @param service.labels Additional Service labels
+## @param service.internalTrafficPolicy Service internal traffic policy
+## @param service.externalTrafficPolicy Service external traffic policy
+## @param service.loadBalancerClass Service load balancer class
+## @param service.loadBalancerIP Service load balancer IP
+## @param service.loadBalancerSourceRanges Allowed source ranges for LoadBalancer
+## @param service.sessionAffinity Service session affinity
+## @param service.sessionAffinityConfig Additional session affinity settings
+## @param service.ipFamilyPolicy Service IP family policy
+## @param service.ipFamilies Service IP families
+## @param service.extraPorts Additional Service ports
+##
+service:
+  enabled: true
+  type: ClusterIP
+  nodePorts:
+    tcp: ""
+    udp: ""
+  clusterIP: ""
+  annotations: {}
+  labels: {}
+  internalTrafficPolicy: Local
+  externalTrafficPolicy: Cluster
+  loadBalancerClass: ""
+  loadBalancerIP: ""
+  loadBalancerSourceRanges: []
+  sessionAffinity: None
+  sessionAffinityConfig: {}
+  ipFamilyPolicy: ""
+  ipFamilies: []
+  extraPorts: []
+
+## @section Shadowsocks DaemonSet parameters
+## @param updateStrategy DaemonSet update strategy
+## @param command Override the container command
+## @param args Override the container arguments
+## @param extraEnvVars Additional environment variables
+## @param extraEnvVarsCM Existing ConfigMap imported as environment variables
+## @param extraEnvVarsSecret Existing Secret imported as environment variables
+## @param extraVolumes Additional pod volumes
+## @param extraVolumeMounts Additional container volume mounts
+## @param initContainers Additional init containers
+## @param sidecars Additional sidecar containers
+##
+updateStrategy:
+  type: RollingUpdate
+command: []
+args: []
+extraEnvVars: []
+extraEnvVarsCM: ""
+extraEnvVarsSecret: ""
+extraVolumes: []
+extraVolumeMounts: []
+initContainers: []
+sidecars: []
+
+## @section Shadowsocks probe parameters
+## @param livenessProbe.enabled Enable the TCP liveness probe
+## @param livenessProbe.initialDelaySeconds Initial liveness probe delay
+## @param livenessProbe.periodSeconds Liveness probe interval
+## @param livenessProbe.timeoutSeconds Liveness probe timeout
+## @param livenessProbe.failureThreshold Liveness probe failure threshold
+## @param livenessProbe.successThreshold Liveness probe success threshold
+## @param readinessProbe.enabled Enable the TCP readiness probe
+## @param readinessProbe.initialDelaySeconds Initial readiness probe delay
+## @param readinessProbe.periodSeconds Readiness probe interval
+## @param readinessProbe.timeoutSeconds Readiness probe timeout
+## @param readinessProbe.failureThreshold Readiness probe failure threshold
+## @param readinessProbe.successThreshold Readiness probe success threshold
+##
+livenessProbe:
+  enabled: true
+  initialDelaySeconds: 10
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 6
+  successThreshold: 1
+readinessProbe:
+  enabled: true
+  initialDelaySeconds: 5
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 6
+  successThreshold: 1
+
+## @section Shadowsocks resource parameters
+## @param resourcesPreset Common resource preset
+## @param resources Explicit resource requests and limits
+##
+resourcesPreset: nano
+resources: {}
+
+## @section Shadowsocks security parameters
+## @param podSecurityContext.enabled Enable pod security context
+## @param podSecurityContext.fsGroupChangePolicy Pod filesystem group change policy
+## @param podSecurityContext.sysctls Pod sysctls
+## @param podSecurityContext.supplementalGroups Pod supplemental groups
+## @param podSecurityContext.fsGroup Pod filesystem group
+## @param containerSecurityContext.enabled Enable container security context
+## @param containerSecurityContext.runAsUser Container user ID
+## @param containerSecurityContext.runAsGroup Container group ID
+## @param containerSecurityContext.runAsNonRoot Require a non-root container
+## @param containerSecurityContext.allowPrivilegeEscalation Allow privilege escalation
+## @param containerSecurityContext.readOnlyRootFilesystem Use a read-only root filesystem
+## @param containerSecurityContext.capabilities.drop Linux capabilities to drop
+## @param containerSecurityContext.seccompProfile.type Seccomp profile type
+##
+podSecurityContext:
+  enabled: false
+  fsGroupChangePolicy: Always
+  sysctls: []
+  supplementalGroups: []
+  fsGroup: 1000
+containerSecurityContext:
+  enabled: false
+  runAsUser: 1000
+  runAsGroup: 1000
+  runAsNonRoot: true
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+  seccompProfile:
+    type: RuntimeDefault
+
+## @section Shadowsocks scheduling parameters
+## @param podLabels Additional pod labels
+## @param podAnnotations Additional pod annotations
+## @param priorityClassName Pod priority class
+## @param schedulerName Alternate scheduler
+## @param terminationGracePeriodSeconds Pod termination grace period
+## @param hostAliases Pod host aliases
+## @param affinity Pod affinity rules
+## @param nodeSelector Node selection labels
+## @param tolerations Pod tolerations
+## @param topologySpreadConstraints Pod topology spread constraints
+##
+podLabels: {}
+podAnnotations: {}
+priorityClassName: ""
+schedulerName: ""
+terminationGracePeriodSeconds: ""
+hostAliases: []
+affinity: {}
+nodeSelector: {}
+tolerations: []
+topologySpreadConstraints: []
+
+## @section Shadowsocks ServiceAccount parameters
+## @param serviceAccount.create Create a ServiceAccount
+## @param serviceAccount.name ServiceAccount name
+## @param serviceAccount.automountServiceAccountToken Automount API credentials on the ServiceAccount
+## @param serviceAccount.annotations Additional ServiceAccount annotations
+## @param automountServiceAccountToken Automount API credentials in workload pods
+##
+serviceAccount:
+  create: true
+  name: ""
+  automountServiceAccountToken: false
+  annotations: {}
+automountServiceAccountToken: false

@@ -236,6 +236,8 @@ test("README documents password handling, networking, and external Secret rotati
   const readme = readFileSync(join(ROOT, "charts", "shadowsocks", "README.md"), "utf8");
 
   assert.match(readme, /changeme/);
+  assert.match(readme, /config\.password/);
+  assert.match(readme, /shadowsocks-secret/);
   assert.match(readme, /auth\.existingSecret/);
   assert.match(readme, /SHADOWSOCKS_PASSWORD/);
   assert.match(readme, /config\.\*/);
@@ -243,4 +245,5 @@ test("README documents password handling, networking, and external Secret rotati
   assert.match(readme, /TCP/);
   assert.match(readme, /UDP/);
   assert.match(readme, /kubectl rollout restart daemonset/);
+  assert.doesNotMatch(readme, /--set-string auth\.password/);
 });

@@ -34,6 +34,7 @@ directly to the root of the generated `config.json`. The defaults are:
 config:
   server: "::"
   server_port: 8388
+  password: changeme
   method: aes-256-gcm
   fast_open: true
   mode: tcp_and_udp
@@ -44,10 +45,9 @@ Users may add any additional shadowsocks-rust configuration fields beneath
 `toPrettyJson` into a chart-managed ConfigMap. `config.server_port` is also the
 single source of truth for both container ports and default Service ports.
 
-`config.password` is the only reserved configuration key. Supplying it causes
-template rendering to fail with a clear message so that a plaintext password
-cannot be mistaken for an accepted value. The chart adds this field after
-copying the user configuration:
+`config.password` is the only special configuration key. It supplies the
+chart-managed Secret rather than being copied into the ConfigMap. After copying
+the user configuration, the chart replaces this field with:
 
 ```json
 "password": "${SHADOWSOCKS_PASSWORD}"
@@ -56,21 +56,25 @@ copying the user configuration:
 shadowsocks-rust expands the environment reference when it reads the file. The
 DaemonSet defines `SHADOWSOCKS_PASSWORD` with `secretKeyRef`.
 
-Authentication values use this shape:
+External Secret values use this shape:
 
 ```yaml
 auth:
-  password: changeme
   existingSecret: ""
   existingSecretPasswordKey: password
 ```
 
-With the defaults, the chart creates an Opaque Secret containing the key
-`password` and the placeholder value `changeme`. The README prominently states
-that this value must be replaced for real deployments. When
-`auth.existingSecret` is non-empty, the chart does not create a Secret and the
+With the defaults, the chart creates an Opaque Secret named
+`<fullname>-secret`, containing the key `password` and the placeholder value
+from `config.password`. The README prominently states that `changeme` must be
+replaced for real deployments. When `auth.existingSecret` is non-empty, it has
+priority: the chart does not create a Secret, ignores `config.password`, and the
 DaemonSet reads `auth.existingSecretPasswordKey` from the named Secret instead.
-The chart-managed Secret template rejects an empty `auth.password`.
+The chart-managed Secret template rejects an empty `config.password`.
+
+Passing `config.password` through Helm means Helm stores the supplied value in
+its release metadata Secret. Operators that do not want the password retained
+in release values should use `auth.existingSecret`.
 
 The ConfigMap checksum and, when the chart manages it, Secret checksum are pod
 template annotations so changes trigger a DaemonSet rollout. Kubernetes does
@@ -121,24 +125,32 @@ a second port setting.
 
 Template rendering fails with an actionable error when:
 
-- `config.password` is present;
 - `config.server_port` is absent or not a valid Kubernetes port from 1 through
   65535;
-- the chart manages the Secret and `auth.password` is empty; or
+- the chart manages the Secret and `config.password` is empty; or
 - an external Secret is selected but `auth.existingSecretPasswordKey` is empty.
 
 Kubernetes remains responsible for validating user-supplied extension objects,
 security contexts, scheduling values, and Service options. The chart does not
 attempt to validate arbitrary shadowsocks-rust configuration fields beyond the
-reserved password and required server port.
+special password handling and required server port.
 
 ## Documentation
 
 `README.md` documents the default DaemonSet, host-network behavior, TCP and UDP
-access, the `config.*` to `config.json` mapping, the reserved password behavior,
+access, the `config.*` to `config.json` mapping, the special password behavior,
 and the insecure `changeme` placeholder. It includes installation examples for
 both a chart-managed Secret and a pre-created Secret, plus a note about manually
 restarting the DaemonSet when an external Secret changes.
+
+## Existing Release Migration
+
+The deployed `shadowsocks` release currently uses external Secret
+`shadowsocks-credentials`. The upgrade reads its current random password and
+passes that value as `config.password`, removes the external Secret override,
+and creates `shadowsocks-secret`. After all four DaemonSet pods are Ready and
+the new Secret reference is confirmed, the obsolete `shadowsocks-credentials`
+Secret is deleted.
 
 ## Testing
 
@@ -151,15 +163,17 @@ Tests cover:
 - chart metadata and the exact v1.24.0 image;
 - one DaemonSet with `hostNetwork: true` and `dnsPolicy: Default`;
 - direct `config.*` JSON rendering and automatic password placeholder injection;
-- default Secret creation with `changeme` and `secretKeyRef` environment wiring;
+- default `shadowsocks-secret` creation from `config.password: changeme` and
+  `secretKeyRef` environment wiring;
 - omission of the chart-managed Secret and custom key wiring when an existing
   Secret is selected;
 - TCP and UDP container ports and ClusterIP Service ports at 8388;
 - `internalTrafficPolicy: Local` and default Service enablement;
 - propagation of a custom `config.server_port` to the ConfigMap, DaemonSet, and
   Service;
-- validation failures for plaintext `config.password`, invalid ports, and empty
-  managed or external Secret settings; and
+- omission of the plaintext `config.password` value from the ConfigMap;
+- validation failures for invalid ports and empty managed or external Secret
+  settings; and
 - standard chart overrides that materially affect the rendered workload.
 
 Verification runs the focused Node test first, then the complete repository test

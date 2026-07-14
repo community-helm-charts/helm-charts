@@ -20,7 +20,9 @@ spec:
         app.kubernetes.io/component: shadowsocks
       annotations:
         checksum/config: {{ include "common.utils.checksumTemplate" (dict "path" "/configmap.yaml" "context" $) }}
+        {{- if not .Values.auth.existingSecret }}
         checksum/secret: {{ include "common.utils.checksumTemplate" (dict "path" "/secret.yaml" "context" $) }}
+        {{- end }}
         {{- if .Values.podAnnotations }}
         {{- include "common.tplvalues.render" (dict "value" .Values.podAnnotations "context" $) | nindent 8 }}
         {{- end }}
@@ -78,7 +80,7 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: {{ include "shadowsocks.secretName" . }}
-                  key: password
+                  key: {{ .Values.auth.existingSecretPasswordKey }}
             {{- if .Values.extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .Values.extraEnvVars "context" $) | nindent 12 }}
             {{- end }}

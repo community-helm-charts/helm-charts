@@ -23,7 +23,11 @@
 {{- end -}}
 
 {{- define "shadowsocks.secretName" -}}
+{{- if .Values.auth.existingSecret -}}
+{{- tpl .Values.auth.existingSecret $ -}}
+{{- else -}}
 {{- printf "%s-auth" (include "shadowsocks.fullname" .) | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
 {{- end -}}
 
 {{- define "shadowsocks.serverPort" -}}
@@ -31,13 +35,7 @@
 {{- end -}}
 
 {{- define "shadowsocks.renderConfig" -}}
-{{- $config := dict
-  "server" .Values.config.server
-  "server_port" .Values.config.server_port
-  "method" .Values.config.method
-  "fast_open" .Values.config.fast_open
-  "mode" .Values.config.mode
-  "password" "${SHADOWSOCKS_PASSWORD}"
--}}
+{{- $config := deepCopy .Values.config -}}
+{{- $_ := set $config "password" "${SHADOWSOCKS_PASSWORD}" -}}
 {{- $config | toPrettyJson -}}
 {{- end -}}

@@ -105,3 +105,49 @@ test("default render creates a host-networked Shadowsocks DaemonSet and TCP/UDP 
     chart.cleanup();
   }
 });
+
+test("config values map directly to JSON and server_port drives workload and Service ports", () => {
+  const chart = makeShadowsocksChart();
+  try {
+    const manifest = chart.render(
+      "--set",
+      "config.server_port=9443",
+      "--set",
+      "config.udp_timeout=300",
+      "--set",
+      "config.outbound_bind_addr=192.0.2.10",
+    );
+
+    assert.match(manifest, /"server_port": 9443/);
+    assert.match(manifest, /"udp_timeout": 300/);
+    assert.match(manifest, /"outbound_bind_addr": "192\.0\.2\.10"/);
+    assert.match(manifest, /- name: tcp\n\s+containerPort: 9443\n\s+protocol: TCP/);
+    assert.match(manifest, /- name: udp\n\s+containerPort: 9443\n\s+protocol: UDP/);
+    assert.match(manifest, /- name: tcp\n\s+port: 9443\n\s+targetPort: tcp\n\s+protocol: TCP/);
+    assert.match(manifest, /- name: udp\n\s+port: 9443\n\s+targetPort: udp\n\s+protocol: UDP/);
+    assert.doesNotMatch(manifest, /8388/);
+  } finally {
+    chart.cleanup();
+  }
+});
+
+test("existing Secret is referenced without rendering the chart-managed Secret", () => {
+  const chart = makeShadowsocksChart();
+  try {
+    const manifest = chart.render(
+      "--set",
+      "auth.existingSecret=shared-shadowsocks",
+      "--set",
+      "auth.existingSecretPasswordKey=credential",
+    );
+
+    assert.deepEqual(resourceNames(manifest, "Secret"), []);
+    assert.match(
+      manifest,
+      /name: SHADOWSOCKS_PASSWORD[\s\S]*?secretKeyRef:[\s\S]*?name: shared-shadowsocks[\s\S]*?key: credential/,
+    );
+    assert.doesNotMatch(manifest, /checksum\/secret:/);
+  } finally {
+    chart.cleanup();
+  }
+});

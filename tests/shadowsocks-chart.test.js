@@ -152,6 +152,22 @@ test("existing Secret is referenced without rendering the chart-managed Secret",
   }
 });
 
+test("chart-managed Secret always uses its password key", () => {
+  const chart = makeShadowsocksChart();
+  try {
+    const manifest = chart.render("--set", "auth.existingSecretPasswordKey=credential");
+
+    assert.deepEqual(resourceNames(manifest, "Secret"), ["shadowsocks-auth"]);
+    assert.match(
+      manifest,
+      /name: SHADOWSOCKS_PASSWORD[\s\S]*?secretKeyRef:[\s\S]*?name: shadowsocks-auth[\s\S]*?key: password/,
+    );
+    assert.doesNotMatch(manifest, /key: credential/);
+  } finally {
+    chart.cleanup();
+  }
+});
+
 test("plaintext config.password is rejected", () => {
   const chart = makeShadowsocksChart();
   try {
@@ -208,4 +224,17 @@ test("empty external Secret key is rejected", () => {
   } finally {
     chart.cleanup();
   }
+});
+
+test("README documents password handling, networking, and external Secret rotation", () => {
+  const readme = readFileSync(join(ROOT, "charts", "shadowsocks", "README.md"), "utf8");
+
+  assert.match(readme, /changeme/);
+  assert.match(readme, /auth\.existingSecret/);
+  assert.match(readme, /SHADOWSOCKS_PASSWORD/);
+  assert.match(readme, /config\.\*/);
+  assert.match(readme, /hostNetwork/);
+  assert.match(readme, /TCP/);
+  assert.match(readme, /UDP/);
+  assert.match(readme, /kubectl rollout restart daemonset/);
 });

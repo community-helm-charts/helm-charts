@@ -80,7 +80,7 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: {{ include "shadowsocks.secretName" . }}
-                  key: {{ .Values.auth.existingSecretPasswordKey }}
+                  key: {{ include "shadowsocks.secretPasswordKey" . }}
             {{- if .Values.extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .Values.extraEnvVars "context" $) | nindent 12 }}
             {{- end }}

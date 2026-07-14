@@ -1,0 +1,14 @@
+{{- $namespace := include "common.names.namespace" . }}
+Shadowsocks is running as a DaemonSet.
+
+Each selected node listens on port {{ include "shadowsocks.serverPort" . }} over TCP and UDP{{ if .Values.hostNetwork }} using the host network{{ end }}.
+
+{{- if .Values.service.enabled }}
+
+In-cluster Service endpoint:
+
+  {{ include "shadowsocks.fullname" . }}.{{ $namespace }}.svc.{{ .Values.clusterDomain }}:{{ include "shadowsocks.serverPort" . }}
+{{- end }}
+
+The server password is loaded from Kubernetes Secret {{ include "shadowsocks.secretName" . | quote }}
+using key {{ include "shadowsocks.secretPasswordKey" . | quote }}.

@@ -30,6 +30,14 @@
 {{- end -}}
 {{- end -}}
 
+{{- define "shadowsocks.secretPasswordKey" -}}
+{{- if .Values.auth.existingSecret -}}
+{{- .Values.auth.existingSecretPasswordKey -}}
+{{- else -}}
+{{- "password" -}}
+{{- end -}}
+{{- end -}}
+
 {{- define "shadowsocks.serverPort" -}}
 {{- .Values.config.server_port -}}
 {{- end -}}

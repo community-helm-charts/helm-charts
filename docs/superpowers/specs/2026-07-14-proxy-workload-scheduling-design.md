@@ -5,9 +5,10 @@
 Use a small combination of node labels, one egress taint, and Helm workload
 settings so that:
 
-- Snell Server runs only on `us-lax-2`.
+- Snell Server runs on every node except `us-lax-3`.
 - Shadowsocks runs only on `us-lax-3`.
 - Traefik runs on every node except `us-lax-3`.
+- Traefik is upgraded to chart `41.0.2` and Traefik `v3.7.6`.
 - The Shadowsocks node remains protected from workloads that do not explicitly
   tolerate proxy-egress capacity.
 
@@ -46,7 +47,9 @@ proxy-egress.
 
 ### Other nodes
 
-Do not add proxy-specific labels or taints. They remain ordinary nodes.
+Add `snell-server=true` to `us-lax-1`, `us-west-ccs-1`, and
+`us-west-hostdzire-1`. Do not add proxy-specific taints; they remain ordinary
+nodes that also run Snell Server.
 
 ## Final Workload Policy
 
@@ -60,8 +63,9 @@ nodeSelector:
 tolerations: []
 ```
 
-The selector limits the DaemonSet to `us-lax-2`. No dedicated toleration is
-needed because the old proxy taint is removed.
+The selector limits the DaemonSet to the four nodes labeled
+`snell-server=true`. No dedicated toleration is needed because all four nodes
+are untainted. `us-lax-3` has no Snell label.
 
 ### Shadowsocks
 
@@ -85,13 +89,38 @@ Both settings are required. The selector attracts the DaemonSet only to
 Configure the existing Helm release with:
 
 ```yaml
+deployment:
+  kind: DaemonSet
+service:
+  spec:
+    type: ClusterIP
+ports:
+  web:
+    hostPort: 80
+  websecure:
+    hostPort: 443
+updateStrategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxUnavailable: 1
+    maxSurge: 0
+log:
+  format: json
+accessLog:
+  enabled: true
+  format: json
 nodeSelector: {}
 tolerations: []
 ```
 
 Traefik needs no proxy-specific scheduling configuration. As a DaemonSet, it
 runs on the four untainted nodes. The proxy-egress taint excludes it from
-`us-lax-3`.
+`us-lax-3`. The ClusterIP Service avoids a K3s `svclb` DaemonSet competing
+with Traefik for host ports 80 and 443. `maxUnavailable: 1` and `maxSurge: 0`
+also prevent replacement pods from competing with old pods for those ports.
+
+Chart 41 uses `log` and `accessLog` instead of the chart 40 `logs.general` and
+`logs.access` keys. It also uses `service.spec.type` instead of `service.type`.
 
 ## Release Sources and Value Preservation
 
@@ -101,24 +130,35 @@ runs on the four untainted nodes. The proxy-egress taint excludes it from
 - Upgrade Shadowsocks with the verified local chart at
   `/root/projects/community-helm-charts/helm-charts/charts/shadowsocks`, which
   matches deployed chart version `1.0.0` and app version `v1.24.0`.
-- Upgrade Traefik with the official chart package at the currently deployed
-  chart version `40.2.0`; do not upgrade the chart or app version as part of
-  this change.
-- Reuse existing release values and override only `nodeSelector` and
-  `tolerations`. Passwords and unrelated settings must remain unchanged.
+- Reinstall Traefik from the official OCI chart at version `41.0.2`, which
+  deploys Traefik `v3.7.6`.
+- Reuse the existing Snell Server and Shadowsocks release values and override
+  only their scheduling fields. Passwords must remain unchanged.
+- Back up all existing Traefik custom resources before replacing its CRDs.
+  The backup contains the Snell Server `IngressRouteTCP`, Ghost `Middleware`,
+  and dnsproxy `ServersTransport`.
+- Let Traefik recreate all 25 `traefik.io` and `hub.traefik.io` CRDs, then
+  restore the three custom resources from the sanitized backup.
 - Use Helm wait, timeout, and rollback-on-failure behavior for every release
   upgrade.
 
 ## Migration Order
 
-1. Add `snell-server=true` to `us-lax-2` and `shadowsocks=true` to `us-lax-3`.
+1. Add `snell-server=true` to all nodes except `us-lax-3`, and add
+   `shadowsocks=true` only to `us-lax-3`.
 2. Verify both labels and the existing proxy-egress taint.
 3. Remove only `dedicated=proxy:NoSchedule` from `us-lax-2`.
 4. Upgrade Snell Server with its final node selector and empty tolerations.
 5. Upgrade Shadowsocks with its final node selector and exact proxy-egress
    toleration.
-6. Upgrade Traefik with empty node selector and tolerations.
-7. Verify final pod placement, readiness, Helm release status, and cluster
+6. Back up the three existing Traefik custom resources without Kubernetes
+   server metadata.
+7. Delete the old Traefik namespace and its 25 old CRDs.
+8. Install Traefik chart `41.0.2` as a DaemonSet with ClusterIP Service,
+   host ports 80/443, rolling strategy 1/0, JSON logs, empty node selector,
+   and empty tolerations.
+9. Restore and verify the three custom resources.
+10. Verify final pod placement, readiness, Helm release status, and cluster
    readiness.
 
 Adding labels before applying selectors prevents unschedulable workloads.
@@ -133,6 +173,10 @@ avoids a scheduling gap. The proxy-egress taint remains in place throughout.
   Ready before the timeout.
 - Do not proceed to the next workload until the current workload has the
   expected Ready count and node placement.
+- Do not delete Traefik CRDs until the sanitized custom-resource backup has
+  been validated against all live Traefik custom-resource instances.
+- Do not restore custom resources until Traefik is deployed and all 25 CRDs
+  exist again.
 - If a later step fails, preserve the successfully applied node labels because
   they do not exclude workloads. Restore the previous Helm revision for the
   failed release before changing taints or selectors again.
@@ -144,20 +188,26 @@ avoids a scheduling gap. The proxy-egress taint remains in place throughout.
 The migration is complete only when all of these checks pass:
 
 - All five nodes are Ready.
-- `us-lax-2` has label `snell-server=true` and no `dedicated=proxy` taint.
+- All nodes except `us-lax-3` have label `snell-server=true`; `us-lax-2` has
+  no `dedicated=proxy` taint.
 - `us-lax-3` has label `shadowsocks=true` and retains exactly the expected
   `dedicated=proxy-egress:NoSchedule` proxy taint.
-- Snell Server is `1/1` Ready and its only pod runs on `us-lax-2`.
+- Snell Server is `4/4` Ready and runs on every node except `us-lax-3`.
 - Shadowsocks is `1/1` Ready and its only pod runs on `us-lax-3`.
 - Traefik is `4/4` Ready, runs on every node except `us-lax-3`, and has no
   proxy-specific node selector or toleration.
+- Traefik is chart `41.0.2` / app `v3.7.6`, uses a ClusterIP Service, binds
+  host ports 80/443, rolls with `maxUnavailable: 1` and `maxSurge: 0`, and
+  emits general and access logs as JSON.
+- No K3s `svclb-traefik` DaemonSet exists.
+- All 25 Traefik CRDs and the three backed-up custom resources exist.
 - The Shadowsocks password still references `shadowsocks-secret/password`.
 - The `snell-server`, `shadowsocks`, and `traefik` Helm releases are deployed.
 - Kubernetes `/readyz` returns `ok`.
 
 ## Out of Scope
 
-- Changing container images, chart versions, service configuration, ports, or
+- Changing Snell Server or Shadowsocks images, chart versions, ports, or
   credentials.
-- Reserving `us-lax-2` exclusively for Snell Server.
+- Reserving any untainted node exclusively for Snell Server.
 - Allowing Traefik or unrelated workloads onto the proxy-egress node.

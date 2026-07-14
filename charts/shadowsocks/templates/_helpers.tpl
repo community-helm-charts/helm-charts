@@ -34,7 +34,32 @@
 {{- .Values.config.server_port -}}
 {{- end -}}
 
+{{- define "shadowsocks.validateValues" -}}
+{{- if hasKey .Values.config "password" -}}
+{{- fail "config.password is reserved; configure auth.password or auth.existingSecret" -}}
+{{- end -}}
+{{- if not (hasKey .Values.config "server_port") -}}
+{{- fail "config.server_port must be an integer from 1 through 65535" -}}
+{{- end -}}
+{{- $portString := printf "%v" .Values.config.server_port -}}
+{{- if not (regexMatch "^[0-9]+$" $portString) -}}
+{{- fail "config.server_port must be an integer from 1 through 65535" -}}
+{{- end -}}
+{{- $port := int $portString -}}
+{{- if or (lt $port 1) (gt $port 65535) -}}
+{{- fail "config.server_port must be an integer from 1 through 65535" -}}
+{{- end -}}
+{{- if .Values.auth.existingSecret -}}
+{{- if empty .Values.auth.existingSecretPasswordKey -}}
+{{- fail "auth.existingSecretPasswordKey must not be empty when auth.existingSecret is set" -}}
+{{- end -}}
+{{- else if empty .Values.auth.password -}}
+{{- fail "auth.password must not be empty when auth.existingSecret is empty" -}}
+{{- end -}}
+{{- end -}}
+
 {{- define "shadowsocks.renderConfig" -}}
+{{- include "shadowsocks.validateValues" . -}}
 {{- $config := deepCopy .Values.config -}}
 {{- $_ := set $config "password" "${SHADOWSOCKS_PASSWORD}" -}}
 {{- $config | toPrettyJson -}}

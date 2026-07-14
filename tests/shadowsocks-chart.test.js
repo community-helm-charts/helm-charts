@@ -151,3 +151,61 @@ test("existing Secret is referenced without rendering the chart-managed Secret",
     chart.cleanup();
   }
 });
+
+test("plaintext config.password is rejected", () => {
+  const chart = makeShadowsocksChart();
+  try {
+    const result = chart.renderResult("--set-string", "config.password=plaintext");
+
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /config\.password is reserved; configure auth\.password or auth\.existingSecret/);
+  } finally {
+    chart.cleanup();
+  }
+});
+
+test("invalid config.server_port values are rejected", () => {
+  const chart = makeShadowsocksChart();
+  try {
+    for (const value of ["0", "65536", "not-a-port"]) {
+      const result = chart.renderResult("--set-string", `config.server_port=${value}`);
+
+      assert.notEqual(result.status, 0, `server port ${value} should fail`);
+      assert.match(result.stderr, /config\.server_port must be an integer from 1 through 65535/);
+    }
+  } finally {
+    chart.cleanup();
+  }
+});
+
+test("empty managed password is rejected", () => {
+  const chart = makeShadowsocksChart();
+  try {
+    const result = chart.renderResult("--set-string", "auth.password=");
+
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /auth\.password must not be empty when auth\.existingSecret is empty/);
+  } finally {
+    chart.cleanup();
+  }
+});
+
+test("empty external Secret key is rejected", () => {
+  const chart = makeShadowsocksChart();
+  try {
+    const result = chart.renderResult(
+      "--set",
+      "auth.existingSecret=shared-shadowsocks",
+      "--set-string",
+      "auth.existingSecretPasswordKey=",
+    );
+
+    assert.notEqual(result.status, 0);
+    assert.match(
+      result.stderr,
+      /auth\.existingSecretPasswordKey must not be empty when auth\.existingSecret is set/,
+    );
+  } finally {
+    chart.cleanup();
+  }
+});

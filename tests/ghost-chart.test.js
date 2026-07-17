@@ -164,6 +164,12 @@ test("ActivityPub runs as a native sidecar behind the Ghost Service", () => {
       "ingress.enabled=true",
       "--set",
       "ingress.hostname=blog.example.com",
+      "--set",
+      "activitypub.customLivenessProbe.tcpSocket.port=http",
+      "--set",
+      "activitypub.customReadinessProbe.httpGet.path=/ping",
+      "--set",
+      "activitypub.customReadinessProbe.httpGet.port=http",
     );
 
     assert.ok(!resourceNames(manifest, "Deployment").includes("ghost-activitypub"));
@@ -178,7 +184,9 @@ test("ActivityPub runs as a native sidecar behind the Ghost Service", () => {
 
     const service = resourceDocument(manifest, "Service", "ghost");
     assert.ok(service);
-    assert.match(service, /- name: activitypub\n\s+port: 8080\n\s+targetPort: activitypub/);
+    assert.match(service, /- name: activitypub\n\s+port: 8080\n\s+targetPort: 8080/);
+    assert.match(statefulSet, /livenessProbe:\n\s+tcpSocket:\n\s+port: 8080/);
+    assert.match(statefulSet, /readinessProbe:\n\s+httpGet:\n\s+path: \/ping\n\s+port: 8080/);
 
     const ingress = resourceDocument(manifest, "Ingress", "ghost-activitypub");
     assert.ok(ingress);

@@ -152,6 +152,8 @@ ActivityPub runs as a Kubernetes-native sidecar in the Ghost StatefulSet and req
 
 The main Ghost Service exposes a separate `activitypub` port for the sidecar. A dedicated ActivityPub Ingress routes `/.ghost/activitypub` and the required `/.well-known` endpoints to that port; no separate ActivityPub Deployment or Service is created. The chart only supports the self-hosted ActivityPub service.
 
+When upgrading from a chart that deployed ActivityPub separately, move Pod-level values to their Ghost equivalents: `activitypub.podLabels` to `ghost.podLabels`, `activitypub.podAnnotations` to `ghost.podAnnotations`, `activitypub.podSecurityContext` to `ghost.podSecurityContext`, and ActivityPub scheduling values to the corresponding `ghost` scheduling values. Move `activitypub.service.annotations` and `activitypub.service.labels` to `ghost.service.annotations` and `ghost.service.labels`. Custom ActivityPub HTTP or TCP probes that use the former `http` named port are translated to the numeric ActivityPub container port automatically.
+
 For fresh installs with the built-in MySQL subchart, the chart creates the `activitypub` database through MySQL initdb. For upgrades of an existing built-in MySQL release, a `pre-upgrade` hook Job runs first and idempotently creates the database and grant before the ActivityPub migration init container starts. If you use an external MySQL database, create the ActivityPub database and grants outside this chart.
 
 If the public site uses a `www` hostname, configure the root-domain redirect at your edge or Ingress layer as described in Ghost's Docker documentation.

@@ -44,7 +44,7 @@ spec:
     {{- if .Values.activitypub.enabled }}
     - name: activitypub
       port: {{ .Values.activitypub.service.ports.http }}
-      targetPort: activitypub
+      targetPort: {{ .Values.activitypub.containerPorts.http }}
     {{- end }}
     {{- if .Values.ghost.service.extraPorts }}
     {{- include "common.tplvalues.render" (dict "value" .Values.ghost.service.extraPorts "context" $) | nindent 4 }}

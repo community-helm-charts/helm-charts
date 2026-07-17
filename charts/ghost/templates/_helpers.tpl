@@ -26,6 +26,18 @@
 {{- include "common.images.image" (dict "imageRoot" .Values.activitypub.migration.image "global" .Values.global) -}}
 {{- end -}}
 
+{{- define "ghost.activitypub.renderProbe" -}}
+{{- $context := .context -}}
+{{- $probe := deepCopy .probe -}}
+{{- range $handler := list "httpGet" "tcpSocket" -}}
+  {{- $config := get $probe $handler -}}
+  {{- if and $config (eq (toString (get $config "port")) "http") -}}
+    {{- $_ := set $config "port" $context.Values.activitypub.containerPorts.http -}}
+  {{- end -}}
+{{- end -}}
+{{- include "common.tplvalues.render" (dict "value" $probe "context" $context) -}}
+{{- end -}}
+
 {{- define "ghost.tinybirdDeploy.image" -}}
 {{- include "common.images.image" (dict "imageRoot" .Values.trafficAnalytics.tinybird.deploy.image "global" .Values.global) -}}
 {{- end -}}

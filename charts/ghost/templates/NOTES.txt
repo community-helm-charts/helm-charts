@@ -40,7 +40,7 @@ or create a Secret with key:
 {{- end }}
 {{- end }}
 
-{{- if .Values.activitypub.enabled }}
+{{- if and .Values.activitypub.enabled .Values.ghost.enabled .Values.ghost.service.enabled }}
 
 Self-hosted ActivityPub is enabled at:
 

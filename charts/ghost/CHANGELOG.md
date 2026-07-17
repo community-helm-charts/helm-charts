@@ -8,7 +8,9 @@
 ### Breaking Changes
 
 - Require Kubernetes 1.29 or newer when using this chart version.
-- Remove the standalone ActivityPub Deployment, Service, and Pod-level scheduling values.
+- Remove the standalone ActivityPub Deployment and Service.
+- Remove `activitypub.podLabels`, `podAnnotations`, `podSecurityContext`, `affinity`, `nodeSelector`, `tolerations`, and `topologySpreadConstraints`; use their `ghost.*` equivalents.
+- Remove `activitypub.service.annotations` and `activitypub.service.labels`; use `ghost.service.annotations` and `ghost.service.labels`.
 
 ## 1.0.1 (2026-06-04)
 

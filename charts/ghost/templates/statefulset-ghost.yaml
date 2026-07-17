@@ -60,7 +60,7 @@ spec:
       {{- end }}
       {{- if or .Values.databaseWait.enabled .Values.activitypub.enabled .Values.ghost.initContainers }}
       initContainers:
-        {{- if .Values.databaseWait.enabled }}
+        {{- if or .Values.databaseWait.enabled .Values.activitypub.enabled }}
         - name: wait-for-database
           image: {{ include "ghost.mysql.image" . }}
           imagePullPolicy: {{ include "ghost.mysql.imagePullPolicy" . | quote }}
@@ -94,22 +94,98 @@ spec:
               done
         {{- end }}
         {{- if .Values.activitypub.enabled }}
-        - name: wait-for-activitypub
+        - name: activitypub-migrate
+          image: {{ include "ghost.activitypubMigration.image" . }}
+          imagePullPolicy: {{ .Values.activitypub.migration.image.pullPolicy | quote }}
+          env:
+            - name: MYSQL_HOST
+              value: {{ include "ghost.databaseHost" . | quote }}
+            - name: MYSQL_PORT
+              value: {{ include "ghost.databasePort" . | quote }}
+            - name: MYSQL_USER
+              value: {{ include "ghost.databaseUser" . | quote }}
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "ghost.databaseSecretName" . }}
+                  key: {{ include "ghost.databasePasswordKey" . }}
+            - name: MYSQL_DATABASE
+              value: {{ .Values.activitypub.database | quote }}
+            - name: MYSQL_DB
+              value: "mysql://$(MYSQL_USER):$(MYSQL_PASSWORD)@tcp($(MYSQL_HOST):$(MYSQL_PORT))/$(MYSQL_DATABASE)"
+          {{- if .Values.activitypub.migration.resources }}
+          resources: {{- toYaml .Values.activitypub.migration.resources | nindent 12 }}
+          {{- end }}
+        - name: activitypub
           image: {{ include "ghost.activitypub.image" . }}
           imagePullPolicy: {{ .Values.activitypub.image.pullPolicy | quote }}
-          command:
-            - /bin/sh
-            - -ec
-            - |
-              deadline=$((SECONDS + {{ .Values.databaseWait.timeoutSeconds }}))
-              url="http://{{ include "ghost.activitypub.fullname" . }}.{{ include "common.names.namespace" . }}.svc.{{ .Values.clusterDomain }}:{{ .Values.activitypub.service.ports.http }}/ping"
-              until node -e 'fetch(process.argv[1]).then((res) => process.exit(res.ok ? 0 : 1)).catch(() => process.exit(1))' "$url"; do
-                if [ "$SECONDS" -ge "$deadline" ]; then
-                  echo "Timed out waiting for ActivityPub at ${url}" >&2
-                  exit 1
-                fi
-                sleep 2
-              done
+          restartPolicy: Always
+          {{- if .Values.activitypub.containerSecurityContext.enabled }}
+          securityContext: {{- include "common.compatibility.renderSecurityContext" (dict "secContext" .Values.activitypub.containerSecurityContext "context" $) | nindent 12 }}
+          {{- end }}
+          env:
+            - name: NODE_ENV
+              value: production
+            - name: MYSQL_HOST
+              value: {{ include "ghost.databaseHost" . | quote }}
+            - name: MYSQL_PORT
+              value: {{ include "ghost.databasePort" . | quote }}
+            - name: MYSQL_USER
+              value: {{ include "ghost.databaseUser" . | quote }}
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "ghost.databaseSecretName" . }}
+                  key: {{ include "ghost.databasePasswordKey" . }}
+            - name: MYSQL_DATABASE
+              value: {{ .Values.activitypub.database | quote }}
+            - name: LOCAL_STORAGE_PATH
+              value: {{ .Values.activitypub.localStoragePath | quote }}
+            - name: LOCAL_STORAGE_HOSTING_URL
+              value: {{ include "ghost.activitypubStorageUrl" . | quote }}
+            {{- if .Values.activitypub.extraEnvVars }}
+            {{- include "common.tplvalues.render" (dict "value" .Values.activitypub.extraEnvVars "context" $) | nindent 12 }}
+            {{- end }}
+          ports:
+            - name: activitypub
+              containerPort: {{ .Values.activitypub.containerPorts.http }}
+          {{- if .Values.activitypub.startupProbe.enabled }}
+          startupProbe:
+            httpGet:
+              path: /ping
+              port: activitypub
+            {{- include "common.tplvalues.render" (dict "value" (omit .Values.activitypub.startupProbe "enabled") "context" $) | nindent 12 }}
+          {{- end }}
+          {{- if .Values.activitypub.customLivenessProbe }}
+          livenessProbe: {{- include "common.tplvalues.render" (dict "value" .Values.activitypub.customLivenessProbe "context" $) | nindent 12 }}
+          {{- else if .Values.activitypub.livenessProbe.enabled }}
+          livenessProbe:
+            tcpSocket:
+              port: activitypub
+            {{- include "common.tplvalues.render" (dict "value" (omit .Values.activitypub.livenessProbe "enabled") "context" $) | nindent 12 }}
+          {{- end }}
+          {{- if .Values.activitypub.customReadinessProbe }}
+          readinessProbe: {{- include "common.tplvalues.render" (dict "value" .Values.activitypub.customReadinessProbe "context" $) | nindent 12 }}
+          {{- else if .Values.activitypub.readinessProbe.enabled }}
+          readinessProbe:
+            tcpSocket:
+              port: activitypub
+            {{- include "common.tplvalues.render" (dict "value" (omit .Values.activitypub.readinessProbe "enabled") "context" $) | nindent 12 }}
+          {{- end }}
+          {{- if .Values.activitypub.resources }}
+          resources: {{- toYaml .Values.activitypub.resources | nindent 12 }}
+          {{- else if ne .Values.activitypub.resourcesPreset "none" }}
+          resources: {{- include "common.resources.preset" (dict "type" .Values.activitypub.resourcesPreset) | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: ghost-content
+              mountPath: /opt/activitypub/content
+              {{- if .Values.persistence.subPath }}
+              subPath: {{ .Values.persistence.subPath }}
+              {{- end }}
+            {{- if .Values.activitypub.extraVolumeMounts }}
+            {{- include "common.tplvalues.render" (dict "value" .Values.activitypub.extraVolumeMounts "context" $) | nindent 12 }}
+            {{- end }}
         {{- end }}
         {{- if .Values.ghost.initContainers }}
         {{- include "common.tplvalues.render" (dict "value" .Values.ghost.initContainers "context" $) | nindent 8 }}
@@ -220,5 +296,8 @@ spec:
           {{- end }}
         {{- if .Values.ghost.extraVolumes }}
         {{- include "common.tplvalues.render" (dict "value" .Values.ghost.extraVolumes "context" $) | nindent 8 }}
+        {{- end }}
+        {{- if and .Values.activitypub.enabled .Values.activitypub.extraVolumes }}
+        {{- include "common.tplvalues.render" (dict "value" .Values.activitypub.extraVolumes "context" $) | nindent 8 }}
         {{- end }}
 {{- end }}

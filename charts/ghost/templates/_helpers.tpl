@@ -34,6 +34,7 @@
 {{- $images := list .Values.ghost.image .Values.mysql.image -}}
 {{- if .Values.activitypub.enabled -}}
 {{- $images = append $images .Values.activitypub.image -}}
+{{- $images = append $images .Values.activitypub.migration.image -}}
 {{- end -}}
 {{- include "common.images.renderPullSecrets" (dict "images" $images "context" $) -}}
 {{- end -}}
@@ -48,10 +49,6 @@
 
 {{- define "ghost.trafficAnalytics.imagePullSecrets" -}}
 {{- include "common.images.renderPullSecrets" (dict "images" (list .Values.trafficAnalytics.image) "context" $) -}}
-{{- end -}}
-
-{{- define "ghost.activitypub.imagePullSecrets" -}}
-{{- include "common.images.renderPullSecrets" (dict "images" (list .Values.activitypub.image .Values.activitypub.migration.image) "context" $) -}}
 {{- end -}}
 
 {{- define "ghost.tinybirdDeploy.imagePullSecrets" -}}

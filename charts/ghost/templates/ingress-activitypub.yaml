@@ -1,4 +1,4 @@
-{{- if and .Values.ingress.enabled .Values.activitypub.enabled }}
+{{- if and .Values.ghost.enabled .Values.ghost.service.enabled .Values.ingress.enabled .Values.activitypub.enabled }}
 apiVersion: {{ default (include "common.capabilities.ingress.apiVersion" .) .Values.ingress.apiVersion }}
 kind: Ingress
 metadata:
@@ -19,13 +19,13 @@ spec:
         paths:
           - path: /.ghost/activitypub
             pathType: Prefix
-            backend: {{- include "common.ingress.backend" (dict "serviceName" (include "ghost.activitypub.fullname" .) "servicePort" "http" "context" $) | nindent 14 }}
+            backend: {{- include "common.ingress.backend" (dict "serviceName" (include "ghost.serviceName" .) "servicePort" "activitypub" "context" $) | nindent 14 }}
           - path: /.well-known/webfinger
             pathType: Exact
-            backend: {{- include "common.ingress.backend" (dict "serviceName" (include "ghost.activitypub.fullname" .) "servicePort" "http" "context" $) | nindent 14 }}
+            backend: {{- include "common.ingress.backend" (dict "serviceName" (include "ghost.serviceName" .) "servicePort" "activitypub" "context" $) | nindent 14 }}
           - path: /.well-known/nodeinfo
             pathType: Exact
-            backend: {{- include "common.ingress.backend" (dict "serviceName" (include "ghost.activitypub.fullname" .) "servicePort" "http" "context" $) | nindent 14 }}
+            backend: {{- include "common.ingress.backend" (dict "serviceName" (include "ghost.serviceName" .) "servicePort" "activitypub" "context" $) | nindent 14 }}
   {{- if or .Values.ingress.tls .Values.ingress.extraTls }}
   tls:
     {{- if .Values.ingress.tls }}

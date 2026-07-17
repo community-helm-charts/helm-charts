@@ -41,6 +41,11 @@ spec:
       {{- if and (or (eq .Values.ghost.service.type "NodePort") (eq .Values.ghost.service.type "LoadBalancer")) .Values.ghost.service.nodePorts.http }}
       nodePort: {{ .Values.ghost.service.nodePorts.http }}
       {{- end }}
+    {{- if .Values.activitypub.enabled }}
+    - name: activitypub
+      port: {{ .Values.activitypub.service.ports.http }}
+      targetPort: activitypub
+    {{- end }}
     {{- if .Values.ghost.service.extraPorts }}
     {{- include "common.tplvalues.render" (dict "value" .Values.ghost.service.extraPorts "context" $) | nindent 4 }}
     {{- end }}

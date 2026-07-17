@@ -59,6 +59,13 @@ function resourceNames(manifest, kind) {
     .sort();
 }
 
+function resourceDocument(manifest, kind, name) {
+  return manifest.split(/^---$/m).find((doc) => {
+    const lines = doc.split("\n");
+    return lines.some((line) => line === `kind: ${kind}`) && lines.some((line) => line === `  name: ${name}`);
+  });
+}
+
 test("ghost.config values flatten into the generated Secret", () => {
   const chart = makeGhostChart();
   try {
@@ -142,6 +149,40 @@ test("primary ingress uses Bitnami-style ingressClassName and extra host values"
     assert.match(manifest, /pathType: ImplementationSpecific/);
     assert.match(manifest, /host: "admin\.example\.com"/);
     assert.match(manifest, /path: "\/admin"/);
+  } finally {
+    chart.cleanup();
+  }
+});
+
+test("ActivityPub runs as a native sidecar behind the Ghost Service", () => {
+  const chart = makeGhostChart();
+  try {
+    const manifest = chart.render(
+      "--set",
+      "activitypub.enabled=true",
+      "--set",
+      "ingress.enabled=true",
+      "--set",
+      "ingress.hostname=blog.example.com",
+    );
+
+    assert.ok(!resourceNames(manifest, "Deployment").includes("ghost-activitypub"));
+    assert.ok(!resourceNames(manifest, "Service").includes("ghost-activitypub"));
+
+    const statefulSet = resourceDocument(manifest, "StatefulSet", "ghost");
+    assert.ok(statefulSet);
+    assert.match(statefulSet, /- name: activitypub-migrate/);
+    assert.match(statefulSet, /- name: activitypub\n[\s\S]*?restartPolicy: Always/);
+    assert.match(statefulSet, /startupProbe:\n\s+httpGet:\n\s+path: \/ping\n\s+port: activitypub/);
+    assert.match(statefulSet, /mountPath: \/opt\/activitypub\/content/);
+
+    const service = resourceDocument(manifest, "Service", "ghost");
+    assert.ok(service);
+    assert.match(service, /- name: activitypub\n\s+port: 8080\n\s+targetPort: activitypub/);
+
+    const ingress = resourceDocument(manifest, "Ingress", "ghost-activitypub");
+    assert.ok(ingress);
+    assert.match(ingress, /service:\n\s+name: ghost\n\s+port:\n\s+name: activitypub/);
   } finally {
     chart.cleanup();
   }

@@ -170,6 +170,8 @@ test("ActivityPub runs as a native sidecar behind the Ghost Service", () => {
       "activitypub.customReadinessProbe.httpGet.path=/ping",
       "--set",
       "activitypub.customReadinessProbe.httpGet.port=http",
+      "--set-json",
+      "activitypub.startupProbe=null",
     );
 
     assert.ok(!resourceNames(manifest, "Deployment").includes("ghost-activitypub"));

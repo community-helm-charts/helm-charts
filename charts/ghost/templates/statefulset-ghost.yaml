@@ -149,12 +149,13 @@ spec:
           ports:
             - name: activitypub
               containerPort: {{ .Values.activitypub.containerPorts.http }}
-          {{- if .Values.activitypub.startupProbe.enabled }}
+          {{- $activitypubStartupProbe := default (dict "enabled" true "initialDelaySeconds" 0 "periodSeconds" 2 "timeoutSeconds" 2 "failureThreshold" 150 "successThreshold" 1) .Values.activitypub.startupProbe }}
+          {{- if $activitypubStartupProbe.enabled }}
           startupProbe:
             httpGet:
               path: /ping
               port: activitypub
-            {{- include "common.tplvalues.render" (dict "value" (omit .Values.activitypub.startupProbe "enabled") "context" $) | nindent 12 }}
+            {{- include "common.tplvalues.render" (dict "value" (omit $activitypubStartupProbe "enabled") "context" $) | nindent 12 }}
           {{- end }}
           {{- if .Values.activitypub.customLivenessProbe }}
           livenessProbe: {{- include "ghost.activitypub.renderProbe" (dict "probe" .Values.activitypub.customLivenessProbe "context" $) | nindent 12 }}

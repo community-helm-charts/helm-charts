@@ -1,3 +1,15 @@
+## 1.1.0 (2026-07-17)
+
+### Features
+
+- Run ActivityPub as a Kubernetes-native sidecar in the Ghost StatefulSet.
+- Expose ActivityPub through the main Ghost Service.
+
+### Breaking Changes
+
+- Require Kubernetes 1.29 or newer when using this chart version.
+- Remove the standalone ActivityPub Deployment, Service, and Pod-level scheduling values.
+
 ## 1.0.1 (2026-06-04)
 
 ### 🚀 Features

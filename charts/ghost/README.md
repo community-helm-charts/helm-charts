@@ -37,7 +37,7 @@ helm install my-ghost oci://ghcr.io/community-helm-charts/ghost \
 
 The chart only targets root-path deployments. It does not try to support `https://example.com/blog`.
 
-The public Service points directly at Ghost. When `ingress.enabled=true`, the chart adds standard Kubernetes Ingress paths for the optional side services:
+The public Ghost Service exposes Ghost and, when enabled, its ActivityPub sidecar. When `ingress.enabled=true`, the chart adds standard Kubernetes Ingress paths for the optional side services:
 
 | Path | Destination |
 | --- | --- |
@@ -148,7 +148,9 @@ activitypub:
   enabled: true
 ```
 
-The ActivityPub pod runs the official migration image as an init container before starting the service. When ActivityPub is enabled, the Ghost pod waits for the ActivityPub service `/ping` endpoint before starting, mirroring the startup ordering used by Ghost's Docker Compose setup. ActivityPub stores local files under the shared site content volume, so persistent storage should stay enabled for production. The chart creates a dedicated ActivityPub Ingress for `/.ghost/activitypub` and the required `/.well-known` endpoints. The chart only supports the self-hosted ActivityPub service.
+ActivityPub runs as a Kubernetes-native sidecar in the Ghost StatefulSet and requires Kubernetes 1.29 or newer. The official migration image runs after the database wait init container. Kubernetes then starts the ActivityPub sidecar and waits for its `/ping` startup probe before starting Ghost. Both containers share the site content volume and Pod network, avoiding cross-node attachment of the `ReadWriteOnce` content PVC.
+
+The main Ghost Service exposes a separate `activitypub` port for the sidecar. A dedicated ActivityPub Ingress routes `/.ghost/activitypub` and the required `/.well-known` endpoints to that port; no separate ActivityPub Deployment or Service is created. The chart only supports the self-hosted ActivityPub service.
 
 For fresh installs with the built-in MySQL subchart, the chart creates the `activitypub` database through MySQL initdb. For upgrades of an existing built-in MySQL release, a `pre-upgrade` hook Job runs first and idempotently creates the database and grant before the ActivityPub migration init container starts. If you use an external MySQL database, create the ActivityPub database and grants outside this chart.
 
@@ -214,6 +216,8 @@ ghost:
 | `trafficAnalytics.tinybird.deploy.enabled` | Run Tinybird deploy hook Job | `false` |
 | `activitypub.enabled` | Enable self-hosted ActivityPub | `false` |
 | `activitypub.database` | MySQL database name for ActivityPub | `activitypub` |
+| `activitypub.service.ports.http` | ActivityPub port exposed by the Ghost Service | `8080` |
+| `activitypub.startupProbe.enabled` | Wait for ActivityPub startup before starting Ghost | `true` |
 | `ghost.extraEnvVars` | Extra environment variables for Ghost | `[]` |
 | `ghost.resources` | Ghost resource requests and limits | `{}` |
 

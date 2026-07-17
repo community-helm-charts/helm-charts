@@ -85,4 +85,3 @@
 - [ ] Commit with a conventional commit message and push `feat/ghost-activitypub-sidecar`.
 - [ ] Upgrade the `blog/ghost` release using the local chart and existing Helm values.
 - [ ] Verify one Ghost Pod contains Ghost and ActivityPub, the dedicated workload/service are absent, both PVCs remain `1Gi`, MySQL is healthy, and `https://huangxudong.com/` returns success.
-

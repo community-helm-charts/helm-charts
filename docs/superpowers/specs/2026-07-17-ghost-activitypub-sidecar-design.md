@@ -27,4 +27,3 @@ The init order is database wait, ActivityPub migration, ActivityPub native sidec
 ## Tests
 
 Helm rendering tests must prove that enabling ActivityPub creates no dedicated Deployment or Service, adds the native sidecar and migration init container to the Ghost StatefulSet, exposes the ActivityPub port from the Ghost Service, and routes ActivityPub Ingress paths to that port. Existing behavior with ActivityPub disabled must remain unchanged.
-

@@ -89,8 +89,14 @@
 {{- if and (not .Values.agent.auth.existingSecret) (empty .Values.agent.auth.autoDiscoveryKey) -}}
 {{- fail "agent.auth.autoDiscoveryKey must not be empty when agent is enabled and agent.auth.existingSecret is empty" -}}
 {{- end -}}
+{{- if and .Values.agent.auth.existingSecret (empty .Values.agent.auth.existingSecretKey) -}}
+{{- fail "agent.auth.existingSecretKey must not be empty when agent.auth.existingSecret is set" -}}
+{{- end -}}
 {{- if and (empty .Values.agent.endpoint) (not (and .Values.server.enabled .Values.server.service.enabled)) -}}
 {{- fail "agent.endpoint must not be empty when agent is enabled without the in-release server Service" -}}
+{{- end -}}
+{{- if not (has .Values.agent.persistence.type (list "hostPath" "emptyDir")) -}}
+{{- fail "agent.persistence.type must be hostPath or emptyDir" -}}
 {{- end -}}
 {{- end -}}
 {{- end -}}

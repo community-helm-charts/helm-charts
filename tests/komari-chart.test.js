@@ -212,3 +212,129 @@ test("enabled Agent uses managed discovery, internal endpoint, and per-node iden
     chart.cleanup();
   }
 });
+
+test("Agent-only mode uses an external endpoint and existing Secret", () => {
+  const chart = makeKomariChart();
+  try {
+    const manifest = chart.render(
+      "--set",
+      "server.enabled=false",
+      "--set",
+      "agent.enabled=true",
+      "--set",
+      "agent.endpoint=https://monitor.example.com",
+      "--set",
+      "agent.auth.existingSecret=komari-discovery",
+      "--set",
+      "agent.auth.existingSecretKey=key",
+    );
+
+    assert.deepEqual(resourceNames(manifest, "StatefulSet"), []);
+    assert.deepEqual(resourceNames(manifest, "Secret"), []);
+    assert.deepEqual(resourceNames(manifest, "ServiceAccount"), ["komari-agent"]);
+    assert.match(manifest, /name: AGENT_ENDPOINT\n\s+value: "https:\/\/monitor\.example\.com"/);
+    assert.match(manifest, /name: komari-discovery[\s\S]*?key: key/);
+  } finally {
+    chart.cleanup();
+  }
+});
+
+test("Agent identity can use emptyDir", () => {
+  const chart = makeKomariChart();
+  try {
+    const manifest = chart.render(
+      "--set",
+      "agent.enabled=true",
+      "--set-string",
+      "agent.auth.autoDiscoveryKey=discovery-key",
+      "--set",
+      "agent.persistence.type=emptyDir",
+    );
+    assert.match(manifest, /- name: identity\n\s+emptyDir: \{\}/);
+    assert.doesNotMatch(manifest, /path: \/opt\/komari/);
+  } finally {
+    chart.cleanup();
+  }
+});
+
+test("invalid Agent configuration fails with actionable messages", () => {
+  const chart = makeKomariChart();
+  try {
+    const cases = [
+      {
+        args: ["--set", "agent.enabled=true"],
+        message: /agent\.auth\.autoDiscoveryKey must not be empty/,
+      },
+      {
+        args: [
+          "--set",
+          "server.enabled=false",
+          "--set",
+          "agent.enabled=true",
+          "--set-string",
+          "agent.auth.autoDiscoveryKey=key",
+        ],
+        message: /agent\.endpoint must not be empty/,
+      },
+      {
+        args: [
+          "--set",
+          "server.service.enabled=false",
+          "--set",
+          "agent.enabled=true",
+          "--set-string",
+          "agent.auth.autoDiscoveryKey=key",
+        ],
+        message: /agent\.endpoint must not be empty/,
+      },
+      {
+        args: [
+          "--set",
+          "agent.enabled=true",
+          "--set",
+          "agent.auth.existingSecret=komari-discovery",
+          "--set-string",
+          "agent.auth.existingSecretKey=",
+        ],
+        message: /agent\.auth\.existingSecretKey must not be empty/,
+      },
+      {
+        args: [
+          "--set",
+          "agent.enabled=true",
+          "--set-string",
+          "agent.auth.autoDiscoveryKey=key",
+          "--set",
+          "agent.persistence.type=pvc",
+        ],
+        message: /agent\.persistence\.type must be hostPath or emptyDir/,
+      },
+    ];
+
+    for (const entry of cases) {
+      const result = chart.renderResult(...entry.args);
+      assert.notEqual(result.status, 0);
+      assert.match(result.stderr, entry.message);
+    }
+  } finally {
+    chart.cleanup();
+  }
+});
+
+test("invalid server ports are rejected", () => {
+  const chart = makeKomariChart();
+  try {
+    for (const key of ["server.containerPorts.http", "server.service.ports.http"]) {
+      for (const value of ["0", "65536", "not-a-port"]) {
+        const result = chart.renderResult("--set-string", `${key}=${value}`);
+        assert.notEqual(result.status, 0);
+        assert.match(
+          result.stderr,
+          new RegExp(`${key.replaceAll(".", "\\.")} must be an integer from 1 through 65535`),
+        );
+      }
+    }
+  } finally {
+    chart.cleanup();
+  }
+});

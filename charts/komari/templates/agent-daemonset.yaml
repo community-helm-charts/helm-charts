@@ -126,9 +126,13 @@ spec:
         {{- end }}
       volumes:
         - name: identity
+          {{- if eq .Values.agent.persistence.type "hostPath" }}
           hostPath:
             path: {{ .Values.agent.persistence.hostPath }}
             type: DirectoryOrCreate
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
         {{- if .Values.agent.extraVolumes }}
         {{- include "common.tplvalues.render" (dict "value" .Values.agent.extraVolumes "context" $) | nindent 8 }}
         {{- end }}

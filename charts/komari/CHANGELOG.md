@@ -1,3 +1,21 @@
+## 1.1.0 (2026-07-30)
+
+### 🚀 Features
+
+- validate komari agent configuration ([287431e](https://github.com/community-helm-charts/helm-charts/commit/287431e))
+- add komari agent daemonset ([7aa268c](https://github.com/community-helm-charts/helm-charts/commit/7aa268c))
+- add komari server ingress ([9dd2f2b](https://github.com/community-helm-charts/helm-charts/commit/9dd2f2b))
+- add komari server statefulset ([e29a948](https://github.com/community-helm-charts/helm-charts/commit/e29a948))
+- scaffold komari chart ([91d1459](https://github.com/community-helm-charts/helm-charts/commit/91d1459))
+
+### 🩹 Fixes
+
+- harden komari template rendering ([b5bcb15](https://github.com/community-helm-charts/helm-charts/commit/b5bcb15))
+
+### ❤️ Thank You
+
+- Xudong Huang @xudongcc
+
 # Changelog
 
 ## 1.0.0

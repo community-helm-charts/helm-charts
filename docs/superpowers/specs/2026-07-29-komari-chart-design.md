@@ -222,7 +222,7 @@ Helm rendering fails before installation when:
 - The Agent is enabled with an existing Secret but its key name is empty.
 - The Agent is enabled without an explicit endpoint while the in-release
   server or server Service is disabled.
-- A required server or Agent port value is not an integer from 1 through
+- The server container port or Service port is not an integer from 1 through
   65535.
 - An unsupported Agent identity volume type is selected.
 

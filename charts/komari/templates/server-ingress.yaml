@@ -1,0 +1,74 @@
+{{- if and .Values.server.enabled .Values.server.service.enabled .Values.server.ingress.enabled }}
+apiVersion: {{ default (include "common.capabilities.ingress.apiVersion" .) .Values.server.ingress.apiVersion }}
+kind: Ingress
+metadata:
+  name: {{ include "komari.server.fullname" . }}
+  namespace: {{ include "common.names.namespace" . | quote }}
+  labels: {{- include "common.labels.standard" (dict "customLabels" .Values.commonLabels "context" $) | nindent 4 }}
+    app.kubernetes.io/component: server
+  {{- if or .Values.server.ingress.annotations .Values.commonAnnotations }}
+  {{- $annotations := include "common.tplvalues.merge" (dict "values" (list .Values.server.ingress.annotations .Values.commonAnnotations) "context" .) }}
+  annotations: {{- include "common.tplvalues.render" (dict "value" $annotations "context" $) | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if .Values.server.ingress.ingressClassName }}
+  ingressClassName: {{ .Values.server.ingress.ingressClassName | quote }}
+  {{- end }}
+  rules:
+    {{- if .Values.server.ingress.hostname }}
+    - host: {{ (tpl .Values.server.ingress.hostname .) | quote }}
+      http:
+        paths:
+          {{- if .Values.server.ingress.extraPaths }}
+          {{- include "common.tplvalues.render" (dict "value" .Values.server.ingress.extraPaths "context" $) | nindent 10 }}
+          {{- end }}
+          - path: {{ .Values.server.ingress.path | quote }}
+            pathType: {{ .Values.server.ingress.pathType }}
+            backend: {{- include "common.ingress.backend" (dict "serviceName" (include "komari.server.serviceName" .) "servicePort" "http" "context" $) | nindent 14 }}
+    {{- else if .Values.server.ingress.path }}
+    - http:
+        paths:
+          {{- if .Values.server.ingress.extraPaths }}
+          {{- include "common.tplvalues.render" (dict "value" .Values.server.ingress.extraPaths "context" $) | nindent 10 }}
+          {{- end }}
+          - path: {{ .Values.server.ingress.path | quote }}
+            pathType: {{ .Values.server.ingress.pathType }}
+            backend: {{- include "common.ingress.backend" (dict "serviceName" (include "komari.server.serviceName" .) "servicePort" "http" "context" $) | nindent 14 }}
+    {{- end }}
+    {{- range .Values.server.ingress.extraHosts }}
+    - host: {{ tpl .name $ | quote }}
+      http:
+        paths:
+          - path: {{ default "/" .path | quote }}
+            pathType: {{ default "ImplementationSpecific" .pathType }}
+            backend: {{- include "common.ingress.backend" (dict "serviceName" (include "komari.server.serviceName" $) "servicePort" "http" "context" $) | nindent 14 }}
+    {{- end }}
+    {{- if .Values.server.ingress.extraRules }}
+    {{- include "common.tplvalues.render" (dict "value" .Values.server.ingress.extraRules "context" $) | nindent 4 }}
+    {{- end }}
+  {{- if or .Values.server.ingress.tls .Values.server.ingress.extraTls }}
+  tls:
+    {{- if .Values.server.ingress.tls }}
+    - hosts:
+        - {{ (tpl .Values.server.ingress.hostname .) | quote }}
+      secretName: {{ printf "%s-tls" ((tpl .Values.server.ingress.hostname .) | replace "*." "") | trunc 63 | trimSuffix "-" }}
+    {{- end }}
+    {{- if .Values.server.ingress.extraTls }}
+    {{- include "common.tplvalues.render" (dict "value" .Values.server.ingress.extraTls "context" $) | nindent 4 }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+{{- range .Values.server.ingress.secrets }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ .name }}
+  namespace: {{ include "common.names.namespace" $ | quote }}
+  labels: {{- include "common.labels.standard" (dict "customLabels" $.Values.commonLabels "context" $) | nindent 4 }}
+    app.kubernetes.io/component: server
+type: kubernetes.io/tls
+data:
+  tls.crt: {{ .certificate | b64enc | quote }}
+  tls.key: {{ .key | b64enc | quote }}
+{{- end }}

@@ -119,3 +119,65 @@ test("server persistence inherits the global default StorageClass", () => {
     chart.cleanup();
   }
 });
+
+test("server ingress, probes, and scheduling values render", () => {
+  const chart = makeKomariChart();
+  try {
+    const manifest = chart.render(
+      "--set",
+      "server.ingress.enabled=true",
+      "--set",
+      "server.ingress.hostname=monitor.example.com",
+      "--set",
+      "server.ingress.ingressClassName=traefik",
+      "--set",
+      "server.startupProbe.enabled=true",
+      "--set",
+      "server.customLivenessProbe.exec.command[0]=true",
+      "--set",
+      "server.nodeSelector.role=monitoring",
+      "--set",
+      "server.tolerations[0].operator=Exists",
+    );
+
+    assert.deepEqual(resourceNames(manifest, "Ingress"), ["komari-server"]);
+    assert.match(manifest, /host: "monitor\.example\.com"/);
+    assert.match(manifest, /ingressClassName: "traefik"/);
+    assert.match(manifest, /startupProbe:[\s\S]*?port: http/);
+    assert.match(manifest, /livenessProbe:\n\s+exec:\n\s+command:\n\s+- true/);
+    assert.match(manifest, /nodeSelector:\n\s+role: monitoring/);
+    assert.match(manifest, /tolerations:\n\s+- operator: Exists/);
+  } finally {
+    chart.cleanup();
+  }
+});
+
+test("server resources disappear together when disabled", () => {
+  const chart = makeKomariChart();
+  try {
+    const manifest = chart.render("--set", "server.enabled=false");
+    assert.deepEqual(resourceNames(manifest, "StatefulSet"), []);
+    assert.deepEqual(resourceNames(manifest, "Service"), []);
+    assert.deepEqual(resourceNames(manifest, "Ingress"), []);
+    assert.deepEqual(resourceNames(manifest, "ServiceAccount"), []);
+  } finally {
+    chart.cleanup();
+  }
+});
+
+test("server image registry and tag can be overridden", () => {
+  const chart = makeKomariChart();
+  try {
+    const manifest = chart.render(
+      "--set",
+      "server.image.registry=registry.example.com",
+      "--set",
+      "server.image.repository=observability/komari",
+      "--set",
+      "server.image.tag=custom",
+    );
+    assert.match(manifest, /image: registry\.example\.com\/observability\/komari:custom/);
+  } finally {
+    chart.cleanup();
+  }
+});

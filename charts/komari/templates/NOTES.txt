@@ -1,0 +1,29 @@
+{{- $namespace := include "common.names.namespace" . -}}
+{{- if .Values.server.enabled }}
+{{- if and .Values.server.service.enabled .Values.server.ingress.enabled }}
+Komari server ingress:
+  http{{ if .Values.server.ingress.tls }}s{{ end }}://{{ tpl .Values.server.ingress.hostname . }}
+{{- range .Values.server.ingress.extraHosts }}
+  http{{ if $.Values.server.ingress.tls }}s{{ end }}://{{ tpl .name $ }}
+{{- end }}
+{{- else if and .Values.server.service.enabled (contains "NodePort" .Values.server.service.type) }}
+To get the Komari server NodePort URL:
+
+  export NODE_PORT=$(kubectl get --namespace {{ $namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ include "komari.server.serviceName" . }})
+  export NODE_IP=$(kubectl get nodes --namespace {{ $namespace }} -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo "http://$NODE_IP:$NODE_PORT"
+{{- else if and .Values.server.service.enabled (contains "LoadBalancer" .Values.server.service.type) }}
+To watch for the Komari server LoadBalancer address:
+
+  kubectl get --namespace {{ $namespace }} svc {{ include "komari.server.serviceName" . }} -w
+{{- else if .Values.server.service.enabled }}
+To access the Komari server locally:
+
+  kubectl port-forward --namespace {{ $namespace }} svc/{{ include "komari.server.serviceName" . }} {{ .Values.server.service.ports.http }}:{{ .Values.server.service.ports.http }}
+  echo "Visit http://127.0.0.1:{{ .Values.server.service.ports.http }}"
+{{- else }}
+Komari server Service is disabled.
+{{- end }}
+{{- else }}
+Komari server is disabled.
+{{- end }}

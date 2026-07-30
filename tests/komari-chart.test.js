@@ -181,3 +181,34 @@ test("server image registry and tag can be overridden", () => {
     chart.cleanup();
   }
 });
+
+test("enabled Agent uses managed discovery, internal endpoint, and per-node identity", () => {
+  const chart = makeKomariChart();
+  try {
+    const manifest = chart.render(
+      "--set",
+      "agent.enabled=true",
+      "--set-string",
+      "agent.auth.autoDiscoveryKey=discovery-key",
+    );
+
+    assert.deepEqual(resourceNames(manifest, "DaemonSet"), ["komari-agent"]);
+    assert.deepEqual(resourceNames(manifest, "Secret"), ["komari-agent"]);
+    assert.deepEqual(resourceNames(manifest, "ServiceAccount"), ["komari-agent", "komari-server"]);
+    assert.match(manifest, /image: ghcr\.io\/komari-monitor\/komari-agent:1\.2\.60/);
+    assert.match(manifest, /stringData:\n\s+auto-discovery-key: "discovery-key"/);
+    assert.match(manifest, /name: AGENT_ENDPOINT\n\s+value: "http:\/\/komari-server:25774"/);
+    assert.match(
+      manifest,
+      /name: AGENT_AUTO_DISCOVERY_KEY[\s\S]*?secretKeyRef:[\s\S]*?name: komari-agent[\s\S]*?key: auto-discovery-key/,
+    );
+    assert.match(manifest, /name: AGENT_DISABLE_AUTO_UPDATE\n\s+value: "true"/);
+    assert.match(manifest, /tolerations:\n\s+- operator: Exists/);
+    assert.match(manifest, /path: \/opt\/komari\n\s+type: DirectoryOrCreate/);
+    assert.match(manifest, /mountPath: \/app\/auto-discovery\.json\n\s+subPath: auto-discovery\.json/);
+    assert.doesNotMatch(manifest, /--auto-discovery/);
+    assert.doesNotMatch(manifest, /- "?discovery-key"?$/m);
+  } finally {
+    chart.cleanup();
+  }
+});

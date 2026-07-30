@@ -27,3 +27,14 @@ Komari server Service is disabled.
 {{- else }}
 Komari server is disabled.
 {{- end }}
+
+{{- if .Values.agent.enabled }}
+
+To check the Komari Agent rollout:
+
+  kubectl rollout status --namespace {{ $namespace }} daemonset/{{ include "komari.agent.fullname" . }}
+  kubectl get pods --namespace {{ $namespace }} -l app.kubernetes.io/component=agent
+{{- else }}
+
+Komari Agent is disabled.
+{{- end }}

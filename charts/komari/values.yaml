@@ -301,3 +301,151 @@ server:
     automountServiceAccountToken: false
     annotations: {}
   automountServiceAccountToken: false
+
+## @section Komari Agent parameters
+## @param agent.enabled Deploy the Komari Agent DaemonSet
+## @param agent.endpoint Komari server endpoint; derived from the in-release server Service when empty
+## @param agent.disableAutoUpdate Disable Agent binary self-update inside the container
+##
+agent:
+  enabled: false
+  endpoint: ""
+  disableAutoUpdate: true
+
+  ## @param agent.image.registry Komari Agent image registry
+  ## @param agent.image.repository Komari Agent image repository
+  ## @param agent.image.tag Komari Agent image tag
+  ## @param agent.image.digest Komari Agent image digest in the form sha256:...
+  ## @param agent.image.pullPolicy Komari Agent image pull policy
+  ## @param agent.image.pullSecrets Komari Agent image pull secrets
+  ##
+  image:
+    registry: ghcr.io
+    repository: komari-monitor/komari-agent
+    tag: "1.2.60"
+    digest: ""
+    pullPolicy: IfNotPresent
+    pullSecrets: []
+
+  ## @section Komari Agent authentication parameters
+  ## @param agent.auth.autoDiscoveryKey Auto-discovery key stored in the chart-managed Secret
+  ## @param agent.auth.existingSecret Existing Secret containing the auto-discovery key
+  ## @param agent.auth.existingSecretKey Auto-discovery key name in the existing Secret
+  ##
+  auth:
+    autoDiscoveryKey: ""
+    existingSecret: ""
+    existingSecretKey: auto-discovery-key
+
+  ## @section Komari Agent identity persistence parameters
+  ## @param agent.persistence.type Identity volume type: hostPath or emptyDir
+  ## @param agent.persistence.hostPath Per-node host directory for the Agent identity
+  ## @param agent.persistence.fileName Agent identity filename
+  ## @param agent.persistence.mountPath Identity file path inside the Agent container
+  ##
+  persistence:
+    type: hostPath
+    hostPath: /opt/komari
+    fileName: auto-discovery.json
+    mountPath: /app/auto-discovery.json
+
+  ## @section Komari Agent workload parameters
+  ## @param agent.updateStrategy DaemonSet update strategy
+  ## @param agent.command Override the Agent container command
+  ## @param agent.args Override the Agent container arguments
+  ## @param agent.extraEnvVars Additional Agent environment variables
+  ## @param agent.extraEnvVarsCM Existing ConfigMap imported as environment variables
+  ## @param agent.extraEnvVarsSecret Existing Secret imported as environment variables
+  ## @param agent.extraVolumes Additional pod volumes
+  ## @param agent.extraVolumeMounts Additional Agent volume mounts
+  ## @param agent.initContainers Additional init containers
+  ## @param agent.sidecars Additional sidecar containers
+  ##
+  updateStrategy:
+    type: RollingUpdate
+  command: []
+  args: []
+  extraEnvVars: []
+  extraEnvVarsCM: ""
+  extraEnvVarsSecret: ""
+  extraVolumes: []
+  extraVolumeMounts: []
+  initContainers: []
+  sidecars: []
+
+  ## @section Komari Agent pod parameters
+  ## @param agent.podLabels Additional pod labels
+  ## @param agent.podAnnotations Additional pod annotations
+  ## @param agent.podSecurityContext.enabled Enable the pod security context
+  ## @param agent.podSecurityContext.fsGroupChangePolicy Pod filesystem group change policy
+  ## @param agent.podSecurityContext.sysctls Pod sysctls
+  ## @param agent.podSecurityContext.supplementalGroups Pod supplemental groups
+  ## @param agent.podSecurityContext.fsGroup Pod filesystem group
+  ## @param agent.containerSecurityContext.enabled Enable the container security context
+  ## @param agent.containerSecurityContext.runAsUser Container user ID
+  ## @param agent.containerSecurityContext.runAsGroup Container group ID
+  ## @param agent.containerSecurityContext.runAsNonRoot Require a non-root container
+  ## @param agent.containerSecurityContext.allowPrivilegeEscalation Allow privilege escalation
+  ## @param agent.containerSecurityContext.capabilities.drop Linux capabilities to drop
+  ## @param agent.containerSecurityContext.seccompProfile.type Seccomp profile type
+  ##
+  podLabels: {}
+  podAnnotations: {}
+  podSecurityContext:
+    enabled: false
+    fsGroupChangePolicy: Always
+    sysctls: []
+    supplementalGroups: []
+    fsGroup: 0
+  containerSecurityContext:
+    enabled: false
+    runAsUser: 0
+    runAsGroup: 0
+    runAsNonRoot: false
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    seccompProfile:
+      type: RuntimeDefault
+
+  ## @section Komari Agent resource parameters
+  ## @param agent.resourcesPreset Common resource preset
+  ## @param agent.resources Explicit resource requests and limits
+  ##
+  resourcesPreset: none
+  resources: {}
+
+  ## @section Komari Agent scheduling parameters
+  ## @param agent.priorityClassName Pod priority class
+  ## @param agent.schedulerName Alternate scheduler
+  ## @param agent.terminationGracePeriodSeconds Pod termination grace period
+  ## @param agent.hostAliases Pod host aliases
+  ## @param agent.affinity Pod affinity rules
+  ## @param agent.nodeSelector Node selection labels
+  ## @param agent.tolerations Pod tolerations
+  ## @param agent.topologySpreadConstraints Pod topology spread constraints
+  ##
+  priorityClassName: ""
+  schedulerName: ""
+  terminationGracePeriodSeconds: ""
+  hostAliases: []
+  affinity: {}
+  nodeSelector: {}
+  tolerations:
+    - operator: Exists
+  topologySpreadConstraints: []
+
+  ## @section Komari Agent ServiceAccount parameters
+  ## @param agent.serviceAccount.create Create the Agent ServiceAccount
+  ## @param agent.serviceAccount.name Agent ServiceAccount name
+  ## @param agent.serviceAccount.automountServiceAccountToken Automount API credentials on the ServiceAccount
+  ## @param agent.serviceAccount.annotations Additional ServiceAccount annotations
+  ## @param agent.automountServiceAccountToken Automount API credentials in Agent pods
+  ##
+  serviceAccount:
+    create: true
+    name: ""
+    automountServiceAccountToken: false
+    annotations: {}
+  automountServiceAccountToken: false

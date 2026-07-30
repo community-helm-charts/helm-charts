@@ -338,3 +338,61 @@ test("invalid server ports are rejected", () => {
     chart.cleanup();
   }
 });
+
+test("component names remain distinct with a long fullname override", () => {
+  const chart = makeKomariChart();
+  try {
+    const manifest = chart.render(
+      "--set",
+      `fullnameOverride=${"a".repeat(63)}`,
+      "--set",
+      "agent.enabled=true",
+      "--set-string",
+      "agent.auth.autoDiscoveryKey=discovery-key",
+    );
+    const [serverName] = resourceNames(manifest, "StatefulSet");
+    const [agentName] = resourceNames(manifest, "DaemonSet");
+
+    assert.match(serverName, /-server$/);
+    assert.match(agentName, /-agent$/);
+    assert.notEqual(serverName, agentName);
+    assert.ok(serverName.length <= 63);
+    assert.ok(agentName.length <= 63);
+  } finally {
+    chart.cleanup();
+  }
+});
+
+test("disabled server does not render configured ingress TLS Secrets", () => {
+  const chart = makeKomariChart();
+  try {
+    const manifest = chart.render(
+      "--set",
+      "server.enabled=false",
+      "--set",
+      "server.ingress.secrets[0].name=komari-tls",
+      "--set-string",
+      "server.ingress.secrets[0].certificate=certificate",
+      "--set-string",
+      "server.ingress.secrets[0].key=key",
+    );
+    assert.deepEqual(resourceNames(manifest, "Secret"), []);
+  } finally {
+    chart.cleanup();
+  }
+});
+
+test("existing Secret Agent omits an empty pod annotations map", () => {
+  const chart = makeKomariChart();
+  try {
+    const manifest = chart.render(
+      "--set",
+      "agent.enabled=true",
+      "--set",
+      "agent.auth.existingSecret=komari-discovery",
+    );
+    assert.doesNotMatch(manifest, /annotations:\n\s+spec:/);
+  } finally {
+    chart.cleanup();
+  }
+});

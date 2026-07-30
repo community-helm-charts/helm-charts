@@ -58,6 +58,7 @@ spec:
     {{- end }}
   {{- end }}
 {{- end }}
+{{- if .Values.server.enabled }}
 {{- range .Values.server.ingress.secrets }}
 ---
 apiVersion: v1
@@ -71,4 +72,5 @@ type: kubernetes.io/tls
 data:
   tls.crt: {{ .certificate | b64enc | quote }}
   tls.key: {{ .key | b64enc | quote }}
+{{- end }}
 {{- end }}

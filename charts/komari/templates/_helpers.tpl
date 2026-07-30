@@ -3,7 +3,7 @@
 {{- end -}}
 
 {{- define "komari.server.fullname" -}}
-{{- printf "%s-server" (include "komari.fullname" .) | trunc 63 | trimSuffix "-" -}}
+{{- printf "%s-server" ((include "komari.fullname" .) | trunc 56 | trimSuffix "-") | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
 {{- define "komari.server.image" -}}
@@ -27,7 +27,7 @@
 {{- end -}}
 
 {{- define "komari.agent.fullname" -}}
-{{- printf "%s-agent" (include "komari.fullname" .) | trunc 63 | trimSuffix "-" -}}
+{{- printf "%s-agent" ((include "komari.fullname" .) | trunc 57 | trimSuffix "-") | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
 {{- define "komari.agent.image" -}}

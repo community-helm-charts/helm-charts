@@ -11,6 +11,7 @@ node_modules/
 .nx/workspace-data/
 dist/
 packages/*/dist/
+.worktrees/
 
 # Local operational backups
 .backups/

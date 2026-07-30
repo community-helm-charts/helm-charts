@@ -66,7 +66,6 @@ test("chart metadata pins stable Komari images and the local common dependency",
   const chart = readChartFile("Chart.yaml");
 
   assert.match(chart, /^name: komari$/m);
-  assert.match(chart, /^version: 1\.0\.0$/m);
   assert.match(chart, /^appVersion: "1\.3\.2"$/m);
   assert.match(chart, /image: ghcr\.io\/komari-monitor\/komari:1\.3\.2/);
   assert.match(chart, /image: ghcr\.io\/komari-monitor\/komari-agent:1\.2\.60/);

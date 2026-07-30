@@ -1,0 +1,166 @@
+{{- if .Values.server.enabled }}
+apiVersion: {{ include "common.capabilities.statefulset.apiVersion" . }}
+kind: StatefulSet
+metadata:
+  name: {{ include "komari.server.fullname" . }}
+  namespace: {{ include "common.names.namespace" . | quote }}
+  labels: {{- include "common.labels.standard" (dict "customLabels" .Values.commonLabels "context" $) | nindent 4 }}
+    app.kubernetes.io/component: server
+  {{- if .Values.commonAnnotations }}
+  annotations: {{- include "common.tplvalues.render" (dict "value" .Values.commonAnnotations "context" $) | nindent 4 }}
+  {{- end }}
+spec:
+  replicas: 1
+  serviceName: {{ include "komari.server.serviceName" . }}
+  updateStrategy: {{- toYaml .Values.server.updateStrategy | nindent 4 }}
+  {{- $podLabels := include "common.tplvalues.merge" (dict "values" (list .Values.server.podLabels .Values.commonLabels) "context" .) }}
+  selector:
+    matchLabels: {{- include "common.labels.matchLabels" (dict "customLabels" $podLabels "context" $) | nindent 6 }}
+      app.kubernetes.io/component: server
+  template:
+    metadata:
+      labels: {{- include "common.labels.standard" (dict "customLabels" $podLabels "context" $) | nindent 8 }}
+        app.kubernetes.io/component: server
+      {{- if .Values.server.podAnnotations }}
+      annotations: {{- include "common.tplvalues.render" (dict "value" .Values.server.podAnnotations "context" $) | nindent 8 }}
+      {{- end }}
+    spec:
+      serviceAccountName: {{ include "komari.server.serviceAccountName" . }}
+      automountServiceAccountToken: {{ .Values.server.automountServiceAccountToken }}
+      {{- include "komari.server.imagePullSecrets" . | nindent 6 }}
+      {{- if .Values.server.hostAliases }}
+      hostAliases: {{- include "common.tplvalues.render" (dict "value" .Values.server.hostAliases "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .Values.server.affinity }}
+      affinity: {{- include "common.tplvalues.render" (dict "value" .Values.server.affinity "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .Values.server.nodeSelector }}
+      nodeSelector: {{- include "common.tplvalues.render" (dict "value" .Values.server.nodeSelector "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .Values.server.tolerations }}
+      tolerations: {{- include "common.tplvalues.render" (dict "value" .Values.server.tolerations "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .Values.server.topologySpreadConstraints }}
+      topologySpreadConstraints: {{- include "common.tplvalues.render" (dict "value" .Values.server.topologySpreadConstraints "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .Values.server.priorityClassName }}
+      priorityClassName: {{ .Values.server.priorityClassName | quote }}
+      {{- end }}
+      {{- if .Values.server.schedulerName }}
+      schedulerName: {{ .Values.server.schedulerName | quote }}
+      {{- end }}
+      {{- if .Values.server.terminationGracePeriodSeconds }}
+      terminationGracePeriodSeconds: {{ .Values.server.terminationGracePeriodSeconds }}
+      {{- end }}
+      {{- if .Values.server.podSecurityContext.enabled }}
+      securityContext: {{- include "common.compatibility.renderSecurityContext" (dict "secContext" .Values.server.podSecurityContext "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .Values.server.initContainers }}
+      initContainers: {{- include "common.tplvalues.render" (dict "value" .Values.server.initContainers "context" $) | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: server
+          image: {{ include "komari.server.image" . }}
+          imagePullPolicy: {{ .Values.server.image.pullPolicy | quote }}
+          {{- if .Values.server.containerSecurityContext.enabled }}
+          securityContext: {{- include "common.compatibility.renderSecurityContext" (dict "secContext" .Values.server.containerSecurityContext "context" $) | nindent 12 }}
+          {{- end }}
+          {{- if .Values.server.command }}
+          command: {{- include "common.tplvalues.render" (dict "value" .Values.server.command "context" $) | nindent 12 }}
+          {{- end }}
+          {{- if .Values.server.args }}
+          args: {{- include "common.tplvalues.render" (dict "value" .Values.server.args "context" $) | nindent 12 }}
+          {{- end }}
+          {{- if .Values.server.extraEnvVars }}
+          env: {{- include "common.tplvalues.render" (dict "value" .Values.server.extraEnvVars "context" $) | nindent 12 }}
+          {{- end }}
+          {{- if or .Values.server.extraEnvVarsCM .Values.server.extraEnvVarsSecret }}
+          envFrom:
+            {{- if .Values.server.extraEnvVarsCM }}
+            - configMapRef:
+                name: {{ .Values.server.extraEnvVarsCM }}
+            {{- end }}
+            {{- if .Values.server.extraEnvVarsSecret }}
+            - secretRef:
+                name: {{ .Values.server.extraEnvVarsSecret }}
+            {{- end }}
+          {{- end }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.server.containerPorts.http }}
+              protocol: TCP
+          {{- if .Values.server.customStartupProbe }}
+          startupProbe: {{- include "common.tplvalues.render" (dict "value" .Values.server.customStartupProbe "context" $) | nindent 12 }}
+          {{- else if .Values.server.startupProbe.enabled }}
+          startupProbe: {{- include "common.tplvalues.render" (dict "value" (omit .Values.server.startupProbe "enabled") "context" $) | nindent 12 }}
+          {{- end }}
+          {{- if .Values.server.customLivenessProbe }}
+          livenessProbe: {{- include "common.tplvalues.render" (dict "value" .Values.server.customLivenessProbe "context" $) | nindent 12 }}
+          {{- else if .Values.server.livenessProbe.enabled }}
+          livenessProbe: {{- include "common.tplvalues.render" (dict "value" (omit .Values.server.livenessProbe "enabled") "context" $) | nindent 12 }}
+          {{- end }}
+          {{- if .Values.server.customReadinessProbe }}
+          readinessProbe: {{- include "common.tplvalues.render" (dict "value" .Values.server.customReadinessProbe "context" $) | nindent 12 }}
+          {{- else if .Values.server.readinessProbe.enabled }}
+          readinessProbe: {{- include "common.tplvalues.render" (dict "value" (omit .Values.server.readinessProbe "enabled") "context" $) | nindent 12 }}
+          {{- end }}
+          {{- if .Values.server.resources }}
+          resources: {{- toYaml .Values.server.resources | nindent 12 }}
+          {{- else if ne .Values.server.resourcesPreset "none" }}
+          resources: {{- include "common.resources.preset" (dict "type" .Values.server.resourcesPreset) | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: {{ .Values.server.persistence.volumeName }}
+              mountPath: {{ .Values.server.persistence.mountPath }}
+              {{- if .Values.server.persistence.subPath }}
+              subPath: {{ .Values.server.persistence.subPath }}
+              {{- end }}
+            {{- if .Values.server.extraVolumeMounts }}
+            {{- include "common.tplvalues.render" (dict "value" .Values.server.extraVolumeMounts "context" $) | nindent 12 }}
+            {{- end }}
+        {{- if .Values.server.sidecars }}
+        {{- include "common.tplvalues.render" (dict "value" .Values.server.sidecars "context" $) | nindent 8 }}
+        {{- end }}
+      {{- if or .Values.server.extraVolumes (and .Values.server.persistence.enabled .Values.server.persistence.existingClaim) (not .Values.server.persistence.enabled) }}
+      volumes:
+        {{- if .Values.server.extraVolumes }}
+        {{- include "common.tplvalues.render" (dict "value" .Values.server.extraVolumes "context" $) | nindent 8 }}
+        {{- end }}
+        {{- if and .Values.server.persistence.enabled .Values.server.persistence.existingClaim }}
+        - name: {{ .Values.server.persistence.volumeName }}
+          persistentVolumeClaim:
+            claimName: {{ tpl .Values.server.persistence.existingClaim $ }}
+        {{- else if not .Values.server.persistence.enabled }}
+        - name: {{ .Values.server.persistence.volumeName }}
+          emptyDir: {}
+        {{- end }}
+      {{- end }}
+  {{- if and .Values.server.persistence.enabled (not .Values.server.persistence.existingClaim) }}
+  volumeClaimTemplates:
+    - apiVersion: v1
+      kind: PersistentVolumeClaim
+      metadata:
+        name: {{ .Values.server.persistence.volumeName }}
+        {{- if .Values.server.persistence.annotations }}
+        annotations: {{- include "common.tplvalues.render" (dict "value" .Values.server.persistence.annotations "context" $) | nindent 10 }}
+        {{- end }}
+        {{- if .Values.server.persistence.labels }}
+        labels: {{- include "common.tplvalues.render" (dict "value" .Values.server.persistence.labels "context" $) | nindent 10 }}
+        {{- end }}
+      spec:
+        accessModes:
+          {{- range .Values.server.persistence.accessModes }}
+          - {{ . | quote }}
+          {{- end }}
+        {{- if .Values.server.persistence.dataSource }}
+        dataSource: {{- include "common.tplvalues.render" (dict "value" .Values.server.persistence.dataSource "context" $) | nindent 10 }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.server.persistence.size | quote }}
+        {{- if .Values.server.persistence.selector }}
+        selector: {{- include "common.tplvalues.render" (dict "value" .Values.server.persistence.selector "context" $) | nindent 10 }}
+        {{- end }}
+        {{- include "common.storage.className" (dict "persistence" .Values.server.persistence "global" .Values.global) | nindent 8 }}
+  {{- end }}
+{{- end }}

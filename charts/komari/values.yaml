@@ -1,0 +1,303 @@
+## @section Global parameters
+## @param global.imageRegistry Global container image registry
+## @param global.imagePullSecrets Global container registry secret names
+## @param global.defaultStorageClassName Global default StorageClass for Persistent Volumes
+## @param global.storageClassName Global StorageClass override kept for compatibility
+##
+global:
+  imageRegistry: ""
+  imagePullSecrets: []
+  defaultStorageClassName: ""
+  storageClassName: ""
+
+## @section Common parameters
+## @param kubeVersion Override Kubernetes version
+## @param nameOverride Partially override the chart name
+## @param fullnameOverride Fully override the chart name
+## @param namespaceOverride Fully override the release namespace
+## @param clusterDomain Kubernetes cluster domain
+## @param commonLabels Labels added to every resource
+## @param commonAnnotations Annotations added to every resource
+## @param extraDeploy Additional objects to deploy
+##
+kubeVersion: ""
+nameOverride: ""
+fullnameOverride: ""
+namespaceOverride: ""
+clusterDomain: cluster.local
+commonLabels: {}
+commonAnnotations: {}
+extraDeploy: []
+
+## @section Komari server parameters
+## @param server.enabled Deploy the Komari server
+##
+server:
+  enabled: true
+
+  ## @param server.image.registry Komari server image registry
+  ## @param server.image.repository Komari server image repository
+  ## @param server.image.tag Komari server image tag
+  ## @param server.image.digest Komari server image digest in the form sha256:...
+  ## @param server.image.pullPolicy Komari server image pull policy
+  ## @param server.image.pullSecrets Komari server image pull secrets
+  ##
+  image:
+    registry: ghcr.io
+    repository: komari-monitor/komari
+    tag: "1.3.2"
+    digest: ""
+    pullPolicy: IfNotPresent
+    pullSecrets: []
+
+  ## @param server.containerPorts.http Komari server HTTP container port
+  ##
+  containerPorts:
+    http: 25774
+
+  ## @section Komari server Service parameters
+  ## @param server.service.enabled Create the Komari server Service
+  ## @param server.service.type Kubernetes Service type
+  ## @param server.service.ports.http Komari server HTTP Service port
+  ## @param server.service.nodePorts.http HTTP node port for NodePort or LoadBalancer
+  ## @param server.service.clusterIP Service ClusterIP
+  ## @param server.service.annotations Additional Service annotations
+  ## @param server.service.labels Additional Service labels
+  ## @param server.service.internalTrafficPolicy Service internal traffic policy
+  ## @param server.service.externalTrafficPolicy Service external traffic policy
+  ## @param server.service.loadBalancerClass Service load balancer class
+  ## @param server.service.loadBalancerIP Service load balancer IP
+  ## @param server.service.loadBalancerSourceRanges Allowed LoadBalancer source ranges
+  ## @param server.service.sessionAffinity Service session affinity
+  ## @param server.service.sessionAffinityConfig Additional session affinity settings
+  ## @param server.service.ipFamilyPolicy Service IP family policy
+  ## @param server.service.ipFamilies Service IP families
+  ## @param server.service.extraPorts Additional Service ports
+  ##
+  service:
+    enabled: true
+    type: ClusterIP
+    ports:
+      http: 25774
+    nodePorts:
+      http: ""
+    clusterIP: ""
+    annotations: {}
+    labels: {}
+    internalTrafficPolicy: Cluster
+    externalTrafficPolicy: Cluster
+    loadBalancerClass: ""
+    loadBalancerIP: ""
+    loadBalancerSourceRanges: []
+    sessionAffinity: None
+    sessionAffinityConfig: {}
+    ipFamilyPolicy: ""
+    ipFamilies: []
+    extraPorts: []
+
+  ## @section Komari server Ingress parameters
+  ## @param server.ingress.enabled Create an Ingress for the Komari server
+  ## @param server.ingress.pathType Ingress path type
+  ## @param server.ingress.apiVersion Force the Ingress API version
+  ## @param server.ingress.hostname Default Ingress hostname
+  ## @param server.ingress.path Default Ingress path
+  ## @param server.ingress.annotations Additional Ingress annotations
+  ## @param server.ingress.ingressClassName IngressClass used for the Ingress
+  ## @param server.ingress.tls Enable TLS for the default hostname
+  ## @param server.ingress.extraHosts Additional hostnames
+  ## @param server.ingress.extraPaths Additional paths under the default host
+  ## @param server.ingress.extraTls Additional TLS entries
+  ## @param server.ingress.extraRules Additional Ingress rules
+  ## @param server.ingress.secrets TLS Secrets to create
+  ##
+  ingress:
+    enabled: false
+    pathType: ImplementationSpecific
+    apiVersion: ""
+    hostname: komari.local
+    path: /
+    annotations: {}
+    ingressClassName: ""
+    tls: false
+    extraHosts: []
+    extraPaths: []
+    extraTls: []
+    extraRules: []
+    secrets: []
+
+  ## @section Komari server persistence parameters
+  ## @param server.persistence.enabled Persist Komari server data
+  ## @param server.persistence.volumeName Server data volume name
+  ## @param server.persistence.mountPath Server data mount path
+  ## @param server.persistence.subPath Subdirectory of the volume to mount
+  ## @param server.persistence.storageClassName StorageClass for the server PVC
+  ## @param server.persistence.accessModes Persistent Volume access modes
+  ## @param server.persistence.size Persistent Volume size
+  ## @param server.persistence.annotations Additional PVC annotations
+  ## @param server.persistence.labels Additional PVC labels
+  ## @param server.persistence.selector Persistent Volume selector
+  ## @param server.persistence.dataSource Custom PVC data source
+  ## @param server.persistence.existingClaim Existing PVC to mount
+  ##
+  persistence:
+    enabled: true
+    volumeName: data
+    mountPath: /app/data
+    subPath: ""
+    storageClassName: ""
+    accessModes:
+      - ReadWriteOnce
+    size: 5Gi
+    annotations: {}
+    labels: {}
+    selector: {}
+    dataSource: {}
+    existingClaim: ""
+
+  ## @section Komari server workload parameters
+  ## @param server.updateStrategy StatefulSet update strategy
+  ## @param server.command Override the server container command
+  ## @param server.args Override the server container arguments
+  ## @param server.extraEnvVars Additional server environment variables
+  ## @param server.extraEnvVarsCM Existing ConfigMap imported as environment variables
+  ## @param server.extraEnvVarsSecret Existing Secret imported as environment variables
+  ## @param server.extraVolumes Additional pod volumes
+  ## @param server.extraVolumeMounts Additional server volume mounts
+  ## @param server.initContainers Additional init containers
+  ## @param server.sidecars Additional sidecar containers
+  ##
+  updateStrategy:
+    type: RollingUpdate
+  command: []
+  args: []
+  extraEnvVars: []
+  extraEnvVarsCM: ""
+  extraEnvVarsSecret: ""
+  extraVolumes: []
+  extraVolumeMounts: []
+  initContainers: []
+  sidecars: []
+
+  ## @section Komari server pod parameters
+  ## @param server.podLabels Additional pod labels
+  ## @param server.podAnnotations Additional pod annotations
+  ## @param server.podSecurityContext.enabled Enable the pod security context
+  ## @param server.podSecurityContext.fsGroupChangePolicy Pod filesystem group change policy
+  ## @param server.podSecurityContext.sysctls Pod sysctls
+  ## @param server.podSecurityContext.supplementalGroups Pod supplemental groups
+  ## @param server.podSecurityContext.fsGroup Pod filesystem group
+  ## @param server.containerSecurityContext.enabled Enable the container security context
+  ## @param server.containerSecurityContext.runAsUser Container user ID
+  ## @param server.containerSecurityContext.runAsGroup Container group ID
+  ## @param server.containerSecurityContext.runAsNonRoot Require a non-root container
+  ## @param server.containerSecurityContext.allowPrivilegeEscalation Allow privilege escalation
+  ## @param server.containerSecurityContext.capabilities.drop Linux capabilities to drop
+  ## @param server.containerSecurityContext.seccompProfile.type Seccomp profile type
+  ##
+  podLabels: {}
+  podAnnotations: {}
+  podSecurityContext:
+    enabled: false
+    fsGroupChangePolicy: Always
+    sysctls: []
+    supplementalGroups: []
+    fsGroup: 1000
+  containerSecurityContext:
+    enabled: false
+    runAsUser: 1000
+    runAsGroup: 1000
+    runAsNonRoot: true
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    seccompProfile:
+      type: RuntimeDefault
+
+  ## @section Komari server resource parameters
+  ## @param server.resourcesPreset Common resource preset
+  ## @param server.resources Explicit resource requests and limits
+  ##
+  resourcesPreset: none
+  resources: {}
+
+  ## @section Komari server probe parameters
+  ## @param server.startupProbe.enabled Enable the startup probe
+  ## @param server.startupProbe.httpGet.path Startup probe HTTP path
+  ## @param server.startupProbe.httpGet.port Startup probe port name
+  ## @param server.livenessProbe.enabled Enable the liveness probe
+  ## @param server.livenessProbe.httpGet.path Liveness probe HTTP path
+  ## @param server.livenessProbe.httpGet.port Liveness probe port name
+  ## @param server.readinessProbe.enabled Enable the readiness probe
+  ## @param server.readinessProbe.httpGet.path Readiness probe HTTP path
+  ## @param server.readinessProbe.httpGet.port Readiness probe port name
+  ## @param server.customStartupProbe Complete startup probe override
+  ## @param server.customLivenessProbe Complete liveness probe override
+  ## @param server.customReadinessProbe Complete readiness probe override
+  ##
+  startupProbe:
+    enabled: false
+    httpGet:
+      path: /
+      port: http
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 30
+    successThreshold: 1
+  livenessProbe:
+    enabled: true
+    httpGet:
+      path: /
+      port: http
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 6
+    successThreshold: 1
+  readinessProbe:
+    enabled: true
+    httpGet:
+      path: /
+      port: http
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 6
+    successThreshold: 1
+  customStartupProbe: {}
+  customLivenessProbe: {}
+  customReadinessProbe: {}
+
+  ## @section Komari server scheduling parameters
+  ## @param server.priorityClassName Pod priority class
+  ## @param server.schedulerName Alternate scheduler
+  ## @param server.terminationGracePeriodSeconds Pod termination grace period
+  ## @param server.hostAliases Pod host aliases
+  ## @param server.affinity Pod affinity rules
+  ## @param server.nodeSelector Node selection labels
+  ## @param server.tolerations Pod tolerations
+  ## @param server.topologySpreadConstraints Pod topology spread constraints
+  ##
+  priorityClassName: ""
+  schedulerName: ""
+  terminationGracePeriodSeconds: ""
+  hostAliases: []
+  affinity: {}
+  nodeSelector: {}
+  tolerations: []
+  topologySpreadConstraints: []
+
+  ## @section Komari server ServiceAccount parameters
+  ## @param server.serviceAccount.create Create the server ServiceAccount
+  ## @param server.serviceAccount.name Server ServiceAccount name
+  ## @param server.serviceAccount.automountServiceAccountToken Automount API credentials on the ServiceAccount
+  ## @param server.serviceAccount.annotations Additional ServiceAccount annotations
+  ## @param server.automountServiceAccountToken Automount API credentials in server pods
+  ##
+  serviceAccount:
+    create: true
+    name: ""
+    automountServiceAccountToken: false
+    annotations: {}
+  automountServiceAccountToken: false

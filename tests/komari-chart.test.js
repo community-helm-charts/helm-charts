@@ -73,3 +73,49 @@ test("chart metadata pins stable Komari images and the local common dependency",
   assert.match(chart, /repository: file:\/\/\.\.\/common/);
   assert.match(chart, /version: 0\.2\.1/);
 });
+
+test("default render creates only the stateful Komari server", () => {
+  const chart = makeKomariChart();
+  try {
+    const manifest = chart.render();
+
+    assert.deepEqual(resourceNames(manifest, "StatefulSet"), ["komari-server"]);
+    assert.deepEqual(resourceNames(manifest, "DaemonSet"), []);
+    assert.deepEqual(resourceNames(manifest, "Service"), ["komari-server"]);
+    assert.deepEqual(resourceNames(manifest, "ServiceAccount"), ["komari-server"]);
+    assert.deepEqual(resourceNames(manifest, "Secret"), []);
+    assert.match(manifest, /replicas: 1/);
+    assert.match(manifest, /image: ghcr\.io\/komari-monitor\/komari:1\.3\.2/);
+    assert.match(manifest, /containerPort: 25774/);
+    assert.match(manifest, /mountPath: \/app\/data/);
+    assert.match(manifest, /volumeClaimTemplates:/);
+    assert.match(manifest, /storage: "5Gi"/);
+  } finally {
+    chart.cleanup();
+  }
+});
+
+test("server persistence supports existing claims and temporary storage", () => {
+  const chart = makeKomariChart();
+  try {
+    const existing = chart.render("--set", "server.persistence.existingClaim=komari-data");
+    assert.match(existing, /claimName: komari-data/);
+    assert.doesNotMatch(existing, /volumeClaimTemplates:/);
+
+    const temporary = chart.render("--set", "server.persistence.enabled=false");
+    assert.match(temporary, /emptyDir: \{\}/);
+    assert.doesNotMatch(temporary, /volumeClaimTemplates:/);
+  } finally {
+    chart.cleanup();
+  }
+});
+
+test("server persistence inherits the global default StorageClass", () => {
+  const chart = makeKomariChart();
+  try {
+    const manifest = chart.render("--set", "global.defaultStorageClassName=fast");
+    assert.match(manifest, /storageClassName: fast/);
+  } finally {
+    chart.cleanup();
+  }
+});

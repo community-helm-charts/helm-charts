@@ -1,3 +1,13 @@
+## 1.1.2 (2026-07-31)
+
+### 🩹 Fixes
+
+- **komari:** avoid duplicate agent disk statistics ([68eb701](https://github.com/community-helm-charts/helm-charts/commit/68eb701))
+
+### ❤️ Thank You
+
+- Xudong Huang @xudongcc
+
 ## 1.1.1 (2026-07-31)
 
 ### 🩹 Fixes

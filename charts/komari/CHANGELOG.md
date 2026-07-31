@@ -1,3 +1,13 @@
+## 1.1.1 (2026-07-31)
+
+### 🩹 Fixes
+
+- **komari:** collect agent host network traffic ([24497c0](https://github.com/community-helm-charts/helm-charts/commit/24497c0))
+
+### ❤️ Thank You
+
+- Xudong Huang @xudongcc
+
 ## 1.1.0 (2026-07-30)
 
 ### 🚀 Features

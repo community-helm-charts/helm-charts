@@ -29,6 +29,8 @@ spec:
         {{- end }}
       {{- end }}
     spec:
+      hostNetwork: {{ .Values.agent.hostNetwork }}
+      dnsPolicy: {{ .Values.agent.dnsPolicy }}
       serviceAccountName: {{ include "komari.agent.serviceAccountName" . }}
       automountServiceAccountToken: {{ .Values.agent.automountServiceAccountToken }}
       {{- include "komari.agent.imagePullSecrets" . | nindent 6 }}

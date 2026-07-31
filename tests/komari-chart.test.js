@@ -212,6 +212,43 @@ test("enabled Agent uses managed discovery, internal endpoint, and per-node iden
   }
 });
 
+test("Agent host network defaults and overrides render", () => {
+  const chart = makeKomariChart();
+  try {
+    const defaults = chart
+      .render(
+        "--set",
+        "agent.enabled=true",
+        "--set-string",
+        "agent.auth.autoDiscoveryKey=discovery-key",
+      )
+      .split(/^---$/m)
+      .find((doc) => resourceNames(doc, "DaemonSet").includes("komari-agent"));
+
+    assert.ok(defaults);
+    assert.match(defaults, /hostNetwork: true\n\s+dnsPolicy: ClusterFirstWithHostNet/);
+
+    const podNetwork = chart
+      .render(
+        "--set",
+        "agent.enabled=true",
+        "--set-string",
+        "agent.auth.autoDiscoveryKey=discovery-key",
+        "--set",
+        "agent.hostNetwork=false",
+        "--set",
+        "agent.dnsPolicy=ClusterFirst",
+      )
+      .split(/^---$/m)
+      .find((doc) => resourceNames(doc, "DaemonSet").includes("komari-agent"));
+
+    assert.ok(podNetwork);
+    assert.match(podNetwork, /hostNetwork: false\n\s+dnsPolicy: ClusterFirst/);
+  } finally {
+    chart.cleanup();
+  }
+});
+
 test("Agent-only mode uses an external endpoint and existing Secret", () => {
   const chart = makeKomariChart();
   try {

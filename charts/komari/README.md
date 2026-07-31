@@ -153,6 +153,28 @@ the same identity.
 
 ## Agent scheduling
 
+The Agent shares each node's network namespace by default:
+
+```yaml
+agent:
+  hostNetwork: true
+  dnsPolicy: ClusterFirstWithHostNet
+```
+
+Komari reads network counters from its process network namespace. Host
+networking therefore lets the DaemonSet report node interfaces and traffic
+instead of only the pod's `eth0`. `ClusterFirstWithHostNet` keeps Kubernetes
+Service discovery available, including the derived
+`http://komari-server:25774` endpoint.
+
+To deliberately monitor the pod network instead, override both values:
+
+```yaml
+agent:
+  hostNetwork: false
+  dnsPolicy: ClusterFirst
+```
+
 The Agent tolerates all taints by default so the DaemonSet can cover every
 schedulable node, matching common node-monitoring deployments:
 

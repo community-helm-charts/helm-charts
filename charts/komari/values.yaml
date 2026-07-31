@@ -374,6 +374,8 @@ agent:
   sidecars: []
 
   ## @section Komari Agent pod parameters
+  ## @param agent.hostNetwork Share the node network namespace to collect host traffic
+  ## @param agent.dnsPolicy DNS policy for Agent pods
   ## @param agent.podLabels Additional pod labels
   ## @param agent.podAnnotations Additional pod annotations
   ## @param agent.podSecurityContext.enabled Enable the pod security context
@@ -389,6 +391,8 @@ agent:
   ## @param agent.containerSecurityContext.capabilities.drop Linux capabilities to drop
   ## @param agent.containerSecurityContext.seccompProfile.type Seccomp profile type
   ##
+  hostNetwork: true
+  dnsPolicy: ClusterFirstWithHostNet
   podLabels: {}
   podAnnotations: {}
   podSecurityContext:

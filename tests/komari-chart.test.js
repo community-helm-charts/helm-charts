@@ -249,6 +249,44 @@ test("Agent host network defaults and overrides render", () => {
   }
 });
 
+test("Agent mountpoint filter defaults to root and supports overrides", () => {
+  const chart = makeKomariChart();
+  try {
+    function renderAgent(...args) {
+      return chart
+        .render(
+          "--set",
+          "agent.enabled=true",
+          "--set-string",
+          "agent.auth.autoDiscoveryKey=discovery-key",
+          ...args,
+        )
+        .split(/^---$/m)
+        .find((doc) => resourceNames(doc, "DaemonSet").includes("komari-agent"));
+    }
+
+    const defaults = renderAgent();
+    assert.ok(defaults);
+    assert.match(defaults, /name: AGENT_INCLUDE_MOUNTPOINTS\n\s+value: "\/"/);
+
+    const custom = renderAgent(
+      "--set-string",
+      "agent.includeMountpoints=/;/data",
+    );
+    assert.ok(custom);
+    assert.match(custom, /name: AGENT_INCLUDE_MOUNTPOINTS\n\s+value: "\/;\/data"/);
+
+    const automatic = renderAgent(
+      "--set-string",
+      "agent.includeMountpoints=",
+    );
+    assert.ok(automatic);
+    assert.match(automatic, /name: AGENT_INCLUDE_MOUNTPOINTS\n\s+value: ""/);
+  } finally {
+    chart.cleanup();
+  }
+});
+
 test("Agent-only mode uses an external endpoint and existing Secret", () => {
   const chart = makeKomariChart();
   try {

@@ -306,11 +306,13 @@ server:
 ## @param agent.enabled Deploy the Komari Agent DaemonSet
 ## @param agent.endpoint Komari server endpoint; derived from the in-release server Service when empty
 ## @param agent.disableAutoUpdate Disable Agent binary self-update inside the container
+## @param agent.includeMountpoints Semicolon-delimited mountpoints included in disk statistics
 ##
 agent:
   enabled: false
   endpoint: ""
   disableAutoUpdate: true
+  includeMountpoints: "/"
 
   ## @param agent.image.registry Komari Agent image registry
   ## @param agent.image.repository Komari Agent image repository

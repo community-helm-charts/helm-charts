@@ -151,6 +151,32 @@ Do not run a native Komari Agent and this DaemonSet concurrently on the same
 node when both use `/opt/komari/auto-discovery.json`. They would connect with
 the same identity.
 
+## Agent disk monitoring
+
+The Agent limits disk statistics to the container root by default:
+
+```yaml
+agent:
+  includeMountpoints: "/"
+```
+
+The container root and the identity file's hostPath `subPath` expose the same
+node root filesystem under different device names. Automatic mount discovery
+would count `/` and `/app/auto-discovery.json` separately, doubling both total
+and used disk space. The chart injects the official
+`AGENT_INCLUDE_MOUNTPOINTS=/` setting to count the root filesystem once.
+
+Use a semicolon-delimited string when additional filesystems are deliberately
+mounted into the Agent container:
+
+```yaml
+agent:
+  includeMountpoints: "/;/data"
+```
+
+Set `agent.includeMountpoints` to an empty string to restore the Agent's
+automatic mountpoint discovery.
+
 ## Agent scheduling
 
 The Agent shares each node's network namespace by default:

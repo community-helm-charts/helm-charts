@@ -99,6 +99,8 @@ spec:
                   key: {{ include "komari.agent.secretKey" . }}
             - name: AGENT_DISABLE_AUTO_UPDATE
               value: {{ .Values.agent.disableAutoUpdate | quote }}
+            - name: AGENT_INCLUDE_MOUNTPOINTS
+              value: {{ .Values.agent.includeMountpoints | quote }}
             {{- if .Values.agent.extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .Values.agent.extraEnvVars "context" $) | nindent 12 }}
             {{- end }}

@@ -34,6 +34,10 @@ token
 {{- end -}}
 {{- end -}}
 
+{{- define "cloudflared.metricsServiceName" -}}
+{{- printf "%s-metrics" (include "cloudflared.fullname" .) | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+
 {{- define "cloudflared.args" -}}
 - tunnel
 - --no-autoupdate

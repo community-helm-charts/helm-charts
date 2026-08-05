@@ -64,11 +64,31 @@ auth:
 ## @section Metrics parameters
 ## @param metrics.port Cloudflared metrics and readiness port
 ## @param metrics.service.enabled Create a metrics Service
+## @param metrics.service.type Metrics Service type
+## @param metrics.service.clusterIP Metrics Service cluster IP
+## @param metrics.service.annotations Additional metrics Service annotations
+## @param metrics.service.labels Additional metrics Service labels
+## @param metrics.service.internalTrafficPolicy Metrics Service internal traffic policy
+## @param metrics.service.sessionAffinity Metrics Service session affinity
+## @param metrics.service.sessionAffinityConfig Additional session affinity settings
+## @param metrics.service.ipFamilyPolicy Metrics Service IP family policy
+## @param metrics.service.ipFamilies Metrics Service IP families
+## @param metrics.service.extraPorts Additional metrics Service ports
 ##
 metrics:
   port: 2000
   service:
     enabled: false
+    type: ClusterIP
+    clusterIP: ""
+    annotations: {}
+    labels: {}
+    internalTrafficPolicy: Cluster
+    sessionAffinity: None
+    sessionAffinityConfig: {}
+    ipFamilyPolicy: ""
+    ipFamilies: []
+    extraPorts: []
 
 ## @section Deployment parameters
 ## @param updateStrategy Deployment update strategy

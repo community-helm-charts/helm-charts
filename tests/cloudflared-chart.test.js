@@ -116,3 +116,113 @@ test("missing managed token fails before installation", () => {
     chart.cleanup();
   }
 });
+
+test("existing Secret is referenced without rendering a managed Secret or checksum", () => {
+  const chart = makeCloudflaredChart();
+  try {
+    const manifest = chart.render(
+      "--set",
+      "auth.existingSecret=shared-tunnel",
+      "--set",
+      "auth.existingSecretKey=credential",
+    );
+
+    assert.deepEqual(resourceNames(manifest, "Secret"), []);
+    assert.match(
+      manifest,
+      /name: TUNNEL_TOKEN[\s\S]*?secretKeyRef:[\s\S]*?name: shared-tunnel[\s\S]*?key: credential/,
+    );
+    assert.doesNotMatch(manifest, /checksum\/secret:/);
+    assert.doesNotMatch(manifest, /test-token/);
+  } finally {
+    chart.cleanup();
+  }
+});
+
+test("existing Secret requires a non-empty key", () => {
+  const chart = makeCloudflaredChart();
+  try {
+    const result = chart.renderResult(
+      "--set",
+      "auth.existingSecret=shared-tunnel",
+      "--set-string",
+      "auth.existingSecretKey=",
+    );
+
+    assert.notEqual(result.status, 0);
+    assert.match(
+      result.stderr,
+      /auth\.existingSecretKey must not be empty when auth\.existingSecret is set/,
+    );
+  } finally {
+    chart.cleanup();
+  }
+});
+
+for (const replicaCount of ["0", "1.5", "many"]) {
+  test(`replicaCount rejects ${replicaCount}`, () => {
+    const chart = makeCloudflaredChart();
+    try {
+      const result = chart.renderResult(
+        "--set-string",
+        "auth.tunnelToken=test-token",
+        "--set-string",
+        `replicaCount=${replicaCount}`,
+      );
+
+      assert.notEqual(result.status, 0);
+      assert.match(
+        result.stderr,
+        /replicaCount must be an integer greater than or equal to 1/,
+      );
+    } finally {
+      chart.cleanup();
+    }
+  });
+}
+
+for (const metricsPort of ["0", "65536", "1.5", "many"]) {
+  test(`metrics.port rejects ${metricsPort}`, () => {
+    const chart = makeCloudflaredChart();
+    try {
+      const result = chart.renderResult(
+        "--set-string",
+        "auth.tunnelToken=test-token",
+        "--set-string",
+        `metrics.port=${metricsPort}`,
+      );
+
+      assert.notEqual(result.status, 0);
+      assert.match(
+        result.stderr,
+        /metrics\.port must be an integer from 1 through 65535/,
+      );
+    } finally {
+      chart.cleanup();
+    }
+  });
+}
+
+test("managed token changes roll the Deployment without appearing in its pod spec", () => {
+  const chart = makeCloudflaredChart();
+  try {
+    function deployment(manifest) {
+      return manifest.split(/^---$/m).find((doc) => doc.includes("kind: Deployment"));
+    }
+
+    const first = deployment(chart.render("--set-string", "auth.tunnelToken=first-token"));
+    const second = deployment(chart.render("--set-string", "auth.tunnelToken=second-token"));
+    assert.ok(first);
+    assert.ok(second);
+
+    const firstChecksum = first.match(/checksum\/secret: ([a-f0-9]+)/)?.[1];
+    const secondChecksum = second.match(/checksum\/secret: ([a-f0-9]+)/)?.[1];
+    assert.ok(firstChecksum);
+    assert.ok(secondChecksum);
+    assert.notEqual(firstChecksum, secondChecksum);
+    assert.doesNotMatch(first, /first-token/);
+    assert.doesNotMatch(second, /second-token/);
+  } finally {
+    chart.cleanup();
+  }
+});

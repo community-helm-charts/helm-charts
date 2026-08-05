@@ -16,6 +16,10 @@ spec:
     metadata:
       labels: {{- include "common.labels.standard" (dict "customLabels" .Values.commonLabels "context" $) | nindent 8 }}
         app.kubernetes.io/component: connector
+      {{- if not .Values.auth.existingSecret }}
+      annotations:
+        checksum/secret: {{ include "common.utils.checksumTemplate" (dict "path" "/secret.yaml" "context" $) }}
+      {{- end }}
     spec:
       serviceAccountName: {{ include "cloudflared.serviceAccountName" . }}
       automountServiceAccountToken: {{ .Values.automountServiceAccountToken }}

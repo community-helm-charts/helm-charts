@@ -2,4 +2,22 @@
 {{- if and (not .Values.auth.existingSecret) (not .Values.auth.tunnelToken) -}}
 {{- fail "auth.tunnelToken must not be empty when auth.existingSecret is empty" -}}
 {{- end -}}
+{{- if and .Values.auth.existingSecret (not .Values.auth.existingSecretKey) -}}
+{{- fail "auth.existingSecretKey must not be empty when auth.existingSecret is set" -}}
+{{- end -}}
+{{- $replicaCount := printf "%v" .Values.replicaCount -}}
+{{- if not (regexMatch "^[0-9]+$" $replicaCount) -}}
+{{- fail "replicaCount must be an integer greater than or equal to 1" -}}
+{{- end -}}
+{{- if lt (int $replicaCount) 1 -}}
+{{- fail "replicaCount must be an integer greater than or equal to 1" -}}
+{{- end -}}
+{{- $metricsPort := printf "%v" .Values.metrics.port -}}
+{{- if not (regexMatch "^[0-9]+$" $metricsPort) -}}
+{{- fail "metrics.port must be an integer from 1 through 65535" -}}
+{{- end -}}
+{{- $metricsPortNumber := int $metricsPort -}}
+{{- if or (lt $metricsPortNumber 1) (gt $metricsPortNumber 65535) -}}
+{{- fail "metrics.port must be an integer from 1 through 65535" -}}
+{{- end -}}
 {{- end -}}

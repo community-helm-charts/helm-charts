@@ -19,11 +19,19 @@
 {{- end -}}
 
 {{- define "cloudflared.secretName" -}}
+{{- if .Values.auth.existingSecret -}}
+{{- tpl .Values.auth.existingSecret $ -}}
+{{- else -}}
 {{- include "cloudflared.fullname" . -}}
+{{- end -}}
 {{- end -}}
 
 {{- define "cloudflared.secretKey" -}}
+{{- if .Values.auth.existingSecret -}}
+{{- .Values.auth.existingSecretKey -}}
+{{- else -}}
 token
+{{- end -}}
 {{- end -}}
 
 {{- define "cloudflared.args" -}}

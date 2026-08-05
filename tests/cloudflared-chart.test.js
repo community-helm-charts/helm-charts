@@ -482,3 +482,17 @@ test("full command and args overrides replace generated process settings", () =>
     chart.cleanup();
   }
 });
+
+test("README documents remote management, credentials, availability, metrics, and rotation", () => {
+  const readme = readFileSync(join(ROOT, "charts", "cloudflared", "README.md"), "utf8");
+
+  assert.match(readme, /remotely managed/i);
+  assert.match(readme, /auth\.tunnelToken/);
+  assert.match(readme, /auth\.existingSecret/);
+  assert.match(readme, /Helm release metadata/);
+  assert.match(readme, /replicaCount/);
+  assert.match(readme, /\/ready/);
+  assert.match(readme, /metrics\.service\.enabled/);
+  assert.match(readme, /kubectl rollout restart deployment/);
+  assert.match(readme, /\.svc\.cluster\.local/);
+});

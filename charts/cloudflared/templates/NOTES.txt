@@ -1,0 +1,25 @@
+Cloudflared connectors have been deployed in remotely managed mode.
+
+Check the rollout:
+  kubectl rollout status deployment/{{ include "cloudflared.fullname" . }} --namespace {{ include "common.names.namespace" . }}
+
+List connector pods:
+  kubectl get pods --namespace {{ include "common.names.namespace" . }} \
+    -l app.kubernetes.io/instance={{ .Release.Name }},app.kubernetes.io/component=connector
+
+View connector logs:
+  kubectl logs --namespace {{ include "common.names.namespace" . }} \
+    deployment/{{ include "cloudflared.fullname" . }} --all-containers --prefix
+
+Configure tunnel routes remotely in Cloudflare. A cluster Service can be reached
+with an address such as http://service.namespace.svc.{{ .Values.clusterDomain }}:port.
+{{- if .Values.auth.existingSecret }}
+
+After updating Secret {{ include "cloudflared.secretName" . }}, restart the Deployment:
+  kubectl rollout restart deployment/{{ include "cloudflared.fullname" . }} --namespace {{ include "common.names.namespace" . }}
+{{- end }}
+{{- if .Values.metrics.service.enabled }}
+
+Metrics are available at:
+  http://{{ include "cloudflared.metricsServiceName" . }}.{{ include "common.names.namespace" . }}.svc.{{ .Values.clusterDomain }}:{{ .Values.metrics.port }}/metrics
+{{- end }}

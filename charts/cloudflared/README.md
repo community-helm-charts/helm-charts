@@ -180,4 +180,3 @@ different release name is used.
 | `serviceAccount.automountServiceAccountToken` | Mount API credentials on the ServiceAccount | `false` |
 | `serviceAccount.annotations` | ServiceAccount annotations | `{}` |
 | `automountServiceAccountToken` | Mount API credentials in connector pods | `false` |
-

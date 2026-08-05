@@ -1,0 +1,202 @@
+## @section Global parameters
+## @param global.imageRegistry Global container image registry
+## @param global.imagePullSecrets Global container registry secret names
+##
+global:
+  imageRegistry: ""
+  imagePullSecrets: []
+
+## @section Common parameters
+## @param kubeVersion Override Kubernetes version
+## @param nameOverride Partially override the chart name
+## @param fullnameOverride Fully override the chart name
+## @param namespaceOverride Fully override the release namespace
+## @param clusterDomain Kubernetes cluster domain
+## @param commonLabels Labels added to every resource
+## @param commonAnnotations Annotations added to every resource
+## @param extraDeploy Additional objects to deploy
+##
+kubeVersion: ""
+nameOverride: ""
+fullnameOverride: ""
+namespaceOverride: ""
+clusterDomain: cluster.local
+commonLabels: {}
+commonAnnotations: {}
+extraDeploy: []
+
+## @section Cloudflared image parameters
+## @param image.registry Cloudflared image registry
+## @param image.repository Cloudflared image repository
+## @param image.tag Cloudflared image tag
+## @param image.digest Cloudflared image digest in the form sha256:...
+## @param image.pullPolicy Cloudflared image pull policy
+## @param image.pullSecrets Cloudflared image pull secrets
+##
+image:
+  registry: docker.io
+  repository: cloudflare/cloudflared
+  tag: "2026.7.2"
+  digest: ""
+  pullPolicy: IfNotPresent
+  pullSecrets: []
+
+## @section Connector parameters
+## @param replicaCount Number of fixed cloudflared replicas
+## @param tunnel.logLevel Cloudflared log level
+## @param tunnel.extraArgs Additional cloudflared tunnel run arguments inserted before run
+##
+replicaCount: 2
+tunnel:
+  logLevel: info
+  extraArgs: []
+
+## @section Authentication parameters
+## @param auth.tunnelToken Tunnel token stored in the chart-managed Secret
+## @param auth.existingSecret Existing Secret containing the tunnel token
+## @param auth.existingSecretKey Tunnel token key in the existing Secret
+##
+auth:
+  tunnelToken: ""
+  existingSecret: ""
+  existingSecretKey: token
+
+## @section Metrics parameters
+## @param metrics.port Cloudflared metrics and readiness port
+## @param metrics.service.enabled Create a metrics Service
+##
+metrics:
+  port: 2000
+  service:
+    enabled: false
+
+## @section Deployment parameters
+## @param updateStrategy Deployment update strategy
+## @param command Override the cloudflared container command
+## @param args Override the cloudflared container arguments
+## @param extraEnvVars Additional environment variables
+## @param extraEnvVarsCM Existing ConfigMap imported as environment variables
+## @param extraEnvVarsSecret Existing Secret imported as environment variables
+## @param extraVolumes Additional pod volumes
+## @param extraVolumeMounts Additional container volume mounts
+## @param initContainers Additional init containers
+## @param sidecars Additional sidecar containers
+##
+updateStrategy:
+  type: RollingUpdate
+command: []
+args: []
+extraEnvVars: []
+extraEnvVarsCM: ""
+extraEnvVarsSecret: ""
+extraVolumes: []
+extraVolumeMounts: []
+initContainers: []
+sidecars: []
+
+## @section Probe parameters
+## @param livenessProbe.enabled Enable the readiness-endpoint liveness probe
+## @param livenessProbe.initialDelaySeconds Initial liveness probe delay
+## @param livenessProbe.periodSeconds Liveness probe interval
+## @param livenessProbe.timeoutSeconds Liveness probe timeout
+## @param livenessProbe.failureThreshold Liveness probe failure threshold
+## @param livenessProbe.successThreshold Liveness probe success threshold
+## @param readinessProbe.enabled Enable the readiness probe
+## @param readinessProbe.initialDelaySeconds Initial readiness probe delay
+## @param readinessProbe.periodSeconds Readiness probe interval
+## @param readinessProbe.timeoutSeconds Readiness probe timeout
+## @param readinessProbe.failureThreshold Readiness probe failure threshold
+## @param readinessProbe.successThreshold Readiness probe success threshold
+## @param customLivenessProbe Complete liveness probe override
+## @param customReadinessProbe Complete readiness probe override
+##
+livenessProbe:
+  enabled: true
+  initialDelaySeconds: 10
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 1
+  successThreshold: 1
+readinessProbe:
+  enabled: true
+  initialDelaySeconds: 5
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+  successThreshold: 1
+customLivenessProbe: {}
+customReadinessProbe: {}
+
+## @section Resource parameters
+## @param resourcesPreset Common resource preset
+## @param resources Explicit resource requests and limits
+##
+resourcesPreset: nano
+resources: {}
+
+## @section Security parameters
+## @param podSecurityContext.enabled Enable the pod security context
+## @param podSecurityContext.sysctls Pod sysctls
+## @param containerSecurityContext.enabled Enable the container security context
+## @param containerSecurityContext.runAsUser Container user ID
+## @param containerSecurityContext.runAsGroup Container group ID
+## @param containerSecurityContext.runAsNonRoot Require a non-root container
+## @param containerSecurityContext.allowPrivilegeEscalation Allow privilege escalation
+## @param containerSecurityContext.readOnlyRootFilesystem Use a read-only root filesystem
+## @param containerSecurityContext.capabilities.drop Linux capabilities to drop
+## @param containerSecurityContext.seccompProfile.type Seccomp profile type
+##
+podSecurityContext:
+  enabled: true
+  sysctls:
+    - name: net.ipv4.ping_group_range
+      value: "65532 65532"
+containerSecurityContext:
+  enabled: true
+  runAsUser: 65532
+  runAsGroup: 65532
+  runAsNonRoot: true
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: false
+  capabilities:
+    drop:
+      - ALL
+  seccompProfile:
+    type: RuntimeDefault
+
+## @section Scheduling parameters
+## @param podLabels Additional pod labels
+## @param podAnnotations Additional pod annotations
+## @param priorityClassName Pod priority class
+## @param schedulerName Alternate scheduler
+## @param terminationGracePeriodSeconds Pod termination grace period
+## @param hostAliases Pod host aliases
+## @param affinity Pod affinity rules
+## @param nodeSelector Node selection labels
+## @param tolerations Pod tolerations
+## @param topologySpreadConstraints Pod topology spread constraints
+##
+podLabels: {}
+podAnnotations: {}
+priorityClassName: ""
+schedulerName: ""
+terminationGracePeriodSeconds: ""
+hostAliases: []
+affinity: {}
+nodeSelector: {}
+tolerations: []
+topologySpreadConstraints: []
+
+## @section ServiceAccount parameters
+## @param serviceAccount.create Create a ServiceAccount
+## @param serviceAccount.name ServiceAccount name
+## @param serviceAccount.automountServiceAccountToken Automount API credentials on the ServiceAccount
+## @param serviceAccount.annotations Additional ServiceAccount annotations
+## @param automountServiceAccountToken Automount API credentials in connector pods
+##
+serviceAccount:
+  create: true
+  name: ""
+  automountServiceAccountToken: false
+  annotations: {}
+automountServiceAccountToken: false

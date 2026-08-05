@@ -1,0 +1,5 @@
+{{- define "cloudflared.validateValues" -}}
+{{- if and (not .Values.auth.existingSecret) (not .Values.auth.tunnelToken) -}}
+{{- fail "auth.tunnelToken must not be empty when auth.existingSecret is empty" -}}
+{{- end -}}
+{{- end -}}

@@ -1,3 +1,13 @@
+## 1.1.3 (2026-08-08)
+
+### 🩹 Fixes
+
+- **komari:** update server image to 1.4.2 ([a7aa211](https://github.com/community-helm-charts/helm-charts/commit/a7aa211))
+
+### ❤️ Thank You
+
+- Xudong Huang @xudongcc
+
 ## 1.1.2 (2026-07-31)
 
 ### 🩹 Fixes

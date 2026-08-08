@@ -12,7 +12,7 @@ release.
 
 | Component | Default image |
 | --- | --- |
-| Server | `ghcr.io/komari-monitor/komari:1.3.2` |
+| Server | `ghcr.io/komari-monitor/komari:1.4.2` |
 | Agent | `ghcr.io/komari-monitor/komari-agent:1.2.60` |
 
 Both tags are pinned for reproducible upgrades. Override the corresponding
@@ -338,7 +338,7 @@ Both components support:
 | `server.enabled` | `true` | Deploy the server |
 | `server.image.registry` | `ghcr.io` | Server image registry |
 | `server.image.repository` | `komari-monitor/komari` | Server image repository |
-| `server.image.tag` | `1.3.2` | Server image tag |
+| `server.image.tag` | `1.4.2` | Server image tag |
 | `server.containerPorts.http` | `25774` | Server container port |
 | `server.service.enabled` | `true` | Create the server Service |
 | `server.service.type` | `ClusterIP` | Service type |

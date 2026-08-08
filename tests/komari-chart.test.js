@@ -66,8 +66,8 @@ test("chart metadata pins stable Komari images and the local common dependency",
   const chart = readChartFile("Chart.yaml");
 
   assert.match(chart, /^name: komari$/m);
-  assert.match(chart, /^appVersion: "1\.3\.2"$/m);
-  assert.match(chart, /image: ghcr\.io\/komari-monitor\/komari:1\.3\.2/);
+  assert.match(chart, /^appVersion: "1\.4\.2"$/m);
+  assert.match(chart, /image: ghcr\.io\/komari-monitor\/komari:1\.4\.2/);
   assert.match(chart, /image: ghcr\.io\/komari-monitor\/komari-agent:1\.2\.60/);
   assert.match(chart, /repository: file:\/\/\.\.\/common/);
   assert.match(chart, /version: 0\.2\.1/);
@@ -84,7 +84,7 @@ test("default render creates only the stateful Komari server", () => {
     assert.deepEqual(resourceNames(manifest, "ServiceAccount"), ["komari-server"]);
     assert.deepEqual(resourceNames(manifest, "Secret"), []);
     assert.match(manifest, /replicas: 1/);
-    assert.match(manifest, /image: ghcr\.io\/komari-monitor\/komari:1\.3\.2/);
+    assert.match(manifest, /image: ghcr\.io\/komari-monitor\/komari:1\.4\.2/);
     assert.match(manifest, /containerPort: 25774/);
     assert.match(manifest, /mountPath: \/app\/data/);
     assert.match(manifest, /volumeClaimTemplates:/);

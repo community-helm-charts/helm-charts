@@ -15,6 +15,7 @@ annotations:
   licenses: MIT
 apiVersion: v2
 appVersion: "6.39.0"
+kubeVersion: ">=1.29.0-0"
 dependencies:
 - name: common
   repository: file://../common
@@ -39,4 +40,4 @@ name: ghost
 sources:
 - https://github.com/community-helm-charts/helm-charts/tree/main/charts/ghost
 - https://github.com/TryGhost/ghost-docker
-version: 1.0.1
+version: 1.1.0

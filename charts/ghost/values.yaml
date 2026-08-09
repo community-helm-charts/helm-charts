@@ -587,21 +587,14 @@ activitypub:
     http: 8080
 
   ## @param activitypub.service.ports.http ActivityPub service HTTP port
-  ## @param activitypub.service.annotations Additional custom annotations for the ActivityPub service
-  ## @param activitypub.service.labels Additional custom labels for the ActivityPub service
   ##
   service:
     ports:
       http: 8080
-    annotations: {}
-    labels: {}
 
   ## @param activitypub.extraEnvVars Array with extra environment variables for the ActivityPub container
-  ## @param activitypub.extraVolumes Optionally specify extra volumes for the ActivityPub pod
+  ## @param activitypub.extraVolumes Optionally specify extra volumes for the Ghost pod
   ## @param activitypub.extraVolumeMounts Optionally specify extra volumeMounts for the ActivityPub container
-  ## @param activitypub.podLabels Extra labels for ActivityPub pods
-  ## @param activitypub.podAnnotations Extra annotations for ActivityPub pods
-  ## @param activitypub.podSecurityContext.enabled Enable ActivityPub pod security context
   ## @param activitypub.containerSecurityContext.enabled Enable ActivityPub container security context
   ## @param activitypub.containerSecurityContext.runAsUser Set ActivityPub container runAsUser
   ## @param activitypub.containerSecurityContext.runAsGroup Set ActivityPub container runAsGroup
@@ -613,10 +606,6 @@ activitypub:
   extraEnvVars: []
   extraVolumes: []
   extraVolumeMounts: []
-  podLabels: {}
-  podAnnotations: {}
-  podSecurityContext:
-    enabled: false
   containerSecurityContext:
     enabled: false
     runAsUser: 1000
@@ -631,6 +620,12 @@ activitypub:
 
   ## @param activitypub.resourcesPreset Set ActivityPub container resources according to one common preset
   ## @param activitypub.resources Set ActivityPub container resource requests and limits
+  ## @param activitypub.startupProbe.enabled Enable startupProbe
+  ## @param activitypub.startupProbe.initialDelaySeconds Initial delay seconds for startupProbe
+  ## @param activitypub.startupProbe.periodSeconds Period seconds for startupProbe
+  ## @param activitypub.startupProbe.timeoutSeconds Timeout seconds for startupProbe
+  ## @param activitypub.startupProbe.failureThreshold Failure threshold for startupProbe
+  ## @param activitypub.startupProbe.successThreshold Success threshold for startupProbe
   ## @param activitypub.livenessProbe.enabled Enable livenessProbe
   ## @param activitypub.livenessProbe.initialDelaySeconds Initial delay seconds for livenessProbe
   ## @param activitypub.livenessProbe.periodSeconds Period seconds for livenessProbe
@@ -648,6 +643,13 @@ activitypub:
   ##
   resourcesPreset: none
   resources: {}
+  startupProbe:
+    enabled: true
+    initialDelaySeconds: 0
+    periodSeconds: 2
+    timeoutSeconds: 2
+    failureThreshold: 150
+    successThreshold: 1
   livenessProbe:
     enabled: true
     initialDelaySeconds: 10
@@ -664,16 +666,6 @@ activitypub:
     successThreshold: 1
   customLivenessProbe: {}
   customReadinessProbe: {}
-
-  ## @param activitypub.affinity Affinity for pod assignment
-  ## @param activitypub.nodeSelector Node labels for pod assignment
-  ## @param activitypub.tolerations Tolerations for pod assignment
-  ## @param activitypub.topologySpreadConstraints Topology spread constraints for pod assignment
-  ##
-  affinity: {}
-  nodeSelector: {}
-  tolerations: []
-  topologySpreadConstraints: []
 
 ## @section Service account parameters
 ## @param serviceAccount.create Enable ServiceAccount creation

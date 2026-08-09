@@ -26,6 +26,18 @@
 {{- include "common.images.image" (dict "imageRoot" .Values.activitypub.migration.image "global" .Values.global) -}}
 {{- end -}}
 
+{{- define "ghost.activitypub.renderProbe" -}}
+{{- $context := .context -}}
+{{- $probe := deepCopy .probe -}}
+{{- range $handler := list "httpGet" "tcpSocket" -}}
+  {{- $config := get $probe $handler -}}
+  {{- if and $config (eq (toString (get $config "port")) "http") -}}
+    {{- $_ := set $config "port" $context.Values.activitypub.containerPorts.http -}}
+  {{- end -}}
+{{- end -}}
+{{- include "common.tplvalues.render" (dict "value" $probe "context" $context) -}}
+{{- end -}}
+
 {{- define "ghost.tinybirdDeploy.image" -}}
 {{- include "common.images.image" (dict "imageRoot" .Values.trafficAnalytics.tinybird.deploy.image "global" .Values.global) -}}
 {{- end -}}
@@ -34,6 +46,7 @@
 {{- $images := list .Values.ghost.image .Values.mysql.image -}}
 {{- if .Values.activitypub.enabled -}}
 {{- $images = append $images .Values.activitypub.image -}}
+{{- $images = append $images .Values.activitypub.migration.image -}}
 {{- end -}}
 {{- include "common.images.renderPullSecrets" (dict "images" $images "context" $) -}}
 {{- end -}}
@@ -48,10 +61,6 @@
 
 {{- define "ghost.trafficAnalytics.imagePullSecrets" -}}
 {{- include "common.images.renderPullSecrets" (dict "images" (list .Values.trafficAnalytics.image) "context" $) -}}
-{{- end -}}
-
-{{- define "ghost.activitypub.imagePullSecrets" -}}
-{{- include "common.images.renderPullSecrets" (dict "images" (list .Values.activitypub.image .Values.activitypub.migration.image) "context" $) -}}
 {{- end -}}
 
 {{- define "ghost.tinybirdDeploy.imagePullSecrets" -}}

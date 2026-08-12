@@ -1,3 +1,9 @@
+## 1.1.1 (2026-08-12)
+
+### 🧱 Updated Dependencies
+
+- Updated common to 0.2.2
+
 ## 1.1.0 (2026-08-05)
 
 ### 🚀 Features

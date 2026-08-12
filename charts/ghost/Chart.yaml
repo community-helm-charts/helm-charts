@@ -18,11 +18,11 @@ appVersion: "6.39.0"
 dependencies:
 - name: common
   repository: file://../common
-  version: 0.2.1
+  version: 0.2.2
 - condition: mysql.enabled
   name: mysql
   repository: file://../mysql
-  version: 2.0.1
+  version: 2.0.2
 description: A Ghost CMS Helm chart with built-in MySQL, optional Tinybird analytics, and optional self-hosted ActivityPub.
 home: https://github.com/community-helm-charts/helm-charts
 keywords:
@@ -39,4 +39,4 @@ name: ghost
 sources:
 - https://github.com/community-helm-charts/helm-charts/tree/main/charts/ghost
 - https://github.com/TryGhost/ghost-docker
-version: 1.0.1
+version: 1.0.2

@@ -8,7 +8,7 @@ appVersion: "v4.2.1"
 dependencies:
 - name: common
   repository: file://../common
-  version: 0.2.1
+  version: 0.2.2
 description: OpenList - A file list program that supports multiple storage backends.
 home: https://github.com/community-helm-charts/helm-charts
 keywords:
@@ -23,4 +23,4 @@ name: openlist
 sources:
 - https://github.com/community-helm-charts/helm-charts/tree/main/charts/openlist
 - https://github.com/OpenListTeam/OpenList
-version: 1.1.1
+version: 1.1.2

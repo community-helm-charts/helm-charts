@@ -1,3 +1,9 @@
+## 1.1.4 (2026-08-12)
+
+### 🧱 Updated Dependencies
+
+- Updated common to 0.2.2
+
 ## 1.1.3 (2026-08-08)
 
 ### 🩹 Fixes

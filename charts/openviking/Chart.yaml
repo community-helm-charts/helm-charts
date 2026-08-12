@@ -8,7 +8,7 @@ appVersion: "v0.3.17"
 dependencies:
 - name: common
   repository: file://../common
-  version: 0.2.1
+  version: 0.2.2
 description: OpenViking - The Context Database for AI Agents.
 home: https://github.com/community-helm-charts/helm-charts
 keywords:
@@ -24,4 +24,4 @@ name: openviking
 sources:
 - https://github.com/community-helm-charts/helm-charts/tree/main/charts/openviking
 - https://github.com/volcengine/OpenViking
-version: 1.1.1
+version: 1.1.2

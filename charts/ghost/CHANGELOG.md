@@ -1,3 +1,10 @@
+## 1.0.2 (2026-08-12)
+
+### 🧱 Updated Dependencies
+
+- Updated common to 0.2.2
+- Updated mysql to 2.0.2
+
 ## 1.0.1 (2026-06-04)
 
 ### 🚀 Features

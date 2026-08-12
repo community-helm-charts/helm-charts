@@ -26,6 +26,8 @@ function makeFrpsChart() {
   );
   assert.match(output, /common-.*\.tgz/);
 
+  cpSync(join(chart, "templates", "NOTES.txt"), join(chart, "notes-test.txt"));
+
   function render(...args) {
     return execFileSync(
       "helm",
@@ -43,11 +45,29 @@ function makeFrpsChart() {
   }
 
   function notes(...args) {
-    return execFileSync(
-      "helm",
-      ["install", "frps", chart, "--dry-run=client", ...args],
-      { encoding: "utf8", maxBuffer: 10 * 1024 * 1024, stdio: ["ignore", "pipe", "pipe"] },
+    const notesTemplate = join(chart, "templates", "notes-test.yaml");
+    writeFileSync(
+      notesTemplate,
+      `apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: notes-test
+data:
+  notes: |-
+{{ tpl (.Files.Get "notes-test.txt") . | nindent 4 }}
+`,
     );
+    try {
+      const manifest = execFileSync(
+        "helm",
+        ["template", "frps", chart, "--show-only", "templates/notes-test.yaml", ...args],
+        { encoding: "utf8", maxBuffer: 10 * 1024 * 1024, stdio: ["ignore", "pipe", "pipe"] },
+      );
+      const [document] = parseAllDocuments(manifest);
+      return document.toJS().data.notes;
+    } finally {
+      rmSync(notesTemplate, { force: true });
+    }
   }
 
   return {

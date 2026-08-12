@@ -1,3 +1,13 @@
+## 1.2.0 (2026-08-12)
+
+### 🚀 Features
+
+- **frps:** add wildcard subdomain ingress ([2ec50d6](https://github.com/community-helm-charts/helm-charts/commit/2ec50d6))
+
+### ❤️ Thank You
+
+- Xudong Huang @xudongcc
+
 ## 1.1.0 (2026-08-12)
 
 ### 🚀 Features

@@ -70,7 +70,7 @@ test("chart metadata pins stable Komari images and the local common dependency",
   assert.match(chart, /image: ghcr\.io\/komari-monitor\/komari:1\.4\.2/);
   assert.match(chart, /image: ghcr\.io\/komari-monitor\/komari-agent:1\.2\.60/);
   assert.match(chart, /repository: file:\/\/\.\.\/common/);
-  assert.match(chart, /version: 0\.2\.1/);
+  assert.match(chart, /version: 0\.2\.2/);
 });
 
 test("default render creates only the stateful Komari server", () => {

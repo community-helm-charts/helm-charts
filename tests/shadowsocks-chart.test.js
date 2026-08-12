@@ -65,7 +65,7 @@ test("chart metadata pins shadowsocks-rust v1.24.0 and the local common dependen
   assert.match(chart, /^appVersion: "v1\.24\.0"$/m);
   assert.match(chart, /image: ghcr\.io\/shadowsocks\/ssserver-rust:v1\.24\.0/);
   assert.match(chart, /repository: file:\/\/\.\.\/common/);
-  assert.match(chart, /version: 0\.2\.1/);
+  assert.match(chart, /version: 0\.2\.2/);
 });
 
 test("default render creates a host-networked Shadowsocks DaemonSet and TCP/UDP Service", () => {

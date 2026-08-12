@@ -1,0 +1,29 @@
+{{- if .Values.subdomainIngress.enabled }}
+apiVersion: {{ default (include "common.capabilities.ingress.apiVersion" .) .Values.subdomainIngress.apiVersion }}
+kind: Ingress
+metadata:
+  name: {{ include "frps.subdomainIngressName" . }}
+  namespace: {{ include "common.names.namespace" . | quote }}
+  labels: {{- include "common.labels.standard" (dict "customLabels" .Values.commonLabels "context" $) | nindent 4 }}
+  {{- if or .Values.subdomainIngress.annotations .Values.commonAnnotations }}
+  {{- $annotations := include "common.tplvalues.merge" (dict "values" (list .Values.subdomainIngress.annotations .Values.commonAnnotations) "context" .) }}
+  annotations: {{- include "common.tplvalues.render" (dict "value" $annotations "context" $) | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if .Values.subdomainIngress.ingressClassName }}
+  ingressClassName: {{ .Values.subdomainIngress.ingressClassName | quote }}
+  {{- end }}
+  rules:
+    - host: {{ include "frps.subdomainWildcard" . | quote }}
+      http:
+        paths:
+          - path: "/"
+            pathType: {{ .Values.subdomainIngress.pathType | quote }}
+            backend: {{- include "common.ingress.backend" (dict "serviceName" (include "frps.vhostServiceName" .) "servicePort" "http" "context" $) | nindent 14 }}
+  {{- if .Values.subdomainIngress.tls }}
+  tls:
+    - hosts:
+        - {{ include "frps.subdomainWildcard" . | quote }}
+      secretName: {{ include "frps.subdomainTlsSecretName" . | quote }}
+  {{- end }}
+{{- end }}

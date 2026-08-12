@@ -47,11 +47,13 @@ image:
 ## @param config.bindPort FRPS client connection port
 ## @param config.vhostHTTPPort FRPS HTTP virtual-host port
 ## @param config.vhostHTTPSPort FRPS HTTPS virtual-host port
+## @param config.subDomainHost FRPS base domain for HTTP subdomain proxies
 ##
 config:
   bindPort: 7000
   vhostHTTPPort: 8080
   vhostHTTPSPort: 8443
+  subDomainHost: ""
 
 ## @section Authentication parameters
 ## @param auth.token Token stored in the chart-managed Secret
@@ -149,6 +151,24 @@ ingress:
   extraTls: []
   extraRules: []
   secrets: []
+
+## @section Subdomain Ingress parameters
+## @param subdomainIngress.enabled Enable the wildcard subdomain Ingress
+## @param subdomainIngress.apiVersion Override Ingress API version
+## @param subdomainIngress.ingressClassName Ingress class name
+## @param subdomainIngress.annotations Additional Ingress annotations
+## @param subdomainIngress.pathType Ingress path type
+## @param subdomainIngress.tls Enable TLS for the wildcard host
+## @param subdomainIngress.secretName TLS Secret name, generated when empty
+##
+subdomainIngress:
+  enabled: false
+  apiVersion: ""
+  ingressClassName: ""
+  annotations: {}
+  pathType: ImplementationSpecific
+  tls: false
+  secretName: ""
 
 ## @section Deployment parameters
 ## @param command Override the FRPS container command

@@ -10,6 +10,22 @@
 {{- printf "%s-vhost" (include "frps.fullname" .) | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
+{{- define "frps.subdomainHost" -}}
+{{- get .Values.config "subDomainHost" -}}
+{{- end -}}
+
+{{- define "frps.subdomainWildcard" -}}
+{{- printf "*.%s" (include "frps.subdomainHost" .) -}}
+{{- end -}}
+
+{{- define "frps.subdomainIngressName" -}}
+{{- printf "%s-subdomain" ((include "frps.fullname" .) | trunc 53 | trimSuffix "-") -}}
+{{- end -}}
+
+{{- define "frps.subdomainTlsSecretName" -}}
+{{- default (printf "%s-subdomain-tls" ((include "frps.fullname" .) | trunc 49 | trimSuffix "-")) .Values.subdomainIngress.secretName -}}
+{{- end -}}
+
 {{- define "frps.bindPort" -}}
 {{- int (printf "%v" .Values.config.bindPort) -}}
 {{- end -}}
@@ -86,6 +102,35 @@ app.kubernetes.io/component: "frps"
 {{- if not (kindIs "map" .Values.config) -}}
 {{- fail "config must be a map" -}}
 {{- end -}}
+{{- if not (kindIs "map" .Values.subdomainIngress) -}}
+{{- fail "subdomainIngress must be a map" -}}
+{{- end -}}
+{{- range $field := list "enabled" "tls" -}}
+{{- if not (kindIs "bool" (get $.Values.subdomainIngress $field)) -}}
+{{- fail (printf "subdomainIngress.%s must be a boolean" $field) -}}
+{{- end -}}
+{{- end -}}
+{{- range $field := list "apiVersion" "ingressClassName" "pathType" "secretName" -}}
+{{- if not (kindIs "string" (get $.Values.subdomainIngress $field)) -}}
+{{- fail (printf "subdomainIngress.%s must be a string" $field) -}}
+{{- end -}}
+{{- end -}}
+{{- if not (kindIs "map" .Values.subdomainIngress.annotations) -}}
+{{- fail "subdomainIngress.annotations must be a map" -}}
+{{- end -}}
+{{- if .Values.subdomainIngress.enabled -}}
+{{- $domainMessage := "config.subDomainHost must be a lower-case DNS name with at least two labels" -}}
+{{- if not (hasKey .Values.config "subDomainHost") -}}
+{{- fail $domainMessage -}}
+{{- end -}}
+{{- $subDomainHost := get .Values.config "subDomainHost" -}}
+{{- if not (kindIs "string" $subDomainHost) -}}
+{{- fail $domainMessage -}}
+{{- end -}}
+{{- if or (gt (len $subDomainHost) 251) (not (regexMatch "^[a-z0-9]([-a-z0-9]{0,61}[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]{0,61}[a-z0-9])?)+$" $subDomainHost)) -}}
+{{- fail $domainMessage -}}
+{{- end -}}
+{{- end -}}
 {{- $ports := dict -}}
 {{- range $field := list "bindPort" "vhostHTTPPort" "vhostHTTPSPort" -}}
 {{- $message := printf "config.%s must be an integer from 1 through 65535" $field -}}
@@ -128,6 +173,9 @@ app.kubernetes.io/component: "frps"
 {{- $config := mustDeepCopy .Values.config -}}
 {{- range $field := list "bindPort" "vhostHTTPPort" "vhostHTTPSPort" -}}
 {{- $_ := set $config $field (int (printf "%v" (get $config $field))) -}}
+{{- end -}}
+{{- if and (hasKey $config "subDomainHost") (empty (get $config "subDomainHost")) -}}
+{{- $_ := unset $config "subDomainHost" -}}
 {{- end -}}
 {{- $auth := default (dict) (get $config "auth") -}}
 {{- $_ := set $auth "method" "token" -}}

@@ -33,6 +33,12 @@ FRPS has been deployed as {{ include "frps.fullname" . }}.
 
      {{ ternary "https" "http" .Values.ingress.tls }}://{{ tpl .Values.ingress.hostname . }}{{ .Values.ingress.path }}
 {{- end }}
+{{- if .Values.subdomainIngress.enabled }}
+
+   The wildcard Ingress routes HTTP virtual-host traffic for one-label subdomains at:
+
+     {{ ternary "https" "http" .Values.subdomainIngress.tls }}://{{ include "frps.subdomainWildcard" . }}
+{{- end }}
 
 3. Inspect the server:
 
@@ -43,5 +49,5 @@ FRPS has been deployed as {{ include "frps.fullname" . }}.
 4. This release uses the external Secret {{ tpl .Values.auth.existingSecret . | quote }}.
    After rotating its token, restart FRPS because Secret subPath mounts do not update in place:
 
-     kubectl rollout restart deployment/{{ include "frps.fullname" . }}{{ if ne (include "common.names.namespace" .) "default" }} -n {{ include "common.names.namespace" . }}{{ end }}
+     kubectl rollout restart deployment/{{ include "frps.fullname" . }} -n {{ include "common.names.namespace" . }}
 {{- end }}

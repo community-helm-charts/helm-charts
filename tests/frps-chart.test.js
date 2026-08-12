@@ -31,13 +31,13 @@ function makeFrpsChart() {
   function render(...args) {
     return execFileSync(
       "helm",
-      ["template", "frps", chart, "--set-string", "auth.token=test-token", ...args],
+      ["template", "frps", chart, "--namespace", "frps", "--set-string", "auth.token=test-token", ...args],
       { encoding: "utf8", maxBuffer: 10 * 1024 * 1024, stdio: ["ignore", "pipe", "pipe"] },
     );
   }
 
   function renderResult(...args) {
-    return spawnSync("helm", ["template", "frps", chart, ...args], {
+    return spawnSync("helm", ["template", "frps", chart, "--namespace", "frps", ...args], {
       encoding: "utf8",
       maxBuffer: 10 * 1024 * 1024,
       stdio: ["ignore", "pipe", "pipe"],
@@ -60,7 +60,7 @@ data:
     try {
       const manifest = execFileSync(
         "helm",
-        ["template", "frps", chart, "--show-only", "templates/notes-test.yaml", ...args],
+        ["template", "frps", chart, "--namespace", "frps", "--show-only", "templates/notes-test.yaml", ...args],
         { encoding: "utf8", maxBuffer: 10 * 1024 * 1024, stdio: ["ignore", "pipe", "pipe"] },
       );
       const [document] = parseAllDocuments(manifest);
@@ -117,11 +117,11 @@ function resourceByName(manifest, kind, name) {
 test("chart metadata pins frps v0.70.1 and the local common dependency", () => {
   const chart = readFileSync(join(ROOT, "charts", "frps", "Chart.yaml"), "utf8");
   assert.match(chart, /^name: frps$/m);
-  assert.match(chart, /^version: 1\.0\.0$/m);
+  assert.match(chart, /^version: 1\.1\.0$/m);
   assert.match(chart, /^appVersion: "v0\.70\.1"$/m);
   assert.match(chart, /image: ghcr\.io\/fatedier\/frps:v0\.70\.1/);
   assert.match(chart, /repository: file:\/\/\.\.\/common/);
-  assert.match(chart, /version: 0\.2\.1/);
+  assert.match(chart, /version: 0\.2\.2/);
 });
 
 test("default config becomes TOML with a file-backed token and no token plaintext", () => {
@@ -155,6 +155,15 @@ test("nested config maps, arrays, and object arrays become TOML", () => {
     assert.match(allowPortBlock, /start = 2000/);
     assert.match(allowPortBlock, /end = 3000/);
     assert.match(manifest, /\[\[httpPlugins\]\][\s\S]*name = "user-manager"[\s\S]*ops = \["Login"\]/);
+  } finally { chart.cleanup(); }
+});
+
+test("subDomainHost config does not implicitly expose a wildcard Ingress", () => {
+  const chart = makeFrpsChart();
+  try {
+    const manifest = chart.render("--set", "config.subDomainHost=example.com");
+    assert.match(manifest, /subDomainHost = "example\.com"/);
+    assert.deepEqual(resourceNames(manifest, "Ingress"), []);
   } finally { chart.cleanup(); }
 });
 
@@ -750,6 +759,86 @@ test("Ingress preserves user-supplied extra paths and rules", () => {
   } finally { chart.cleanup(); }
 });
 
+test("wildcard Ingress terminates TLS and routes subdomains to the HTTP vhost Service", () => {
+  const chart = makeFrpsChart();
+  try {
+    const manifest = chart.render(
+      "--set", "config.subDomainHost=example.com",
+      "--set", "subdomainIngress.enabled=true",
+      "--set", "subdomainIngress.ingressClassName=nginx",
+      "--set-string", "subdomainIngress.annotations.cert-manager\\.io/cluster-issuer=letsencrypt-dns",
+      "--set", "subdomainIngress.pathType=Prefix",
+      "--set", "subdomainIngress.tls=true",
+    );
+    const ingress = resourceByName(manifest, "Ingress", "frps-subdomain");
+    assert.ok(ingress);
+    assert.equal(ingress.spec.ingressClassName, "nginx");
+    assert.equal(ingress.metadata.annotations["cert-manager.io/cluster-issuer"], "letsencrypt-dns");
+    assert.equal(ingress.spec.rules[0].host, "*.example.com");
+    assert.equal(ingress.spec.rules[0].http.paths[0].path, "/");
+    assert.equal(ingress.spec.rules[0].http.paths[0].pathType, "Prefix");
+    assert.deepEqual(ingress.spec.rules[0].http.paths[0].backend.service, {
+      name: "frps-vhost",
+      port: { name: "http" },
+    });
+    assert.deepEqual(ingress.spec.tls, [{
+      hosts: ["*.example.com"],
+      secretName: "frps-subdomain-tls",
+    }]);
+
+    const explicitSecretManifest = chart.render(
+      "--set", "config.subDomainHost=example.com",
+      "--set", "subdomainIngress.enabled=true",
+      "--set", "subdomainIngress.tls=true",
+      "--set", "subdomainIngress.secretName=wildcard-example-tls",
+    );
+    const explicitSecretIngress = resourceByName(explicitSecretManifest, "Ingress", "frps-subdomain");
+    assert.deepEqual(explicitSecretIngress.spec.tls, [{
+      hosts: ["*.example.com"],
+      secretName: "wildcard-example-tls",
+    }]);
+
+    const scalarSecretManifest = chart.render(
+      "--set", "config.subDomainHost=example.com",
+      "--set", "subdomainIngress.enabled=true",
+      "--set", "subdomainIngress.tls=true",
+      "--set-string", "subdomainIngress.secretName=true",
+    );
+    const scalarSecretIngress = resourceByName(scalarSecretManifest, "Ingress", "frps-subdomain");
+    assert.equal(scalarSecretIngress.spec.tls[0].secretName, "true");
+  } finally { chart.cleanup(); }
+});
+
+test("regular and wildcard Ingress resources coexist independently", () => {
+  const chart = makeFrpsChart();
+  try {
+    const manifest = chart.render(
+      "--set", "ingress.enabled=true",
+      "--set", "ingress.hostname=frps.example.net",
+      "--set", "config.subDomainHost=example.com",
+      "--set", "subdomainIngress.enabled=true",
+    );
+    assert.deepEqual(resourceNames(manifest, "Ingress"), ["frps", "frps-subdomain"]);
+    assert.equal(resourceByName(manifest, "Ingress", "frps").spec.rules[0].host, "frps.example.net");
+    assert.equal(resourceByName(manifest, "Ingress", "frps-subdomain").spec.rules[0].host, "*.example.com");
+
+    const longNameManifest = chart.render(
+      "--set", "fullnameOverride=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "--set", "ingress.enabled=true",
+      "--set", "config.subDomainHost=example.com",
+      "--set", "subdomainIngress.enabled=true",
+      "--set", "subdomainIngress.tls=true",
+    );
+    const longNameIngresses = resources(longNameManifest).filter(({ kind }) => kind === "Ingress");
+    assert.equal(new Set(longNameIngresses.map(({ metadata }) => metadata.name)).size, 2);
+    const longWildcardIngress = longNameIngresses.find(({ spec }) => spec.rules[0].host === "*.example.com");
+    assert.equal(longWildcardIngress.metadata.name.length, 63);
+    assert.match(longWildcardIngress.metadata.name, /-subdomain$/);
+    assert.equal(longWildcardIngress.spec.tls[0].secretName.length, 63);
+    assert.match(longWildcardIngress.spec.tls[0].secretName, /-subdomain-tls$/);
+  } finally { chart.cleanup(); }
+});
+
 test("extraDeploy renders arbitrary resources with release and chart context", () => {
   const chart = makeFrpsChart();
   try {
@@ -784,6 +873,19 @@ test("rejects invalid authentication and server configuration values", () => {
       [["--set-string", "auth.token=test", "--set-string", "config.auth.token=unsafe"], /config\.auth\.token is managed by the chart and must not be set/],
       [["--set-string", "auth.token=test", "--set", "config.auth.tokenSource.type=file"], /config\.auth\.tokenSource is managed by the chart and must not be set/],
       [["--set-string", "auth.token=test", "--set", "config.auth.method=oidc"], /config\.auth\.method must be token when set/],
+      [["--set-string", "auth.token=test", "--set", "subdomainIngress.enabled=true", "--set-string", "config.subDomainHost="], /config\.subDomainHost must be a lower-case DNS name with at least two labels/],
+      [["--set-string", "auth.token=test", "--set", "subdomainIngress.enabled=true", "--set-string", "config.subDomainHost=*.example.com"], /config\.subDomainHost must be a lower-case DNS name with at least two labels/],
+      [["--set-string", "auth.token=test", "--set", "subdomainIngress.enabled=true", "--set-string", "config.subDomainHost=https:\/\/example.com"], /config\.subDomainHost must be a lower-case DNS name with at least two labels/],
+      [["--set-string", "auth.token=test", "--set", "subdomainIngress.enabled=true", "--set-string", "config.subDomainHost=example.com:443"], /config\.subDomainHost must be a lower-case DNS name with at least two labels/],
+      [["--set-string", "auth.token=test", "--set", "subdomainIngress.enabled=true", "--set-string", "config.subDomainHost=example.com/path"], /config\.subDomainHost must be a lower-case DNS name with at least two labels/],
+      [["--set-string", "auth.token=test", "--set", "subdomainIngress.enabled=true", "--set-string", "config.subDomainHost=Example.com"], /config\.subDomainHost must be a lower-case DNS name with at least two labels/],
+      [["--set-string", "auth.token=test", "--set", "subdomainIngress.enabled=true", "--set-string", "config.subDomainHost=example.com."], /config\.subDomainHost must be a lower-case DNS name with at least two labels/],
+      [["--set-string", "auth.token=test", "--set", "subdomainIngress.enabled=true", "--set", "config.subDomainHost=true"], /config\.subDomainHost must be a lower-case DNS name with at least two labels/],
+      [["--set-string", "auth.token=test", "--set", "subdomainIngress.enabled=true", "--set-string", `config.subDomainHost=${"a".repeat(63)}.${"b".repeat(63)}.${"c".repeat(63)}.${"d".repeat(60)}`], /config\.subDomainHost must be a lower-case DNS name with at least two labels/],
+      [["--set-string", "auth.token=test", "--set", "subdomainIngress.enabled=true", "--set-string", "config.subDomainHost=example.com", "--set", "subdomainIngress.secretName=true"], /subdomainIngress\.secretName must be a string/],
+      [["--set-string", "auth.token=test", "--set-string", "subdomainIngress.enabled=false"], /subdomainIngress\.enabled must be a boolean/],
+      [["--set-string", "auth.token=test", "--set-string", "subdomainIngress.tls=false"], /subdomainIngress\.tls must be a boolean/],
+      [["--set-string", "auth.token=test", "--set", "subdomainIngress=invalid"], /subdomainIngress must be a map/],
     ];
 
     for (const [args, expected] of invalidCases) {
@@ -799,35 +901,36 @@ test("NOTES provide connection and inspection instructions", () => {
   try {
     const notes = chart.notes("--set-string", "auth.token=test-token");
     assert.match(notes, /kubectl get service frps/);
-    assert.match(notes, /frps-vhost\.default\.svc\.cluster\.local:8080/);
-    assert.match(notes, /frps-vhost\.default\.svc\.cluster\.local:8443/);
-    assert.match(notes, /kubectl get pods/);
-    assert.match(notes, /kubectl logs deployment\/frps/);
+    assert.match(notes, /kubectl get service frps -n frps/);
+    assert.match(notes, /frps-vhost\.frps\.svc\.cluster\.local:8080/);
+    assert.match(notes, /frps-vhost\.frps\.svc\.cluster\.local:8443/);
+    assert.match(notes, /kubectl get pods -n frps/);
+    assert.match(notes, /kubectl logs deployment\/frps -n frps/);
 
     const existingSecretNotes = chart.notes(
       "--set", "auth.existingSecret=shared-frps",
     );
-    assert.match(existingSecretNotes, /^     kubectl rollout restart deployment\/frps$/m);
+    assert.match(existingSecretNotes, /^     kubectl rollout restart deployment\/frps -n frps$/m);
   } finally { chart.cleanup(); }
 });
 
-test("NOTES cover NodePort, ClusterIP, Ingress, and namespace branches", () => {
+test("NOTES cover NodePort, ClusterIP, Ingress, and the frps namespace", () => {
   const chart = makeFrpsChart();
   try {
     const nodePortNotes = chart.notes(
-      "--namespace", "edge",
+      "--namespace", "frps",
       "--set-string", "auth.token=test-token",
       "--set", "service.type=NodePort",
     );
     assert.match(nodePortNotes, /primary Service is a NodePort/);
-    assert.match(nodePortNotes, /kubectl get service frps -n edge/);
+    assert.match(nodePortNotes, /kubectl get service frps -n frps/);
     assert.match(nodePortNotes, /kubectl get nodes -o wide/);
-    assert.match(nodePortNotes, /frps-vhost\.edge\.svc\.cluster\.local:8080/);
+    assert.match(nodePortNotes, /frps-vhost\.frps\.svc\.cluster\.local:8080/);
 
     const clusterIPIngressNotes = chart.notes(
-      "--namespace", "release-namespace",
+      "--namespace", "frps",
       "--set-string", "auth.token=test-token",
-      "--set", "namespaceOverride=runtime",
+      "--set", "namespaceOverride=frps-runtime",
       "--set", "service.type=ClusterIP",
       "--set", "ingress.enabled=true",
       "--set", "ingress.hostname=tunnels.example.com",
@@ -835,14 +938,46 @@ test("NOTES cover NodePort, ClusterIP, Ingress, and namespace branches", () => {
       "--set", "ingress.tls=true",
     );
     assert.match(clusterIPIngressNotes, /primary Service is a ClusterIP Service/);
-    assert.match(clusterIPIngressNotes, /frps\.runtime\.svc\.cluster\.local:7000/);
-    assert.match(clusterIPIngressNotes, /kubectl port-forward -n runtime service\/frps 7000:7000/);
+    assert.match(clusterIPIngressNotes, /frps\.frps-runtime\.svc\.cluster\.local:7000/);
+    assert.match(clusterIPIngressNotes, /kubectl port-forward -n frps-runtime service\/frps 7000:7000/);
+    assert.match(clusterIPIngressNotes, /kubectl get pods -n frps-runtime/);
+    assert.match(clusterIPIngressNotes, /kubectl logs deployment\/frps -n frps-runtime/);
     assert.match(clusterIPIngressNotes, /https:\/\/tunnels\.example\.com\/frp/);
 
+    const wildcardTLSNotes = chart.notes(
+      "--set-string", "auth.token=test-token",
+      "--set", "config.subDomainHost=example.com",
+      "--set", "subdomainIngress.enabled=true",
+      "--set", "subdomainIngress.tls=true",
+    );
+    assert.match(wildcardTLSNotes, /https:\/\/\*\.example\.com/);
+
+    const wildcardHTTPNotes = chart.notes(
+      "--set-string", "auth.token=test-token",
+      "--set", "config.subDomainHost=example.com",
+      "--set", "subdomainIngress.enabled=true",
+    );
+    assert.match(wildcardHTTPNotes, /http:\/\/\*\.example\.com/);
+
     const externalSecretNotes = chart.notes(
-      "--namespace", "edge",
+      "--namespace", "frps",
       "--set", "auth.existingSecret=shared-frps",
     );
-    assert.match(externalSecretNotes, /^     kubectl rollout restart deployment\/frps -n edge$/m);
+    assert.match(externalSecretNotes, /^     kubectl rollout restart deployment\/frps -n frps$/m);
   } finally { chart.cleanup(); }
+});
+
+test("README documents wildcard subdomain Ingress operation", () => {
+  const readme = readFileSync(join(ROOT, "charts", "frps", "README.md"), "utf8");
+  assert.match(readme, /config\.subDomainHost/);
+  assert.match(readme, /subdomainIngress\.enabled/);
+  assert.match(readme, /\*\.example\.com/);
+  assert.match(readme, /exactly one DNS label/);
+  assert.match(readme, /DNS-01/);
+  assert.match(readme, /cert-manager\.io\/cluster-issuer/);
+  assert.match(readme, /--namespace frps/);
+  assert.match(readme, /kubectl rollout restart deployment\/frps -n frps/);
+  assert.match(readme, /Kubernetes Service DNS does not provide wildcard aliases/);
+  assert.match(readme, /\*\.frps\.svc\.cluster\.local` is not an alias for `frps\.frps\.svc\.cluster\.local/);
+  assert.match(readme, /frps\.frps\.svc\.cluster\.local:7000/);
 });

@@ -15,6 +15,8 @@ Install with a chart-managed token:
 
 ```console
 helm install frps oci://ghcr.io/community-helm-charts/frps \
+  --namespace frps \
+  --create-namespace \
   --set-string auth.token='<TOKEN>'
 ```
 
@@ -23,10 +25,14 @@ Values passed through Helm, including `auth.token`, are retained in Helm release
 Create the Secret and select both its name and key:
 
 ```console
+kubectl create namespace frps --dry-run=client -o yaml | kubectl apply -f -
+
 kubectl create secret generic frps-credentials \
+  --namespace frps \
   --from-literal=credential='<TOKEN>'
 
 helm install frps oci://ghcr.io/community-helm-charts/frps \
+  --namespace frps \
   --set auth.existingSecret=frps-credentials \
   --set auth.existingSecretKey=credential
 ```
@@ -42,6 +48,7 @@ config:
   bindPort: 7000
   vhostHTTPPort: 8080
   vhostHTTPSPort: 8443
+  subDomainHost: ""
 ```
 
 The chart converts `config` to TOML and injects file-backed token authentication. The resulting configuration has this shape:
@@ -124,13 +131,32 @@ ingress:
   tls: true
 ```
 
+FRPS can route client proxies by subdomain when `config.subDomainHost` is set. The separate `subdomainIngress` resource is opt-in, so configuring FRPS alone does not expose a wildcard endpoint. Its Ingress class, annotations, and TLS are empty or disabled by default and must be selected for the target cluster.
+
+```yaml
+config:
+  subDomainHost: example.com
+
+subdomainIngress:
+  enabled: true
+  ingressClassName: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-dns
+  tls: true
+  secretName: ""
+```
+
+This creates a rule for `*.example.com` and sends `/` to the `http` port of the internal vhost Service. A Kubernetes wildcard matches exactly one DNS label: `app.example.com` matches, while `example.com` and `app.dev.example.com` do not. TLS terminates at the Ingress controller; when `secretName` is empty the Chart uses `<fullname>-subdomain-tls`. The Chart does not create a cert-manager `Certificate` or issuer. ACME wildcard certificates normally require a DNS-01 solver, so configure the annotation and issuer for the cluster's DNS provider.
+
+Create an external wildcard DNS record such as `*.example.com` pointing at the Ingress controller. Kubernetes Service DNS does not provide wildcard aliases: `*.frps.svc.cluster.local` is not an alias for `frps.frps.svc.cluster.local`. The latter identifies the `frps` Service in the `frps` namespace, while `foo.frps.svc.cluster.local` would identify a different Service named `foo`. Use `frps.frps.svc.cluster.local:7000` for in-cluster FRPC control connections, not as `config.subDomainHost`.
+
 ## Rotate an external token
 
 Externally managed Secret contents are not part of the Deployment checksum. The token is mounted with `subPath` and FRPS reads it at startup, so update the Secret and explicitly restart the Deployment:
 
 ```console
-kubectl rollout restart deployment/frps
-kubectl rollout status deployment/frps
+kubectl rollout restart deployment/frps -n frps
+kubectl rollout status deployment/frps -n frps
 ```
 
 Adjust the Deployment name and namespace when the release uses a different name or namespace override.
@@ -171,6 +197,7 @@ Adjust the Deployment name and namespace when the release uses a different name 
 | `config.bindPort` | FRPS client connection port | `7000` |
 | `config.vhostHTTPPort` | FRPS HTTP virtual-host port | `8080` |
 | `config.vhostHTTPSPort` | FRPS HTTPS virtual-host port | `8443` |
+| `config.subDomainHost` | FRPS base domain for HTTP subdomain proxies | `""` |
 | `auth.token` | Token stored in the chart-managed Secret | `""` |
 | `auth.existingSecret` | Existing Secret containing the token | `""` |
 | `auth.existingSecretKey` | Token key in the existing Secret | `token` |
@@ -226,6 +253,18 @@ Adjust the Deployment name and namespace when the release uses a different name 
 | `ingress.extraTls` | Additional TLS configurations | `[]` |
 | `ingress.extraRules` | Additional Ingress rules | `[]` |
 | `ingress.secrets` | TLS secrets | `[]` |
+
+### Subdomain Ingress parameters
+
+| Name | Description | Default |
+| --- | --- | --- |
+| `subdomainIngress.enabled` | Enable the wildcard subdomain Ingress | `false` |
+| `subdomainIngress.apiVersion` | Override Ingress API version | `""` |
+| `subdomainIngress.ingressClassName` | Ingress class name | `""` |
+| `subdomainIngress.annotations` | Additional Ingress annotations | `{}` |
+| `subdomainIngress.pathType` | Ingress path type | `ImplementationSpecific` |
+| `subdomainIngress.tls` | Enable TLS for the wildcard host | `false` |
+| `subdomainIngress.secretName` | TLS Secret name, generated when empty | `""` |
 
 ### Deployment and probe parameters
 

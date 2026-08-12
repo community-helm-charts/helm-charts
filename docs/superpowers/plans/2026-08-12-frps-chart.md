@@ -668,7 +668,7 @@ git commit -m "feat(frps): add optional vhost ingress"
 Render the chart and assert NOTES output contains the primary Service inspection command, the two internal vhost addresses, pod/log inspection commands, and—when `auth.existingSecret` is set—the exact restart instruction:
 
 ```text
-kubectl rollout restart deployment/frps
+kubectl rollout restart deployment/frps -n frps
 ```
 
 Do not grep README prose in automated tests; review human documentation against the spec checklist instead.
@@ -688,8 +688,8 @@ Write `NOTES.txt` with LoadBalancer/NodePort/ClusterIP-specific bind instruction
 Write `README.md` with these concrete sections:
 
 1. chart purpose and single-instance limitation;
-2. prerequisites and install with `--set-string auth.token=...` plus Helm metadata warning;
-3. existing Secret creation and `auth.existingSecret`/key install example;
+2. prerequisites and install into a dedicated `frps` namespace with `--set-string auth.token=...` plus Helm metadata warning;
+3. existing Secret creation in `frps` and `auth.existingSecret`/key install example;
 4. default `config` and generated tokenSource TOML;
 5. nested `config.*` example from the spec;
 6. reserved authentication keys and validation behavior;

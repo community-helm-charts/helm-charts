@@ -1,0 +1,28 @@
+annotations:
+  images: |
+    - name: frps
+      image: ghcr.io/fatedier/frps:v0.70.1
+  licenses: Apache-2.0
+apiVersion: v2
+appVersion: "v0.70.1"
+dependencies:
+  - name: common
+    repository: file://../common
+    version: 0.2.1
+description: A fast reverse proxy server.
+home: https://github.com/community-helm-charts/helm-charts
+keywords:
+  - proxy
+  - reverse-proxy
+  - server
+  - frp
+  - frps
+maintainers:
+  - name: community-helm-charts
+    url: https://github.com/community-helm-charts/helm-charts
+name: frps
+sources:
+  - https://github.com/community-helm-charts/helm-charts/tree/main/charts/frps
+  - https://github.com/fatedier/frp
+type: application
+version: 1.0.0

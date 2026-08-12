@@ -222,6 +222,9 @@ importers:
       nx-helm:
         specifier: ^0.1.0
         version: 0.1.0(nx@22.7.5)
+      yaml:
+        specifier: ^2.9.0
+        version: 2.9.0
 
 packages:
 

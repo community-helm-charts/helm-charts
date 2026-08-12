@@ -1,0 +1,7 @@
+auth:
+  token: test
+config:
+  bindPort: 7000
+  vhostHTTPPort: 8080
+  vhostHTTPSPort: 8443
+  auth: invalid

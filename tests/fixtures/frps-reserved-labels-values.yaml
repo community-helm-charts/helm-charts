@@ -1,0 +1,10 @@
+commonLabels:
+  app.kubernetes.io/name: changed-common-name
+  app.kubernetes.io/instance: changed-common-instance
+  app.kubernetes.io/component: changed-common-component
+  owner: platform
+podLabels:
+  app.kubernetes.io/name: changed-pod-name
+  app.kubernetes.io/instance: changed-pod-instance
+  app.kubernetes.io/component: changed-pod-component
+  role: edge

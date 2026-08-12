@@ -1,0 +1,47 @@
+FRPS has been deployed as {{ include "frps.fullname" . }}.
+
+1. Find the client connection endpoint:
+{{- if eq .Values.service.type "LoadBalancer" }}
+
+   The primary Service is a LoadBalancer. Wait for its external address:
+
+     kubectl get service {{ include "frps.serviceName" . }} -n {{ include "common.names.namespace" . }} --watch
+{{- else if eq .Values.service.type "NodePort" }}
+
+   The primary Service is a NodePort. Inspect its assigned bind port and choose a reachable node address:
+
+     kubectl get service {{ include "frps.serviceName" . }} -n {{ include "common.names.namespace" . }}
+     kubectl get nodes -o wide
+{{- else }}
+
+   The primary Service is a {{ .Values.service.type }} Service and is reachable inside the cluster at:
+
+     {{ include "frps.serviceName" . }}.{{ include "common.names.namespace" . }}.svc.{{ .Values.clusterDomain }}:{{ include "frps.bindPort" . }}
+
+   To access it temporarily from this workstation:
+
+     kubectl port-forward -n {{ include "common.names.namespace" . }} service/{{ include "frps.serviceName" . }} {{ include "frps.bindPort" . }}:{{ include "frps.bindPort" . }}
+{{- end }}
+
+2. The virtual-host Service endpoints are:
+
+     HTTP:  {{ include "frps.vhostServiceName" . }}.{{ include "common.names.namespace" . }}.svc.{{ .Values.clusterDomain }}:{{ include "frps.vhostHTTPPort" . }}
+     HTTPS: {{ include "frps.vhostServiceName" . }}.{{ include "common.names.namespace" . }}.svc.{{ .Values.clusterDomain }}:{{ include "frps.vhostHTTPSPort" . }}
+{{- if .Values.ingress.enabled }}
+
+   The enabled Ingress routes HTTP virtual-host traffic at:
+
+     {{ ternary "https" "http" .Values.ingress.tls }}://{{ tpl .Values.ingress.hostname . }}{{ .Values.ingress.path }}
+{{- end }}
+
+3. Inspect the server:
+
+     kubectl get pods -n {{ include "common.names.namespace" . }} -l app.kubernetes.io/instance={{ .Release.Name }},app.kubernetes.io/component=frps
+     kubectl logs deployment/{{ include "frps.fullname" . }} -n {{ include "common.names.namespace" . }}
+{{- if .Values.auth.existingSecret }}
+
+4. This release uses the external Secret {{ tpl .Values.auth.existingSecret . | quote }}.
+   After rotating its token, restart FRPS because Secret subPath mounts do not update in place:
+
+     kubectl rollout restart deployment/{{ include "frps.fullname" . }}{{ if ne (include "common.names.namespace" .) "default" }} -n {{ include "common.names.namespace" . }}{{ end }}
+{{- end }}

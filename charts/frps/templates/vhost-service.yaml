@@ -1,0 +1,39 @@
+{{- include "frps.validateValues" . }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "frps.vhostServiceName" . }}
+  namespace: {{ include "common.names.namespace" . | quote }}
+  {{- $labels := include "common.tplvalues.merge" (dict "values" (list .Values.vhostService.labels .Values.commonLabels) "context" .) }}
+  labels: {{- include "common.labels.standard" (dict "customLabels" $labels "context" $) | nindent 4 }}
+    app.kubernetes.io/component: frps
+  {{- if or .Values.vhostService.annotations .Values.commonAnnotations }}
+  {{- $annotations := include "common.tplvalues.merge" (dict "values" (list .Values.vhostService.annotations .Values.commonAnnotations) "context" .) }}
+  annotations: {{- include "common.tplvalues.render" (dict "value" $annotations "context" $) | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ .Values.vhostService.type }}
+  {{- if .Values.vhostService.clusterIP }}
+  clusterIP: {{ .Values.vhostService.clusterIP | quote }}
+  {{- end }}
+  internalTrafficPolicy: {{ .Values.vhostService.internalTrafficPolicy }}
+  sessionAffinity: {{ .Values.vhostService.sessionAffinity }}
+  {{- if .Values.vhostService.sessionAffinityConfig }}
+  sessionAffinityConfig: {{- include "common.tplvalues.render" (dict "value" .Values.vhostService.sessionAffinityConfig "context" $) | nindent 4 }}
+  {{- end }}
+  {{- if .Values.vhostService.ipFamilyPolicy }}
+  ipFamilyPolicy: {{ .Values.vhostService.ipFamilyPolicy }}
+  {{- end }}
+  {{- if .Values.vhostService.ipFamilies }}
+  ipFamilies: {{- include "common.tplvalues.render" (dict "value" .Values.vhostService.ipFamilies "context" $) | nindent 4 }}
+  {{- end }}
+  selector: {{- include "frps.selectorLabels" . | nindent 4 }}
+  ports:
+    - name: http
+      port: {{ include "frps.vhostHTTPPort" . }}
+      targetPort: vhost-http
+      protocol: TCP
+    - name: https
+      port: {{ include "frps.vhostHTTPSPort" . }}
+      targetPort: vhost-https
+      protocol: TCP

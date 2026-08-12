@@ -1,0 +1,279 @@
+## @section Global parameters
+## @param global.imageRegistry Global container image registry
+## @param global.imagePullSecrets Global container registry secret names
+##
+global:
+  imageRegistry: ""
+  imagePullSecrets: []
+
+## @section Common parameters
+## @param kubeVersion Override Kubernetes version
+## @param nameOverride Partially override the chart name
+## @param fullnameOverride Fully override the chart name
+## @param namespaceOverride Fully override the release namespace
+## @param clusterDomain Kubernetes cluster domain
+## @param commonLabels Labels added to every resource
+## @param commonAnnotations Annotations added to every resource
+## @param secretAnnotations Annotations to add to chart-managed Secret objects
+## @param extraDeploy Additional objects to deploy
+##
+kubeVersion: ""
+nameOverride: ""
+fullnameOverride: ""
+namespaceOverride: ""
+clusterDomain: cluster.local
+commonLabels: {}
+commonAnnotations: {}
+secretAnnotations: {}
+extraDeploy: []
+
+## @section FRPS image parameters
+## @param image.registry FRPS image registry
+## @param image.repository FRPS image repository
+## @param image.tag FRPS image tag
+## @param image.digest FRPS image digest in the form sha256:...
+## @param image.pullPolicy FRPS image pull policy
+## @param image.pullSecrets FRPS image pull secrets
+##
+image:
+  registry: ghcr.io
+  repository: fatedier/frps
+  tag: v0.70.1
+  digest: ""
+  pullPolicy: IfNotPresent
+  pullSecrets: []
+
+## @section Server configuration parameters
+## @param config.bindPort FRPS client connection port
+## @param config.vhostHTTPPort FRPS HTTP virtual-host port
+## @param config.vhostHTTPSPort FRPS HTTPS virtual-host port
+##
+config:
+  bindPort: 7000
+  vhostHTTPPort: 8080
+  vhostHTTPSPort: 8443
+
+## @section Authentication parameters
+## @param auth.token Token stored in the chart-managed Secret
+## @param auth.existingSecret Existing Secret containing the token
+## @param auth.existingSecretKey Token key in the existing Secret
+##
+auth:
+  token: ""
+  existingSecret: ""
+  existingSecretKey: token
+
+## @section Service parameters
+## @param service.type Service type
+## @param service.nodePorts.bind Node port for client connections
+## @param service.clusterIP Service cluster IP
+## @param service.annotations Additional Service annotations
+## @param service.labels Additional Service labels
+## @param service.internalTrafficPolicy Service internal traffic policy
+## @param service.externalTrafficPolicy Service external traffic policy
+## @param service.loadBalancerClass Load balancer implementation class
+## @param service.loadBalancerIP Load balancer IP address
+## @param service.loadBalancerSourceRanges Allowed source ranges for the load balancer
+## @param service.sessionAffinity Service session affinity
+## @param service.sessionAffinityConfig Additional session affinity settings
+## @param service.ipFamilyPolicy Service IP family policy
+## @param service.ipFamilies Service IP families
+## @param service.extraPorts Additional Service ports
+##
+service:
+  type: LoadBalancer
+  nodePorts:
+    bind: ""
+  clusterIP: ""
+  annotations: {}
+  labels: {}
+  internalTrafficPolicy: Cluster
+  externalTrafficPolicy: Cluster
+  loadBalancerClass: ""
+  loadBalancerIP: ""
+  loadBalancerSourceRanges: []
+  sessionAffinity: None
+  sessionAffinityConfig: {}
+  ipFamilyPolicy: ""
+  ipFamilies: []
+  extraPorts: []
+
+## @section Virtual-host Service parameters
+## @param vhostService.type Service type
+## @param vhostService.clusterIP Service cluster IP
+## @param vhostService.annotations Additional Service annotations
+## @param vhostService.labels Additional Service labels
+## @param vhostService.internalTrafficPolicy Service internal traffic policy
+## @param vhostService.sessionAffinity Service session affinity
+## @param vhostService.sessionAffinityConfig Additional session affinity settings
+## @param vhostService.ipFamilyPolicy Service IP family policy
+## @param vhostService.ipFamilies Service IP families
+##
+vhostService:
+  type: ClusterIP
+  clusterIP: ""
+  annotations: {}
+  labels: {}
+  internalTrafficPolicy: Cluster
+  sessionAffinity: None
+  sessionAffinityConfig: {}
+  ipFamilyPolicy: ""
+  ipFamilies: []
+
+## @section Ingress parameters
+## @param ingress.enabled Enable the Ingress resource
+## @param ingress.pathType Ingress path type
+## @param ingress.apiVersion Override Ingress API version
+## @param ingress.hostname Default Ingress hostname
+## @param ingress.path Default Ingress path
+## @param ingress.annotations Additional Ingress annotations
+## @param ingress.ingressClassName Ingress class name
+## @param ingress.tls Enable TLS for the default host
+## @param ingress.extraHosts Additional Ingress hosts
+## @param ingress.extraPaths Additional Ingress paths
+## @param ingress.extraTls Additional TLS configurations
+## @param ingress.extraRules Additional Ingress rules
+## @param ingress.secrets TLS secrets
+##
+ingress:
+  enabled: false
+  pathType: ImplementationSpecific
+  apiVersion: ""
+  hostname: frps.local
+  path: /
+  annotations: {}
+  ingressClassName: ""
+  tls: false
+  extraHosts: []
+  extraPaths: []
+  extraTls: []
+  extraRules: []
+  secrets: []
+
+## @section Deployment parameters
+## @param command Override the FRPS container command
+## @param args Override the FRPS container arguments
+## @param extraEnvVars Additional environment variables
+## @param extraEnvVarsCM Existing ConfigMap imported as environment variables
+## @param extraEnvVarsSecret Existing Secret imported as environment variables
+## @param extraVolumes Additional pod volumes
+## @param extraVolumeMounts Additional container volume mounts
+## @param initContainers Additional init containers
+## @param sidecars Additional sidecar containers
+##
+command: []
+args: []
+extraEnvVars: []
+extraEnvVarsCM: ""
+extraEnvVarsSecret: ""
+extraVolumes: []
+extraVolumeMounts: []
+initContainers: []
+sidecars: []
+
+## @section Probe parameters
+## @param livenessProbe.enabled Enable the liveness probe
+## @param livenessProbe.initialDelaySeconds Initial liveness probe delay
+## @param livenessProbe.periodSeconds Liveness probe interval
+## @param livenessProbe.timeoutSeconds Liveness probe timeout
+## @param livenessProbe.failureThreshold Liveness probe failure threshold
+## @param livenessProbe.successThreshold Liveness probe success threshold
+## @param readinessProbe.enabled Enable the readiness probe
+## @param readinessProbe.initialDelaySeconds Initial readiness probe delay
+## @param readinessProbe.periodSeconds Readiness probe interval
+## @param readinessProbe.timeoutSeconds Readiness probe timeout
+## @param readinessProbe.failureThreshold Readiness probe failure threshold
+## @param readinessProbe.successThreshold Readiness probe success threshold
+## @param customLivenessProbe Complete liveness probe override
+## @param customReadinessProbe Complete readiness probe override
+##
+livenessProbe:
+  enabled: true
+  initialDelaySeconds: 10
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 1
+  successThreshold: 1
+readinessProbe:
+  enabled: true
+  initialDelaySeconds: 5
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+  successThreshold: 1
+customLivenessProbe: {}
+customReadinessProbe: {}
+
+## @section Resource parameters
+## @param resourcesPreset Common resource preset
+## @param resources Explicit resource requests and limits
+##
+resourcesPreset: nano
+resources: {}
+
+## @section Security parameters
+## @param podSecurityContext.enabled Enable the pod security context
+## @param podSecurityContext.sysctls Pod sysctls
+## @param containerSecurityContext.enabled Enable the container security context
+## @param containerSecurityContext.runAsUser Container user ID
+## @param containerSecurityContext.runAsGroup Container group ID
+## @param containerSecurityContext.runAsNonRoot Require a non-root container
+## @param containerSecurityContext.allowPrivilegeEscalation Allow privilege escalation
+## @param containerSecurityContext.readOnlyRootFilesystem Use a read-only root filesystem
+## @param containerSecurityContext.capabilities.drop Linux capabilities to drop
+## @param containerSecurityContext.seccompProfile.type Seccomp profile type
+##
+podSecurityContext:
+  enabled: true
+  sysctls:
+    - name: net.ipv4.ping_group_range
+      value: "65532 65532"
+containerSecurityContext:
+  enabled: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  runAsNonRoot: true
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+  seccompProfile:
+    type: RuntimeDefault
+
+## @section Scheduling parameters
+## @param podLabels Additional pod labels
+## @param podAnnotations Additional pod annotations
+## @param priorityClassName Pod priority class
+## @param schedulerName Alternate scheduler
+## @param terminationGracePeriodSeconds Pod termination grace period
+## @param hostAliases Pod host aliases
+## @param affinity Pod affinity rules
+## @param nodeSelector Node selection labels
+## @param tolerations Pod tolerations
+## @param topologySpreadConstraints Pod topology spread constraints
+##
+podLabels: {}
+podAnnotations: {}
+priorityClassName: ""
+schedulerName: ""
+terminationGracePeriodSeconds: ""
+hostAliases: []
+affinity: {}
+nodeSelector: {}
+tolerations: []
+topologySpreadConstraints: []
+
+## @section ServiceAccount parameters
+## @param serviceAccount.create Create a ServiceAccount
+## @param serviceAccount.name ServiceAccount name
+## @param serviceAccount.automountServiceAccountToken Automount API credentials on the ServiceAccount
+## @param serviceAccount.annotations Additional ServiceAccount annotations
+## @param automountServiceAccountToken Automount API credentials in server pods
+##
+serviceAccount:
+  create: true
+  name: ""
+  automountServiceAccountToken: false
+  annotations: {}
+automountServiceAccountToken: false

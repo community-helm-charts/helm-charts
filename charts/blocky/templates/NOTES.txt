@@ -1,0 +1,16 @@
+Blocky has been deployed as {{ include "blocky.fullname" . }}.
+
+The in-cluster plain HTTP DoH endpoint is:
+
+  http://{{ include "blocky.serviceName" . }}.{{ include "common.names.namespace" . }}.svc.{{ .Values.clusterDomain }}:{{ .Values.service.port }}{{ .Values.blocky.dohPath }}
+{{- if .Values.ingress.enabled }}
+
+The external DoH endpoint is:
+
+  {{ ternary "https" "http" .Values.ingress.tls }}://{{ tpl .Values.ingress.hostname . }}{{ .Values.ingress.path }}
+{{- end }}
+
+Inspect the workload:
+
+  kubectl get pods -n {{ include "common.names.namespace" . }} -l app.kubernetes.io/instance={{ .Release.Name }},app.kubernetes.io/component=dns-proxy
+  kubectl logs deployment/{{ include "blocky.fullname" . }} -n {{ include "common.names.namespace" . }}

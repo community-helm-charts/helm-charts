@@ -69,7 +69,6 @@ test("chart metadata pins cloudflared 2026.7.2 and the local common dependency",
   assert.match(chart, /^appVersion: "2026\.7\.2"$/m);
   assert.match(chart, /image: docker\.io\/cloudflare\/cloudflared:2026\.7\.2/);
   assert.match(chart, /repository: file:\/\/\.\.\/common/);
-  assert.match(chart, /version: 0\.2\.2/);
 });
 
 test("managed token renders a secure two-replica connector Deployment", () => {

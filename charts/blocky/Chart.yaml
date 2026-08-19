@@ -1,0 +1,30 @@
+annotations:
+  images: |
+    - name: blocky
+      image: ghcr.io/0xerr0r/blocky:v0.34.0
+    - name: busybox
+      image: docker.io/library/busybox:1.36
+  licenses: Apache-2.0
+apiVersion: v2
+appVersion: "v0.34.0"
+dependencies:
+  - name: common
+    repository: file://../common
+    version: 0.2.2
+description: A fast and lightweight DNS proxy with DNS-over-HTTPS support.
+home: https://github.com/community-helm-charts/helm-charts
+keywords:
+  - blocky
+  - dns
+  - doh
+  - dns-over-https
+  - proxy
+maintainers:
+  - name: community-helm-charts
+    url: https://github.com/community-helm-charts/helm-charts
+name: blocky
+sources:
+  - https://github.com/community-helm-charts/helm-charts/tree/main/charts/blocky
+  - https://github.com/0xERR0R/blocky
+type: application
+version: 1.0.0

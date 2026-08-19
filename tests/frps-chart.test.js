@@ -117,11 +117,9 @@ function resourceByName(manifest, kind, name) {
 test("chart metadata pins frps v0.70.1 and the local common dependency", () => {
   const chart = readFileSync(join(ROOT, "charts", "frps", "Chart.yaml"), "utf8");
   assert.match(chart, /^name: frps$/m);
-  assert.match(chart, /^version: 1\.1\.0$/m);
   assert.match(chart, /^appVersion: "v0\.70\.1"$/m);
   assert.match(chart, /image: ghcr\.io\/fatedier\/frps:v0\.70\.1/);
   assert.match(chart, /repository: file:\/\/\.\.\/common/);
-  assert.match(chart, /version: 0\.2\.2/);
 });
 
 test("default config becomes TOML with a file-backed token and no token plaintext", () => {

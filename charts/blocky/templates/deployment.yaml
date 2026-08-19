@@ -1,0 +1,214 @@
+{{- include "blocky.validateValues" . }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "blocky.fullname" . }}
+  namespace: {{ include "common.names.namespace" . | quote }}
+  labels: {{- include "common.labels.standard" (dict "customLabels" .Values.commonLabels "context" $) | nindent 4 }}
+    app.kubernetes.io/component: dns-proxy
+  {{- if .Values.commonAnnotations }}
+  annotations: {{- include "common.tplvalues.render" (dict "value" .Values.commonAnnotations "context" $) | nindent 4 }}
+  {{- end }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  strategy: {{- toYaml .Values.updateStrategy | nindent 4 }}
+  selector:
+    matchLabels: {{- include "blocky.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels: {{- include "blocky.podLabels" . | nindent 8 }}
+      annotations:
+        checksum/configmap: {{ include "common.utils.checksumTemplate" (dict "path" "/configmap.yaml" "context" $) }}
+        {{- if .Values.podAnnotations }}
+        {{- include "common.tplvalues.render" (dict "value" .Values.podAnnotations "context" $) | nindent 8 }}
+        {{- end }}
+    spec:
+      serviceAccountName: {{ include "blocky.serviceAccountName" . }}
+      automountServiceAccountToken: {{ .Values.automountServiceAccountToken }}
+      {{- include "blocky.imagePullSecrets" . | nindent 6 }}
+      {{- if .Values.hostAliases }}
+      hostAliases: {{- include "common.tplvalues.render" (dict "value" .Values.hostAliases "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .Values.affinity }}
+      affinity: {{- include "common.tplvalues.render" (dict "value" .Values.affinity "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .Values.nodeSelector }}
+      nodeSelector: {{- include "common.tplvalues.render" (dict "value" .Values.nodeSelector "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .Values.tolerations }}
+      tolerations: {{- include "common.tplvalues.render" (dict "value" .Values.tolerations "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .Values.topologySpreadConstraints }}
+      topologySpreadConstraints: {{- include "common.tplvalues.render" (dict "value" .Values.topologySpreadConstraints "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .Values.priorityClassName }}
+      priorityClassName: {{ .Values.priorityClassName | quote }}
+      {{- end }}
+      {{- if .Values.schedulerName }}
+      schedulerName: {{ .Values.schedulerName | quote }}
+      {{- end }}
+      {{- if .Values.terminationGracePeriodSeconds }}
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
+      {{- end }}
+      {{- if .Values.podSecurityContext.enabled }}
+      securityContext: {{- include "common.compatibility.renderSecurityContext" (dict "secContext" .Values.podSecurityContext "context" $) | nindent 8 }}
+      {{- end }}
+      initContainers:
+        - name: configure-upstreams
+          image: {{ include "blocky.discoveryImage" . }}
+          imagePullPolicy: {{ .Values.podDnsUpstream.image.pullPolicy | quote }}
+          command:
+            - /bin/sh
+            - -c
+          args:
+            - |
+              set -eu
+              cp /config-template/00-base.yml /app/config/00-base.yml
+              if [ -s /config-template/10-upstreams.yml ]; then
+                cp /config-template/10-upstreams.yml /app/config/10-upstreams.yml
+              else
+                awk '
+                  BEGIN {
+                    print "upstreams:"
+                    print "  groups:"
+                    print "    default:"
+                  }
+                  $1 == "nameserver" {
+                    address = $2
+                    if (index(address, ":") > 0) {
+                      address = "[" address "]"
+                    }
+                    printf "      - \"%s:53\"\n", address
+                    count++
+                  }
+                  END {
+                    if (count == 0) exit 1
+                  }
+                ' /etc/resolv.conf > /app/config/10-upstreams.yml
+              fi
+              test -s /app/config/10-upstreams.yml
+              cat /app/config/10-upstreams.yml
+          securityContext: {{- include "common.compatibility.renderSecurityContext" (dict "secContext" .Values.podDnsUpstream.securityContext "context" $) | nindent 12 }}
+          volumeMounts:
+            - name: config-template
+              mountPath: /config-template
+              readOnly: true
+            - name: config
+              mountPath: /app/config
+        {{- if .Values.initContainers }}
+        {{- include "common.tplvalues.render" (dict "value" .Values.initContainers "context" $) | nindent 8 }}
+        {{- end }}
+      containers:
+        - name: blocky
+          image: {{ include "blocky.image" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy | quote }}
+          {{- if .Values.containerSecurityContext.enabled }}
+          securityContext: {{- include "common.compatibility.renderSecurityContext" (dict "secContext" .Values.containerSecurityContext "context" $) | nindent 12 }}
+          {{- end }}
+          {{- if .Values.command }}
+          command: {{- include "common.tplvalues.render" (dict "value" .Values.command "context" $) | nindent 12 }}
+          {{- end }}
+          {{- if .Values.args }}
+          args: {{- include "common.tplvalues.render" (dict "value" .Values.args "context" $) | nindent 12 }}
+          {{- end }}
+          env:
+            - name: BLOCKY_CONFIG_FILE
+              value: /app/config
+            {{- if .Values.extraEnvVars }}
+            {{- include "common.tplvalues.render" (dict "value" .Values.extraEnvVars "context" $) | nindent 12 }}
+            {{- end }}
+          {{- if or .Values.extraEnvVarsCM .Values.extraEnvVarsSecret }}
+          envFrom:
+            {{- if .Values.extraEnvVarsCM }}
+            - configMapRef:
+                name: {{ .Values.extraEnvVarsCM }}
+            {{- end }}
+            {{- if .Values.extraEnvVarsSecret }}
+            - secretRef:
+                name: {{ .Values.extraEnvVarsSecret }}
+            {{- end }}
+          {{- end }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.blocky.httpPort }}
+              protocol: TCP
+            - name: dns-tcp
+              containerPort: {{ .Values.blocky.dnsPort }}
+              protocol: TCP
+            - name: dns-udp
+              containerPort: {{ .Values.blocky.dnsPort }}
+              protocol: UDP
+          {{- if .Values.customLivenessProbe }}
+          livenessProbe: {{- include "common.tplvalues.render" (dict "value" .Values.customLivenessProbe "context" $) | nindent 12 }}
+          {{- else if .Values.livenessProbe.enabled }}
+          livenessProbe:
+            httpGet:
+              scheme: HTTP
+              port: http
+              path: {{ printf "%s?dns=AAABAAABAAAAAAAAC2hlYWx0aGNoZWNrBmJsb2NreQAAAQAB" .Values.blocky.dohPath | quote }}
+              httpHeaders:
+                - name: Accept
+                  value: application/dns-message
+            initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
+            successThreshold: {{ .Values.livenessProbe.successThreshold }}
+          {{- end }}
+          {{- if .Values.customReadinessProbe }}
+          readinessProbe: {{- include "common.tplvalues.render" (dict "value" .Values.customReadinessProbe "context" $) | nindent 12 }}
+          {{- else if .Values.readinessProbe.enabled }}
+          readinessProbe:
+            httpGet:
+              scheme: HTTP
+              port: http
+              path: {{ printf "%s?dns=AAABAAABAAAAAAAAC2hlYWx0aGNoZWNrBmJsb2NreQAAAQAB" .Values.blocky.dohPath | quote }}
+              httpHeaders:
+                - name: Accept
+                  value: application/dns-message
+            initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
+            successThreshold: {{ .Values.readinessProbe.successThreshold }}
+          {{- end }}
+          {{- if .Values.customStartupProbe }}
+          startupProbe: {{- include "common.tplvalues.render" (dict "value" .Values.customStartupProbe "context" $) | nindent 12 }}
+          {{- else if .Values.startupProbe.enabled }}
+          startupProbe:
+            httpGet:
+              scheme: HTTP
+              port: http
+              path: {{ printf "%s?dns=AAABAAABAAAAAAAAC2hlYWx0aGNoZWNrBmJsb2NreQAAAQAB" .Values.blocky.dohPath | quote }}
+              httpHeaders:
+                - name: Accept
+                  value: application/dns-message
+            periodSeconds: {{ .Values.startupProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.startupProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.startupProbe.failureThreshold }}
+            successThreshold: {{ .Values.startupProbe.successThreshold }}
+          {{- end }}
+          {{- if .Values.resources }}
+          resources: {{- toYaml .Values.resources | nindent 12 }}
+          {{- else if ne .Values.resourcesPreset "none" }}
+          resources: {{- include "common.resources.preset" (dict "type" .Values.resourcesPreset) | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: config
+              mountPath: /app/config
+              readOnly: true
+            {{- if .Values.extraVolumeMounts }}
+            {{- include "common.tplvalues.render" (dict "value" .Values.extraVolumeMounts "context" $) | nindent 12 }}
+            {{- end }}
+        {{- if .Values.sidecars }}
+        {{- include "common.tplvalues.render" (dict "value" .Values.sidecars "context" $) | nindent 8 }}
+        {{- end }}
+      volumes:
+        - name: config-template
+          configMap:
+            name: {{ printf "%s-config" (include "blocky.fullname" .) | trunc 63 | trimSuffix "-" }}
+        - name: config
+          emptyDir: {}
+        {{- if .Values.extraVolumes }}
+        {{- include "common.tplvalues.render" (dict "value" .Values.extraVolumes "context" $) | nindent 8 }}
+        {{- end }}

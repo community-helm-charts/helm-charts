@@ -6,6 +6,7 @@ import test from "node:test";
 const ROOT = resolve(import.meta.dirname, "..");
 const INTERNAL_REPOSITORY = "oci://ghcr.io/community-helm-charts";
 const LOCAL_INTERNAL_REPOSITORY = /^file:\/\/\.\.\//;
+const SEMVER = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/;
 
 function chartFile(chartName, file = "Chart.yaml") {
   return join(ROOT, "charts", chartName, file);
@@ -42,6 +43,20 @@ function internalDependencies(chartName, file = "Chart.yaml") {
     return dependency.repository === INTERNAL_REPOSITORY || LOCAL_INTERNAL_REPOSITORY.test(dependency.repository);
   });
 }
+
+test("chart versions are valid SemVer without pinning release-managed values", () => {
+  const chartNames = readdirSync(join(ROOT, "charts"), { withFileTypes: true })
+    .filter((entry) => entry.isDirectory() && existsSync(chartFile(entry.name)))
+    .map((entry) => entry.name)
+    .sort();
+
+  const invalidVersions = chartNames
+    .map((chartName) => [chartName, chartVersion(chartName)])
+    .filter(([, version]) => !SEMVER.test(version))
+    .map(([chartName, version]) => `${chartName}: ${version}`);
+
+  assert.deepEqual(invalidVersions, []);
+});
 
 test("internal chart dependency versions match the referenced chart versions", () => {
   const chartNames = readdirSync(join(ROOT, "charts"), { withFileTypes: true })

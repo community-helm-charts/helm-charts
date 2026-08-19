@@ -1,0 +1,277 @@
+## @section Global parameters
+## @param global.imageRegistry Global container image registry
+## @param global.imagePullSecrets Global container registry secret names
+##
+global:
+  imageRegistry: ""
+  imagePullSecrets: []
+
+## @section Common parameters
+## @param kubeVersion Override Kubernetes version
+## @param nameOverride Partially override the chart name
+## @param fullnameOverride Fully override the chart name
+## @param namespaceOverride Fully override the release namespace
+## @param clusterDomain Kubernetes cluster domain
+## @param commonLabels Labels added to every resource
+## @param commonAnnotations Annotations added to every resource
+## @param extraDeploy Additional objects to deploy
+##
+kubeVersion: ""
+nameOverride: ""
+fullnameOverride: ""
+namespaceOverride: ""
+clusterDomain: cluster.local
+commonLabels: {}
+commonAnnotations: {}
+extraDeploy: []
+
+## @section Blocky image parameters
+## @param image.registry Blocky image registry
+## @param image.repository Blocky image repository
+## @param image.tag Blocky image tag
+## @param image.digest Blocky image digest in the form sha256:...
+## @param image.pullPolicy Blocky image pull policy
+## @param image.pullSecrets Blocky image pull secrets
+##
+image:
+  registry: ghcr.io
+  repository: 0xerr0r/blocky
+  tag: v0.34.0
+  digest: ""
+  pullPolicy: IfNotPresent
+  pullSecrets: []
+
+## @section Blocky configuration
+## @param blocky.httpPort Plain HTTP port serving DoH, metrics, and the REST API
+## @param blocky.dnsPort Unprivileged plain DNS TCP/UDP port
+## @param blocky.dohPath DNS-over-HTTPS request path
+## @param blocky.upstreams Explicit default-group upstreams; takes precedence over resolv.conf discovery
+## @param blocky.config Additional Blocky configuration; ports and upstreams are chart-managed. Special-use domain blocking defaults off so cluster.local reaches CoreDNS
+##
+blocky:
+  httpPort: 4000
+  dnsPort: 5353
+  dohPath: /dns-query
+  upstreams: []
+  config:
+    specialUseDomains:
+      enable: false
+
+## @section Pod DNS upstream discovery
+## @param podDnsUpstream.enabled Generate Blocky's default upstream group from the Pod's /etc/resolv.conf when blocky.upstreams is empty
+## @param podDnsUpstream.image.registry Discovery init container image registry
+## @param podDnsUpstream.image.repository Discovery init container image repository
+## @param podDnsUpstream.image.tag Discovery init container image tag
+## @param podDnsUpstream.image.digest Discovery init container image digest in the form sha256:...
+## @param podDnsUpstream.image.pullPolicy Discovery init container image pull policy
+## @param podDnsUpstream.image.pullSecrets Discovery init container image pull secrets
+## @param podDnsUpstream.securityContext Discovery init container security context
+##
+podDnsUpstream:
+  enabled: true
+  image:
+    registry: docker.io
+    repository: library/busybox
+    tag: "1.36"
+    digest: ""
+    pullPolicy: IfNotPresent
+    pullSecrets: []
+  securityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    runAsGroup: 100
+    runAsNonRoot: true
+    runAsUser: 100
+    capabilities:
+      drop:
+        - ALL
+    seccompProfile:
+      type: RuntimeDefault
+
+## @section Service parameters
+## @param service.type Service type
+## @param service.port Service HTTP port
+## @param service.clusterIP Service cluster IP
+## @param service.annotations Additional Service annotations
+## @param service.labels Additional Service labels
+## @param service.internalTrafficPolicy Service internal traffic policy
+## @param service.sessionAffinity Service session affinity
+## @param service.sessionAffinityConfig Additional session affinity settings
+## @param service.ipFamilyPolicy Service IP family policy
+## @param service.ipFamilies Service IP families
+## @param service.extraPorts Additional Service ports
+##
+service:
+  type: ClusterIP
+  port: 4000
+  clusterIP: ""
+  annotations: {}
+  labels: {}
+  internalTrafficPolicy: Cluster
+  sessionAffinity: None
+  sessionAffinityConfig: {}
+  ipFamilyPolicy: ""
+  ipFamilies: []
+  extraPorts: []
+
+## @section Ingress parameters
+## @param ingress.enabled Enable the Ingress resource
+## @param ingress.pathType Ingress path type
+## @param ingress.apiVersion Override Ingress API version
+## @param ingress.hostname Default Ingress hostname
+## @param ingress.path Default Ingress path
+## @param ingress.annotations Additional Ingress annotations
+## @param ingress.ingressClassName Ingress class name
+## @param ingress.tls Enable TLS for the default host
+## @param ingress.tlsSecretName TLS Secret for the default host; generated from the hostname when empty
+## @param ingress.extraHosts Additional Ingress hosts
+## @param ingress.extraPaths Additional paths inserted before the default path
+## @param ingress.extraTls Additional TLS configurations
+## @param ingress.extraRules Additional Ingress rules
+##
+ingress:
+  enabled: false
+  pathType: Exact
+  apiVersion: ""
+  hostname: blocky.local
+  path: /dns-query
+  annotations: {}
+  ingressClassName: ""
+  tls: false
+  tlsSecretName: ""
+  extraHosts: []
+  extraPaths: []
+  extraTls: []
+  extraRules: []
+
+## @section Deployment parameters
+## @param replicaCount Number of Blocky replicas
+## @param updateStrategy Deployment update strategy
+## @param command Override the Blocky container command
+## @param args Override the Blocky container arguments
+## @param extraEnvVars Additional environment variables
+## @param extraEnvVarsCM Existing ConfigMap imported as environment variables
+## @param extraEnvVarsSecret Existing Secret imported as environment variables
+## @param extraVolumes Additional pod volumes
+## @param extraVolumeMounts Additional Blocky container volume mounts
+## @param initContainers Additional init containers
+## @param sidecars Additional sidecar containers
+##
+replicaCount: 1
+updateStrategy:
+  type: RollingUpdate
+command: []
+args: []
+extraEnvVars: []
+extraEnvVarsCM: ""
+extraEnvVarsSecret: ""
+extraVolumes: []
+extraVolumeMounts: []
+initContainers: []
+sidecars: []
+
+## @section Probe parameters
+## @param livenessProbe.enabled Enable the HTTP DoH liveness probe
+## @param readinessProbe.enabled Enable the HTTP DoH readiness probe
+## @param startupProbe.enabled Enable the HTTP DoH startup probe
+## @param customLivenessProbe Complete liveness probe override
+## @param customReadinessProbe Complete readiness probe override
+## @param customStartupProbe Complete startup probe override
+##
+livenessProbe:
+  enabled: true
+  initialDelaySeconds: 10
+  periodSeconds: 20
+  timeoutSeconds: 2
+  failureThreshold: 3
+  successThreshold: 1
+readinessProbe:
+  enabled: true
+  initialDelaySeconds: 2
+  periodSeconds: 10
+  timeoutSeconds: 2
+  failureThreshold: 3
+  successThreshold: 1
+startupProbe:
+  enabled: true
+  periodSeconds: 2
+  timeoutSeconds: 1
+  failureThreshold: 30
+  successThreshold: 1
+customLivenessProbe: {}
+customReadinessProbe: {}
+customStartupProbe: {}
+
+## @section Resource parameters
+## @param resourcesPreset Common resource preset
+## @param resources Explicit resource requests and limits
+##
+resourcesPreset: nano
+resources: {}
+
+## @section Security parameters
+## @param podSecurityContext.enabled Enable the pod security context
+## @param podSecurityContext.fsGroup Pod filesystem group
+## @param podSecurityContext.fsGroupChangePolicy Filesystem group ownership policy
+## @param containerSecurityContext.enabled Enable the container security context
+## @param containerSecurityContext.runAsUser Container user ID
+## @param containerSecurityContext.runAsGroup Container group ID
+## @param containerSecurityContext.runAsNonRoot Require a non-root container
+## @param containerSecurityContext.allowPrivilegeEscalation Allow privilege escalation
+## @param containerSecurityContext.readOnlyRootFilesystem Use a read-only root filesystem
+## @param containerSecurityContext.capabilities.drop Linux capabilities to drop
+## @param containerSecurityContext.seccompProfile.type Seccomp profile type
+##
+podSecurityContext:
+  enabled: true
+  fsGroup: 100
+  fsGroupChangePolicy: OnRootMismatch
+containerSecurityContext:
+  enabled: true
+  runAsUser: 100
+  runAsGroup: 100
+  runAsNonRoot: true
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+  seccompProfile:
+    type: RuntimeDefault
+
+## @section Scheduling parameters
+## @param podLabels Additional pod labels
+## @param podAnnotations Additional pod annotations
+## @param priorityClassName Pod priority class
+## @param schedulerName Alternate scheduler
+## @param terminationGracePeriodSeconds Pod termination grace period
+## @param hostAliases Pod host aliases
+## @param affinity Pod affinity rules
+## @param nodeSelector Node selection labels
+## @param tolerations Pod tolerations
+## @param topologySpreadConstraints Pod topology spread constraints
+##
+podLabels: {}
+podAnnotations: {}
+priorityClassName: ""
+schedulerName: ""
+terminationGracePeriodSeconds: ""
+hostAliases: []
+affinity: {}
+nodeSelector: {}
+tolerations: []
+topologySpreadConstraints: []
+
+## @section ServiceAccount parameters
+## @param serviceAccount.create Create a ServiceAccount
+## @param serviceAccount.name ServiceAccount name
+## @param serviceAccount.automountServiceAccountToken Automount API credentials on the ServiceAccount
+## @param serviceAccount.annotations Additional ServiceAccount annotations
+## @param automountServiceAccountToken Automount API credentials in Blocky pods
+##
+serviceAccount:
+  create: true
+  name: ""
+  automountServiceAccountToken: false
+  annotations: {}
+automountServiceAccountToken: false

@@ -1,3 +1,13 @@
+## 1.1.5 (2026-09-10)
+
+### 🩹 Fixes
+
+- **komari:** update server to 1.4.3 ([ccfd567](https://github.com/community-helm-charts/helm-charts/commit/ccfd567))
+
+### ❤️ Thank You
+
+- Xudong Huang @xudongcc
+
 ## 1.1.4 (2026-08-12)
 
 ### 🧱 Updated Dependencies

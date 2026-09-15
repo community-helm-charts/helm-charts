@@ -1,12 +1,73 @@
 import assert from "node:assert/strict";
-import { execFileSync, spawnSync } from "node:child_process";
+import { execFile, execFileSync, spawnSync } from "node:child_process";
 import { cpSync, mkdtempSync, mkdirSync, readFileSync, rmSync } from "node:fs";
+import { createServer } from "node:http";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import test from "node:test";
+import { promisify } from "node:util";
 import { parse, parseAllDocuments } from "yaml";
 
 const ROOT = resolve(import.meta.dirname, "..");
+const execFileAsync = promisify(execFile);
+
+function apiResource(name, kind) {
+  return {
+    name,
+    singularName: "",
+    namespaced: true,
+    kind,
+    verbs: ["get", "list", "create", "update", "patch", "delete"],
+  };
+}
+
+async function withFakeKubeApi(fn) {
+  const server = createServer((req, res) => {
+    const pathname = new URL(req.url ?? "/", "http://127.0.0.1").pathname;
+    res.setHeader("content-type", "application/json");
+
+    const resourceLists = {
+      "/api/v1": { groupVersion: "v1", resources: [apiResource("serviceaccounts", "ServiceAccount"), apiResource("services", "Service")] },
+      "/apis/apps/v1": { groupVersion: "apps/v1", resources: [apiResource("statefulsets", "StatefulSet")] },
+      "/apis/networking.k8s.io/v1": { groupVersion: "networking.k8s.io/v1", resources: [apiResource("ingresses", "Ingress")] },
+    };
+
+    if (pathname === "/version") {
+      res.end(JSON.stringify({ major: "1", minor: "30", gitVersion: "v1.30.0" }));
+    } else if (pathname === "/api") {
+      res.end(JSON.stringify({ kind: "APIVersions", versions: ["v1"], serverAddressByClientCIDRs: [] }));
+    } else if (pathname === "/apis") {
+      res.end(JSON.stringify({
+        kind: "APIGroupList",
+        groups: [
+          {
+            name: "apps",
+            versions: [{ groupVersion: "apps/v1", version: "v1" }],
+            preferredVersion: { groupVersion: "apps/v1", version: "v1" },
+          },
+          {
+            name: "networking.k8s.io",
+            versions: [{ groupVersion: "networking.k8s.io/v1", version: "v1" }],
+            preferredVersion: { groupVersion: "networking.k8s.io/v1", version: "v1" },
+          },
+        ],
+      }));
+    } else if (resourceLists[pathname]) {
+      res.end(JSON.stringify({ kind: "APIResourceList", ...resourceLists[pathname] }));
+    } else {
+      res.statusCode = 404;
+      res.end(JSON.stringify({ message: "not found" }));
+    }
+  });
+
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  try {
+    const { port } = server.address();
+    return await fn(`http://127.0.0.1:${port}`);
+  } finally {
+    await new Promise((resolve, reject) => server.close((error) => (error ? reject(error) : resolve())));
+  }
+}
 
 function makeChart(t) {
   const dir = mkdtempSync(join(tmpdir(), "uptime-kuma-chart-"));
@@ -218,7 +279,7 @@ test("invalid ports and conflicting configuration fail with actionable messages"
   }
 });
 
-test("chart lints, packages, and renders the README values examples", (t) => {
+test("chart lints, packages, and renders the README values examples", async (t) => {
   const chart = makeChart(t);
   execFileSync("helm", ["lint", chart.path, "--strict"], { stdio: "pipe" });
   const output = execFileSync("helm", ["package", chart.path, "-d", resolve(chart.path, "..")], { encoding: "utf8" });
@@ -230,6 +291,17 @@ test("chart lints, packages, and renders the README values examples", (t) => {
   assert.equal(metadata.dependencies[0].repository, "file://../common");
   const readme = readFileSync(join(chart.path, "README.md"), "utf8");
   for (const [, yaml] of readme.matchAll(/```yaml\n([\s\S]*?)```/g)) chart.render(parse(yaml));
-  const notes = execFileSync("helm", ["install", "uptime-kuma", chart.path, "--dry-run=client", "--set", "ingress.enabled=true"], { encoding: "utf8", stdio: "pipe" });
+  const notes = await withFakeKubeApi(async (apiServer) => {
+    const { stdout } = await execFileAsync("helm", [
+      "install", "uptime-kuma", chart.path,
+      "--dry-run=client", "--debug", "--disable-openapi-validation",
+      "--kube-apiserver", apiServer,
+      "--set", "ingress.enabled=true",
+    ], {
+      encoding: "utf8",
+      env: { ...process.env, KUBECONFIG: "/tmp/nonexistent-kubeconfig" },
+    });
+    return stdout;
+  });
   assert.match(notes, /http:\/\/status\.example\.com\//);
 });

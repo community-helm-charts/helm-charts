@@ -1,0 +1,30 @@
+Uptime Kuma has been deployed as {{ include "uptime-kuma.fullname" . }}.
+
+Access the setup screen locally:
+
+  kubectl port-forward -n {{ include "common.names.namespace" . }} statefulset/{{ include "uptime-kuma.fullname" . }} 3001:{{ .Values.containerPorts.http }}
+
+Then open http://localhost:3001 and create the administrator account.
+{{- if .Values.service.enabled }}
+
+The in-cluster HTTP endpoint is:
+
+  http://{{ include "uptime-kuma.serviceName" . }}.{{ include "common.names.namespace" . }}.svc.{{ .Values.clusterDomain }}:{{ .Values.service.ports.http }}
+{{- end }}
+{{- if .Values.ingress.enabled }}
+
+The configured Ingress URL is:
+
+  {{ ternary "https" "http" .Values.ingress.tls }}://{{ tpl .Values.ingress.hostname . }}{{ .Values.ingress.path }}
+
+The Ingress controller must support WebSocket upgrades.
+{{- end }}
+{{- if not .Values.persistence.enabled }}
+
+WARNING: Persistence is disabled. Local data will be lost when the pod is removed.
+With SQLite, this includes the database. With external MariaDB, provide database
+settings on every start and preserve any required local assets separately.
+{{- end }}
+
+This chart runs one replica. Back up /app/data (or your configured data path)
+before application upgrades. Do not share a SQLite data volume between instances.

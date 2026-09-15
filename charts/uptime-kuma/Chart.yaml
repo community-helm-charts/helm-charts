@@ -1,0 +1,27 @@
+annotations:
+  images: |
+    - name: uptime-kuma
+      image: docker.io/louislam/uptime-kuma:2.5.4
+  licenses: MIT
+apiVersion: v2
+appVersion: "2.5.4"
+dependencies:
+  - name: common
+    repository: file://../common
+    version: 0.2.2
+description: A self-hosted monitoring tool with status pages and notifications.
+home: https://github.com/community-helm-charts/helm-charts
+keywords:
+  - uptime-kuma
+  - monitoring
+  - uptime
+  - status-page
+maintainers:
+  - name: community-helm-charts
+    url: https://github.com/community-helm-charts/helm-charts
+name: uptime-kuma
+sources:
+  - https://github.com/community-helm-charts/helm-charts/tree/main/charts/uptime-kuma
+  - https://github.com/louislam/uptime-kuma
+type: application
+version: 1.0.0

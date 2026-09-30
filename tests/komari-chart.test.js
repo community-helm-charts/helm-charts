@@ -66,9 +66,9 @@ test("chart metadata pins stable Komari images and the local common dependency",
   const chart = readChartFile("Chart.yaml");
 
   assert.match(chart, /^name: komari$/m);
-  assert.match(chart, /^appVersion: "1\.4\.3"$/m);
-  assert.match(chart, /image: ghcr\.io\/komari-monitor\/komari:1\.4\.3/);
-  assert.match(chart, /image: ghcr\.io\/komari-monitor\/komari-agent:1\.2\.60/);
+  assert.match(chart, /^appVersion: "1\.5\.1"$/m);
+  assert.match(chart, /image: ghcr\.io\/komari-monitor\/komari:1\.5\.1/);
+  assert.match(chart, /image: ghcr\.io\/komari-monitor\/komari-agent:1\.5\.11/);
   assert.match(chart, /repository: file:\/\/\.\.\/common/);
 });
 
@@ -83,7 +83,7 @@ test("default render creates only the stateful Komari server", () => {
     assert.deepEqual(resourceNames(manifest, "ServiceAccount"), ["komari-server"]);
     assert.deepEqual(resourceNames(manifest, "Secret"), []);
     assert.match(manifest, /replicas: 1/);
-    assert.match(manifest, /image: ghcr\.io\/komari-monitor\/komari:1\.4\.3/);
+    assert.match(manifest, /image: ghcr\.io\/komari-monitor\/komari:1\.5\.1/);
     assert.match(manifest, /containerPort: 25774/);
     assert.match(manifest, /mountPath: \/app\/data/);
     assert.match(manifest, /volumeClaimTemplates:/);
@@ -193,7 +193,7 @@ test("enabled Agent uses managed discovery, internal endpoint, and per-node iden
     assert.deepEqual(resourceNames(manifest, "DaemonSet"), ["komari-agent"]);
     assert.deepEqual(resourceNames(manifest, "Secret"), ["komari-agent"]);
     assert.deepEqual(resourceNames(manifest, "ServiceAccount"), ["komari-agent", "komari-server"]);
-    assert.match(manifest, /image: ghcr\.io\/komari-monitor\/komari-agent:1\.2\.60/);
+    assert.match(manifest, /image: ghcr\.io\/komari-monitor\/komari-agent:1\.5\.11/);
     assert.match(manifest, /stringData:\n\s+auto-discovery-key: "discovery-key"/);
     assert.match(manifest, /name: AGENT_ENDPOINT\n\s+value: "http:\/\/komari-server:25774"/);
     assert.match(

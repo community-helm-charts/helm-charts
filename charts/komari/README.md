@@ -12,8 +12,8 @@ release.
 
 | Component | Default image |
 | --- | --- |
-| Server | `ghcr.io/komari-monitor/komari:1.4.3` |
-| Agent | `ghcr.io/komari-monitor/komari-agent:1.2.60` |
+| Server | `ghcr.io/komari-monitor/komari:1.5.1` |
+| Agent | `ghcr.io/komari-monitor/komari-agent:1.5.11` |
 
 Both tags are pinned for reproducible upgrades. Override the corresponding
 `server.image.*` or `agent.image.*` values to use another release.
@@ -338,7 +338,7 @@ Both components support:
 | `server.enabled` | `true` | Deploy the server |
 | `server.image.registry` | `ghcr.io` | Server image registry |
 | `server.image.repository` | `komari-monitor/komari` | Server image repository |
-| `server.image.tag` | `1.4.3` | Server image tag |
+| `server.image.tag` | `1.5.1` | Server image tag |
 | `server.containerPorts.http` | `25774` | Server container port |
 | `server.service.enabled` | `true` | Create the server Service |
 | `server.service.type` | `ClusterIP` | Service type |
@@ -364,7 +364,7 @@ Both components support:
 | `agent.enabled` | `false` | Deploy the Agent DaemonSet |
 | `agent.image.registry` | `ghcr.io` | Agent image registry |
 | `agent.image.repository` | `komari-monitor/komari-agent` | Agent image repository |
-| `agent.image.tag` | `1.2.60` | Agent image tag |
+| `agent.image.tag` | `1.5.11` | Agent image tag |
 | `agent.endpoint` | `""` | External endpoint or automatic in-release endpoint |
 | `agent.disableAutoUpdate` | `true` | Disable in-container binary updates |
 | `agent.auth.autoDiscoveryKey` | `""` | Key placed in the chart-managed Secret |

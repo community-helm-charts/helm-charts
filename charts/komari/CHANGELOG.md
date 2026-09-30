@@ -1,3 +1,13 @@
+## 1.1.6 (2026-09-30)
+
+### 🩹 Fixes
+
+- **komari:** update server and agent images to latest stable ([f48f441](https://github.com/community-helm-charts/helm-charts/commit/f48f441))
+
+### ❤️ Thank You
+
+- Xudong Huang @xudongcc
+
 ## 1.1.5 (2026-09-10)
 
 ### 🩹 Fixes

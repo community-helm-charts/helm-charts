@@ -1,12 +1,12 @@
 annotations:
   images: |
     - name: komari
-      image: ghcr.io/komari-monitor/komari:1.6.0
+      image: ghcr.io/komari-monitor/komari:1.6.1
     - name: komari-agent
       image: ghcr.io/komari-monitor/komari-agent:1.5.11
   licenses: MIT
 apiVersion: v2
-appVersion: "1.6.0"
+appVersion: "1.6.1"
 dependencies:
   - name: common
     repository: file://../common

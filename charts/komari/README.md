@@ -12,13 +12,13 @@ release.
 
 | Component | Default image |
 | --- | --- |
-| Server | `ghcr.io/komari-monitor/komari:1.6.0` |
+| Server | `ghcr.io/komari-monitor/komari:1.6.1` |
 | Agent | `ghcr.io/komari-monitor/komari-agent:1.5.11` |
 
 Both tags are pinned for reproducible upgrades. Override the corresponding
 `server.image.*` or `agent.image.*` values to use another release.
 
-## Upgrading to Server 1.6.0
+## Upgrading to Server 1.6.x
 
 Server 1.6.0 changes the notification system and removes several features.
 Back up the server data before upgrading and review the
@@ -37,6 +37,10 @@ Back up the server data before upgrading and review the
   volume at `/app/cache` with suitable permissions.
 
 The Agent image remains pinned to 1.5.11.
+
+Server 1.6.1 replaces the Goja JavaScript engine with MoeJS. After upgrading,
+check custom plugins and JavaScript notification scripts for compatibility. See
+the [1.6.1 release notes](https://github.com/komari-monitor/komari/releases/tag/1.6.1).
 
 ## Install
 
@@ -358,7 +362,7 @@ Both components support:
 | `server.enabled` | `true` | Deploy the server |
 | `server.image.registry` | `ghcr.io` | Server image registry |
 | `server.image.repository` | `komari-monitor/komari` | Server image repository |
-| `server.image.tag` | `1.6.0` | Server image tag |
+| `server.image.tag` | `1.6.1` | Server image tag |
 | `server.containerPorts.http` | `25774` | Server container port |
 | `server.service.enabled` | `true` | Create the server Service |
 | `server.service.type` | `ClusterIP` | Service type |

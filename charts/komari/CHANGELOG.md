@@ -1,3 +1,13 @@
+## 1.1.8 (2026-10-26)
+
+### 🩹 Fixes
+
+- **komari:** update server image to 1.6.1 ([d955984](https://github.com/community-helm-charts/helm-charts/commit/d955984))
+
+### ❤️ Thank You
+
+- Xudong Huang @xudongcc
+
 ## 1.1.7 (2026-10-26)
 
 ### 🩹 Fixes

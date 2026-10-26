@@ -5,6 +5,7 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
+import { parse } from "yaml";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -149,6 +150,24 @@ test("primary ingress uses Bitnami-style ingressClassName and extra host values"
     assert.match(manifest, /pathType: ImplementationSpecific/);
     assert.match(manifest, /host: "admin\.example\.com"/);
     assert.match(manifest, /path: "\/admin"/);
+  } finally {
+    chart.cleanup();
+  }
+});
+
+test("analytics updates release persistent storage before replacing the pod", () => {
+  const chart = makeGhostChart();
+  try {
+    for (const [args, strategy] of [
+      [[], "Recreate"],
+      [["--set", "trafficAnalytics.persistence.existingClaim=analytics-data"], "Recreate"],
+      [["--set", "trafficAnalytics.persistence.enabled=false"], "RollingUpdate"],
+    ]) {
+      const manifest = chart.render("--set", "trafficAnalytics.enabled=true", ...args);
+      const deployment = parse(resourceDocument(manifest, "Deployment", "ghost-traffic-analytics"));
+      assert.equal(deployment.spec.strategy.type, strategy);
+      assert.equal(deployment.spec.replicas, 1);
+    }
   } finally {
     chart.cleanup();
   }

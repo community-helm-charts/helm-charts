@@ -9,6 +9,8 @@ metadata:
     app.kubernetes.io/component: traffic-analytics
 spec:
   replicas: 1
+  strategy:
+    type: {{ if .Values.trafficAnalytics.persistence.enabled }}Recreate{{ else }}RollingUpdate{{ end }}
   selector:
     {{- $podLabels := include "common.tplvalues.merge" (dict "values" (list .Values.trafficAnalytics.podLabels .Values.commonLabels) "context" .) }}
     matchLabels: {{- include "common.labels.matchLabels" (dict "customLabels" $podLabels "context" $) | nindent 6 }}

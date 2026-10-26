@@ -103,6 +103,10 @@ ghost:
 
 Ghost analytics uses Tinybird plus the `ghost/traffic-analytics` proxy service.
 
+With analytics persistence enabled, updates use `Recreate` so the old pod releases
+its volume before the replacement starts. Without persistence, updates use
+`RollingUpdate`.
+
 ```yaml
 trafficAnalytics:
   enabled: true

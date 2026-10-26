@@ -1,3 +1,13 @@
+## 1.1.7 (2026-10-26)
+
+### 🩹 Fixes
+
+- **charts:** update application images to stable releases ([ceb9e19](https://github.com/community-helm-charts/helm-charts/commit/ceb9e19))
+
+### ❤️ Thank You
+
+- Xudong Huang @xudongcc
+
 ## 1.1.6 (2026-09-30)
 
 ### 🩹 Fixes

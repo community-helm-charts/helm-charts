@@ -40,9 +40,9 @@ or create a Secret with key:
 {{- end }}
 {{- end }}
 
-{{- if .Values.activitypub.enabled }}
+{{- if and .Values.activitypub.enabled .Values.ghost.enabled .Values.ghost.service.enabled }}
 
 Self-hosted ActivityPub is enabled at:
 
-  {{ include "ghost.activitypub.fullname" . }}.{{ include "common.names.namespace" . }}.svc.{{ .Values.clusterDomain }}:{{ .Values.activitypub.service.ports.http }}
+  {{ include "ghost.serviceName" . }}.{{ include "common.names.namespace" . }}.svc.{{ .Values.clusterDomain }}:{{ .Values.activitypub.service.ports.http }}
 {{- end }}

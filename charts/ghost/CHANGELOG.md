@@ -1,3 +1,13 @@
+## 1.1.1 (2026-10-26)
+
+### 🩹 Fixes
+
+- **ghost:** recreate analytics pods when using persistent storage ([7ca4aa7](https://github.com/community-helm-charts/helm-charts/commit/7ca4aa7))
+
+### ❤️ Thank You
+
+- Xudong Huang @xudongcc
+
 ## 1.1.0 (2026-10-26)
 
 ### 🚀 Features

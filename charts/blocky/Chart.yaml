@@ -1,12 +1,12 @@
 annotations:
   images: |
     - name: blocky
-      image: ghcr.io/0xerr0r/blocky:v0.34.0
+      image: ghcr.io/0xerr0r/blocky:v0.35.0
     - name: busybox
-      image: docker.io/library/busybox:1.36
+      image: docker.io/library/busybox:1.37.0
   licenses: Apache-2.0
 apiVersion: v2
-appVersion: "v0.34.0"
+appVersion: "v0.35.0"
 dependencies:
   - name: common
     repository: file://../common

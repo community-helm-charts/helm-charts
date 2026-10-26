@@ -32,7 +32,7 @@ From inside the cluster:
 
 ```console
 kubectl run my-postgres-client --rm --tty -i --restart='Never' \
-  --image docker.io/library/postgres:18.3-alpine \
+  --image docker.io/library/postgres:18.6-alpine \
   --env="PGPASSWORD=$(kubectl get secret my-postgres-postgresql -o jsonpath='{.data.postgresql-password}' | base64 -d)" \
   --command -- psql \
   --host my-postgres-postgresql \
@@ -103,7 +103,7 @@ initdb:
 | --- | --- | --- |
 | `image.registry` | PostgreSQL image registry | `docker.io` |
 | `image.repository` | PostgreSQL image repository | `library/postgres` |
-| `image.tag` | PostgreSQL image tag | `18.3-alpine` |
+| `image.tag` | PostgreSQL image tag | `18.6-alpine` |
 | `image.pullPolicy` | Image pull policy | `IfNotPresent` |
 | `auth.username` | Initial PostgreSQL superuser | `postgres` |
 | `auth.password` | Password for `auth.username`; generated when empty | `""` |

@@ -113,7 +113,7 @@ The HTTP listener also serves Blocky's API, metrics, and debugging endpoints. Th
 | --- | --- | --- |
 | `image.registry` | Blocky image registry | `ghcr.io` |
 | `image.repository` | Blocky image repository | `0xerr0r/blocky` |
-| `image.tag` | Blocky image tag | `v0.34.0` |
+| `image.tag` | Blocky image tag | `v0.35.0` |
 | `image.digest` | Blocky image digest | `""` |
 | `image.pullPolicy` | Image pull policy | `IfNotPresent` |
 | `blocky.httpPort` | Plain HTTP/DoH container port | `4000` |

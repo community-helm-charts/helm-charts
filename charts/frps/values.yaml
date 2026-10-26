@@ -38,7 +38,7 @@ extraDeploy: []
 image:
   registry: ghcr.io
   repository: fatedier/frps
-  tag: v0.70.1
+  tag: v0.71.1
   digest: ""
   pullPolicy: IfNotPresent
   pullSecrets: []

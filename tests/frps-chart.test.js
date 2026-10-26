@@ -8,7 +8,7 @@ import test from "node:test";
 import { parseAllDocuments } from "yaml";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const FRPS_IMAGE = "ghcr.io/fatedier/frps:v0.70.1";
+const FRPS_IMAGE = "ghcr.io/fatedier/frps:v0.71.1";
 const HAS_PINNED_FRPS_IMAGE = spawnSync(
   "docker", ["image", "inspect", FRPS_IMAGE], { stdio: "ignore" },
 ).status === 0;
@@ -114,11 +114,11 @@ function resourceByName(manifest, kind, name) {
   );
 }
 
-test("chart metadata pins frps v0.70.1 and the local common dependency", () => {
+test("chart metadata pins frps v0.71.1 and the local common dependency", () => {
   const chart = readFileSync(join(ROOT, "charts", "frps", "Chart.yaml"), "utf8");
   assert.match(chart, /^name: frps$/m);
-  assert.match(chart, /^appVersion: "v0\.70\.1"$/m);
-  assert.match(chart, /image: ghcr\.io\/fatedier\/frps:v0\.70\.1/);
+  assert.match(chart, /^appVersion: "v0\.71\.1"$/m);
+  assert.match(chart, /image: ghcr\.io\/fatedier\/frps:v0\.71\.1/);
   assert.match(chart, /repository: file:\/\/\.\.\/common/);
 });
 
@@ -218,7 +218,7 @@ test("single-instance Deployment renders safe default server behavior", () => {
     assert.deepEqual(resourceNames(manifest, "ServiceAccount"), ["frps"]);
     assert.match(deployment, /replicas: 1/);
     assert.match(deployment, /strategy:\n\s+type: Recreate/);
-    assert.match(deployment, /image: ghcr\.io\/fatedier\/frps:v0\.70\.1/);
+    assert.match(deployment, /image: ghcr\.io\/fatedier\/frps:v0\.71\.1/);
     assert.match(deployment, /imagePullPolicy: "IfNotPresent"/);
     assert.match(deployment, /args:\n\s+- -c\n\s+- \/etc\/frp\/frps\.toml/);
     assert.match(deployment, /name: bind\n\s+containerPort: 7000\n\s+protocol: TCP/);
@@ -318,7 +318,7 @@ test("string-form required ports become numeric TOML and matching Kubernetes int
   } finally { chart.cleanup(); }
 });
 
-test("generated TOML passes the pinned frps v0.70.1 verifier", {
+test("generated TOML passes the pinned frps v0.71.1 verifier", {
   skip: HAS_PINNED_FRPS_IMAGE ? false : `${FRPS_IMAGE} is not available locally`,
 }, () => {
   const chart = makeFrpsChart();

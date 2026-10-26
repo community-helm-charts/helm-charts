@@ -1,10 +1,10 @@
 annotations:
   images: |
     - name: shadowsocks
-      image: ghcr.io/shadowsocks/ssserver-rust:v1.24.0
+      image: ghcr.io/shadowsocks/ssserver-rust:v1.25.0
   licenses: MIT
 apiVersion: v2
-appVersion: "v1.24.0"
+appVersion: "v1.25.0"
 dependencies:
   - name: common
     repository: file://../common

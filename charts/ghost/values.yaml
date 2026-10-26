@@ -79,7 +79,7 @@ ghost:
   image:
     registry: docker.io
     repository: library/ghost
-    tag: 6.39.0-alpine
+    tag: 6.72.0-alpine
     digest: ""
     pullPolicy: IfNotPresent
     pullSecrets: []
@@ -322,7 +322,7 @@ mysql:
   image:
     registry: docker.io
     repository: library/mysql
-    tag: 8.0.44
+    tag: 8.0.46
     digest: ""
     pullPolicy: IfNotPresent
     pullSecrets: []
@@ -396,7 +396,7 @@ trafficAnalytics:
   image:
     registry: docker.io
     repository: ghost/traffic-analytics
-    tag: 1.0.231
+    tag: 1.0.507
     digest: ""
     pullPolicy: IfNotPresent
     pullSecrets: []
@@ -415,7 +415,7 @@ trafficAnalytics:
       image:
         registry: docker.io
         repository: tinybirdco/tb-cli-docker
-        tag: 4.5.8
+        tag: 4.6.22
         digest: ""
         pullPolicy: IfNotPresent
         pullSecrets: []
@@ -568,7 +568,7 @@ activitypub:
   image:
     registry: ghcr.io
     repository: tryghost/activitypub
-    tag: 1.2.2
+    tag: 1.2.9
     digest: ""
     pullPolicy: IfNotPresent
     pullSecrets: []
@@ -576,7 +576,7 @@ activitypub:
     image:
       registry: ghcr.io
       repository: tryghost/activitypub-migrations
-      tag: 1.2.2
+      tag: 1.2.9
       digest: ""
       pullPolicy: IfNotPresent
       pullSecrets: []

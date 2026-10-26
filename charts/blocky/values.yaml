@@ -36,7 +36,7 @@ extraDeploy: []
 image:
   registry: ghcr.io
   repository: 0xerr0r/blocky
-  tag: v0.34.0
+  tag: v0.35.0
   digest: ""
   pullPolicy: IfNotPresent
   pullSecrets: []
@@ -72,7 +72,7 @@ podDnsUpstream:
   image:
     registry: docker.io
     repository: library/busybox
-    tag: "1.36"
+    tag: "1.37.0"
     digest: ""
     pullPolicy: IfNotPresent
     pullSecrets: []

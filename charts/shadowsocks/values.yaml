@@ -36,7 +36,7 @@ extraDeploy: []
 image:
   registry: ghcr.io
   repository: shadowsocks/ssserver-rust
-  tag: v1.24.0
+  tag: v1.25.0
   digest: ""
   pullPolicy: IfNotPresent
   pullSecrets: []

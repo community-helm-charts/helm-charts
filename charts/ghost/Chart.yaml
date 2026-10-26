@@ -1,20 +1,20 @@
 annotations:
   images: |
     - name: ghost
-      image: docker.io/library/ghost:6.39.0-alpine
+      image: docker.io/library/ghost:6.72.0-alpine
     - name: mysql
-      image: docker.io/library/mysql:8.0.44
+      image: docker.io/library/mysql:8.0.46
     - name: traffic-analytics
-      image: docker.io/ghost/traffic-analytics:1.0.231
+      image: docker.io/ghost/traffic-analytics:1.0.507
     - name: activitypub
-      image: ghcr.io/tryghost/activitypub:1.2.2
+      image: ghcr.io/tryghost/activitypub:1.2.9
     - name: activitypub-migrations
-      image: ghcr.io/tryghost/activitypub-migrations:1.2.2
+      image: ghcr.io/tryghost/activitypub-migrations:1.2.9
     - name: tinybird-forward-cli
-      image: docker.io/tinybirdco/tb-cli-docker:4.5.8
+      image: docker.io/tinybirdco/tb-cli-docker:4.6.22
   licenses: MIT
 apiVersion: v2
-appVersion: "6.39.0"
+appVersion: "6.72.0"
 dependencies:
 - name: common
   repository: file://../common

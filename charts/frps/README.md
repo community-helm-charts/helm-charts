@@ -185,7 +185,7 @@ Adjust the Deployment name and namespace when the release uses a different name 
 | --- | --- | --- |
 | `image.registry` | FRPS image registry | `ghcr.io` |
 | `image.repository` | FRPS image repository | `fatedier/frps` |
-| `image.tag` | FRPS image tag | `v0.70.1` |
+| `image.tag` | FRPS image tag | `v0.71.1` |
 | `image.digest` | FRPS image digest in the form `sha256:...` | `""` |
 | `image.pullPolicy` | FRPS image pull policy | `IfNotPresent` |
 | `image.pullSecrets` | FRPS image pull secrets | `[]` |

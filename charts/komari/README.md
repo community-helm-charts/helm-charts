@@ -12,11 +12,31 @@ release.
 
 | Component | Default image |
 | --- | --- |
-| Server | `ghcr.io/komari-monitor/komari:1.5.1` |
+| Server | `ghcr.io/komari-monitor/komari:1.6.0` |
 | Agent | `ghcr.io/komari-monitor/komari-agent:1.5.11` |
 
 Both tags are pinned for reproducible upgrades. Override the corresponding
 `server.image.*` or `agent.image.*` values to use another release.
+
+## Upgrading to Server 1.6.0
+
+Server 1.6.0 changes the notification system and removes several features.
+Back up the server data before upgrading and review the
+[upstream release notes](https://github.com/komari-monitor/komari/releases/tag/1.6.0).
+
+- Notification channels now use the plugin system. Install and enable the
+  required channel plugins, then configure them under
+  `/admin/notification/channels` and `/admin/notification/channel/configuration`.
+  The old message-sender configuration API has been removed; Webhook remains
+  available.
+- Clipboard, load alert rules, global xterm.js settings, and the visitor audit
+  RPC have been removed. Update integrations that use their routes or RPCs.
+- Frontend assets are now extracted to `/app/cache/dist`. If you run the server
+  as a non-root user or with a read-only root filesystem, use
+  `server.extraVolumes` and `server.extraVolumeMounts` to provide a writable
+  volume at `/app/cache` with suitable permissions.
+
+The Agent image remains pinned to 1.5.11.
 
 ## Install
 
@@ -338,7 +358,7 @@ Both components support:
 | `server.enabled` | `true` | Deploy the server |
 | `server.image.registry` | `ghcr.io` | Server image registry |
 | `server.image.repository` | `komari-monitor/komari` | Server image repository |
-| `server.image.tag` | `1.5.1` | Server image tag |
+| `server.image.tag` | `1.6.0` | Server image tag |
 | `server.containerPorts.http` | `25774` | Server container port |
 | `server.service.enabled` | `true` | Create the server Service |
 | `server.service.type` | `ClusterIP` | Service type |

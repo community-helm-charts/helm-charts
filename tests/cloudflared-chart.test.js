@@ -62,12 +62,12 @@ function resourceNames(manifest, kind) {
     .sort();
 }
 
-test("chart metadata pins cloudflared 2026.7.2 and the local common dependency", () => {
+test("chart metadata pins cloudflared 2026.10.3 and the local common dependency", () => {
   const chart = readFileSync(join(ROOT, "charts", "cloudflared", "Chart.yaml"), "utf8");
 
   assert.match(chart, /^name: cloudflared$/m);
-  assert.match(chart, /^appVersion: "2026\.7\.2"$/m);
-  assert.match(chart, /image: docker\.io\/cloudflare\/cloudflared:2026\.7\.2/);
+  assert.match(chart, /^appVersion: "2026\.10\.3"$/m);
+  assert.match(chart, /image: docker\.io\/cloudflare\/cloudflared:2026\.10\.3/);
   assert.match(chart, /repository: file:\/\/\.\.\/common/);
 });
 
@@ -80,7 +80,7 @@ test("managed token renders a secure two-replica connector Deployment", () => {
     assert.deepEqual(resourceNames(manifest, "Secret"), ["cloudflared"]);
     assert.deepEqual(resourceNames(manifest, "ServiceAccount"), ["cloudflared"]);
     assert.match(manifest, /replicas: 2/);
-    assert.match(manifest, /image: docker\.io\/cloudflare\/cloudflared:2026\.7\.2/);
+    assert.match(manifest, /image: docker\.io\/cloudflare\/cloudflared:2026\.10\.3/);
     assert.match(manifest, /stringData:\n\s+token: "test-token"/);
     assert.match(
       manifest,

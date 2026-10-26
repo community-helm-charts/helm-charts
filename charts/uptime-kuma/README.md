@@ -3,8 +3,8 @@
 A Helm chart for [Uptime Kuma](https://github.com/louislam/uptime-kuma), a
 self-hosted monitoring application with notifications and public status pages.
 
-The default image is `docker.io/louislam/uptime-kuma:2.5.4`, pinned to the
-[upstream stable release](https://github.com/louislam/uptime-kuma/releases/tag/2.5.4).
+The default image is `docker.io/louislam/uptime-kuma:2.5.7`, pinned to the
+[upstream stable release](https://github.com/louislam/uptime-kuma/releases/tag/2.5.7).
 The chart uses the local `common` library and the repository's Nx release workflow.
 
 ## Install
@@ -86,12 +86,12 @@ Uptime Kuma v2 supports external MariaDB through the
 The application still writes local files under `/app/data`: `db-config.json`,
 uploads, screenshots, and Docker TLS files. Moving the database does not move
 these files. See the pinned upstream
-[data directory implementation](https://github.com/louislam/uptime-kuma/blob/2.5.4/server/database.js).
+[data directory implementation](https://github.com/louislam/uptime-kuma/blob/2.5.7/server/database.js).
 
 Keeping the small PVC is the simplest way to preserve these files. To run
 without a PVC, supply database configuration on every start and ensure local
 assets are disposable or provisioned separately. The
-[upstream setup code](https://github.com/louislam/uptime-kuma/blob/2.5.4/server/setup-database.js)
+[upstream setup code](https://github.com/louislam/uptime-kuma/blob/2.5.7/server/setup-database.js)
 recreates `db-config.json` from environment variables. Configuring the database
 only through the setup UI will lose its connection settings on pod replacement.
 
@@ -145,7 +145,7 @@ rewrites. Configure DNS for `status.example.com` to reach your controller.
 | --- | --- | --- |
 | `image.registry` | `docker.io` | Container registry |
 | `image.repository` | `louislam/uptime-kuma` | Official image repository |
-| `image.tag` | `2.5.4` | Pinned application version |
+| `image.tag` | `2.5.7` | Pinned application version |
 | `image.digest` | `""` | Optional digest; takes precedence over tag |
 | `containerPorts.http` | `3001` | Container port and `UPTIME_KUMA_PORT` |
 | `service.enabled` | `true` | Create the client Service; headless Service always exists |

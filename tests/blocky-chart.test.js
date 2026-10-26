@@ -64,12 +64,12 @@ function resource(manifest, kind) {
     .find((doc) => doc.split("\n").some((line) => line === `kind: ${kind}`));
 }
 
-test("chart metadata pins Blocky v0.34.0 and the local common dependency", () => {
+test("chart metadata pins Blocky v0.35.0 and the local common dependency", () => {
   const chart = readFileSync(join(ROOT, "charts", "blocky", "Chart.yaml"), "utf8");
 
   assert.match(chart, /^name: blocky$/m);
-  assert.match(chart, /^appVersion: "v0\.34\.0"$/m);
-  assert.match(chart, /image: ghcr\.io\/0xerr0r\/blocky:v0\.34\.0/);
+  assert.match(chart, /^appVersion: "v0\.35\.0"$/m);
+  assert.match(chart, /image: ghcr\.io\/0xerr0r\/blocky:v0\.35\.0/);
   assert.match(chart, /repository: file:\/\/\.\.\/common/);
 });
 
@@ -88,7 +88,7 @@ test("default render creates a plain HTTP Blocky deployment with resolver discov
     assert.deepEqual(resourceNames(manifest, "Certificate"), []);
     assert.ok(deployment);
     assert.ok(service);
-    assert.match(deployment, /image: ghcr\.io\/0xerr0r\/blocky:v0\.34\.0/);
+    assert.match(deployment, /image: ghcr\.io\/0xerr0r\/blocky:v0\.35\.0/);
     assert.match(deployment, /name: BLOCKY_CONFIG_FILE\n\s+value: \/app\/config/);
     assert.match(deployment, /name: configure-upstreams[\s\S]*?\/etc\/resolv\.conf/);
     assert.match(deployment, /containerPort: 4000[\s\S]*?protocol: TCP/);

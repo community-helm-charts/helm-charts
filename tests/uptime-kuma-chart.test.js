@@ -108,7 +108,7 @@ test("Uptime Kuma defaults provide a single persistent instance with matching se
   assert.deepEqual(docs.map((doc) => doc.kind).sort(), ["Service", "Service", "ServiceAccount", "StatefulSet"]);
   const sts = workload(docs);
   assert.equal(sts.spec.replicas, 1);
-  assert.equal(container(docs).image, "docker.io/louislam/uptime-kuma:2.5.4");
+  assert.equal(container(docs).image, "docker.io/louislam/uptime-kuma:2.5.7");
   assert.equal(container(docs).ports[0].containerPort, 3001);
   assert.deepEqual(container(docs).env, [
     { name: "UPTIME_KUMA_PORT", value: "3001" }, { name: "DATA_DIR", value: "/app/data" },

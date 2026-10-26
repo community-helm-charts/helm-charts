@@ -35,7 +35,7 @@ From inside the cluster:
 export MYSQL_ROOT_PASSWORD=$(kubectl get secret my-mysql -o jsonpath='{.data.mysql-root-password}' | base64 -d)
 
 kubectl run my-mysql-client --rm --tty -i --restart='Never' \
-  --image docker.io/library/mysql:8.4.9 \
+  --image docker.io/library/mysql:8.4.13 \
   --env="MYSQL_PWD=$MYSQL_ROOT_PASSWORD" \
   --command -- mysql \
   --host my-mysql \
@@ -50,7 +50,7 @@ my-mysql.<namespace>.svc.cluster.local
 
 ## Image
 
-The default image is `docker.io/library/mysql:8.4.9`, the current MySQL 8.4 LTS official image tag. The Docker Official MySQL image does not publish an Alpine variant, so this chart does not default to an Alpine tag.
+The default image is `docker.io/library/mysql:8.4.13`, the current MySQL 8.4 LTS official image tag. The Docker Official MySQL image does not publish an Alpine variant, so this chart does not default to an Alpine tag.
 
 ## Storage
 
@@ -106,7 +106,7 @@ initdb:
 | --- | --- | --- |
 | `image.registry` | MySQL image registry | `docker.io` |
 | `image.repository` | MySQL image repository | `library/mysql` |
-| `image.tag` | MySQL image tag | `8.4.9` |
+| `image.tag` | MySQL image tag | `8.4.13` |
 | `image.pullPolicy` | Image pull policy | `IfNotPresent` |
 | `auth.rootPassword` | MySQL root password; generated when empty | `""` |
 | `auth.username` | Optional initial non-root user | `""` |

@@ -105,7 +105,7 @@ different release name is used.
 | --- | --- | --- |
 | `image.registry` | Cloudflared image registry | `docker.io` |
 | `image.repository` | Cloudflared image repository | `cloudflare/cloudflared` |
-| `image.tag` | Cloudflared image tag | `2026.7.2` |
+| `image.tag` | Cloudflared image tag | `2026.10.3` |
 | `image.digest` | Cloudflared image digest | `""` |
 | `image.pullPolicy` | Image pull policy | `IfNotPresent` |
 | `image.pullSecrets` | Image pull Secret names | `[]` |

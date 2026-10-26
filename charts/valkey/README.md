@@ -23,7 +23,7 @@ From inside the cluster:
 
 ```console
 kubectl run my-valkey-client --rm --tty -i --restart='Never' \
-  --image docker.io/valkey/valkey:8.1.3-alpine \
+  --image docker.io/valkey/valkey:8.1.10-alpine \
   --env="REDISCLI_AUTH=$(kubectl get secret my-valkey -o jsonpath='{.data.valkey-password}' | base64 -d)" \
   --command -- valkey-cli --host my-valkey ping
 ```
@@ -88,7 +88,7 @@ existingConfigmap: my-valkey-config
 | --- | --- | --- |
 | `image.registry` | Valkey image registry | `docker.io` |
 | `image.repository` | Valkey image repository | `valkey/valkey` |
-| `image.tag` | Valkey image tag | `8.1.3-alpine` |
+| `image.tag` | Valkey image tag | `8.1.10-alpine` |
 | `auth.enabled` | Enable password authentication | `true` |
 | `auth.password` | Valkey password; generated when empty | `""` |
 | `auth.existingSecret` | Existing Secret containing the password | `""` |

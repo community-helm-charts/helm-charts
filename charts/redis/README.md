@@ -23,7 +23,7 @@ From inside the cluster:
 
 ```console
 kubectl run my-redis-client --rm --tty -i --restart='Never' \
-  --image docker.io/library/redis:8.2.1-alpine \
+  --image docker.io/library/redis:8.10.2-alpine \
   --env="REDISCLI_AUTH=$(kubectl get secret my-redis -o jsonpath='{.data.redis-password}' | base64 -d)" \
   --command -- redis-cli --host my-redis ping
 ```
@@ -88,7 +88,7 @@ existingConfigmap: my-redis-config
 | --- | --- | --- |
 | `image.registry` | Redis image registry | `docker.io` |
 | `image.repository` | Redis image repository | `library/redis` |
-| `image.tag` | Redis image tag | `8.2.1-alpine` |
+| `image.tag` | Redis image tag | `8.10.2-alpine` |
 | `auth.enabled` | Enable password authentication | `true` |
 | `auth.password` | Redis password; generated when empty | `""` |
 | `auth.existingSecret` | Existing Secret containing the password | `""` |

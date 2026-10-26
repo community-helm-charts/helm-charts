@@ -42,7 +42,7 @@ extraDeploy: []
 image:
   registry: docker.io
   repository: library/mysql
-  tag: 8.4.9
+  tag: 8.4.13
   digest: ""
   pullPolicy: IfNotPresent
   pullSecrets: []

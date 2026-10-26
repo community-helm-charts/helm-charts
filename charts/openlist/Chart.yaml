@@ -1,10 +1,10 @@
 annotations:
   images: |
     - name: openlist
-      image: docker.io/openlistteam/openlist:v4.2.1
+      image: docker.io/openlistteam/openlist:v4.2.9
   licenses: AGPL-3.0
 apiVersion: v2
-appVersion: "v4.2.1"
+appVersion: "v4.2.9"
 dependencies:
 - name: common
   repository: file://../common

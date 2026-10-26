@@ -167,7 +167,7 @@ test("default render creates a single StatefulSet with OpenList compose defaults
     assert.deepEqual(resourceNames(manifest, "StatefulSet"), ["openlist"]);
     assert.deepEqual(resourceNames(manifest, "PersistentVolumeClaim"), []);
     assert.match(manifest, /replicas: 1/);
-    assert.match(manifest, /image: docker\.io\/openlistteam\/openlist:v4\.2\.1/);
+    assert.match(manifest, /image: docker\.io\/openlistteam\/openlist:v4\.2\.9/);
     assert.match(manifest, /serviceAccountName: openlist/);
     assert.match(manifest, /- name: UMASK\n\s+value: "022"/);
     assert.match(manifest, /- name: TZ\n\s+value: "Asia\/Shanghai"/);

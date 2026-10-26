@@ -58,12 +58,12 @@ function resourceNames(manifest, kind) {
     .sort();
 }
 
-test("chart metadata pins shadowsocks-rust v1.24.0 and the local common dependency", () => {
+test("chart metadata pins shadowsocks-rust v1.25.0 and the local common dependency", () => {
   const chart = readFileSync(join(ROOT, "charts", "shadowsocks", "Chart.yaml"), "utf8");
 
   assert.match(chart, /^name: shadowsocks$/m);
-  assert.match(chart, /^appVersion: "v1\.24\.0"$/m);
-  assert.match(chart, /image: ghcr\.io\/shadowsocks\/ssserver-rust:v1\.24\.0/);
+  assert.match(chart, /^appVersion: "v1\.25\.0"$/m);
+  assert.match(chart, /image: ghcr\.io\/shadowsocks\/ssserver-rust:v1\.25\.0/);
   assert.match(chart, /repository: file:\/\/\.\.\/common/);
 });
 
@@ -77,7 +77,7 @@ test("default render creates a host-networked Shadowsocks DaemonSet and TCP/UDP 
     assert.deepEqual(resourceNames(manifest, "ServiceAccount"), ["shadowsocks"]);
     assert.deepEqual(resourceNames(manifest, "DaemonSet"), ["shadowsocks"]);
     assert.deepEqual(resourceNames(manifest, "Service"), ["shadowsocks"]);
-    assert.match(manifest, /image: ghcr\.io\/shadowsocks\/ssserver-rust:v1\.24\.0/);
+    assert.match(manifest, /image: ghcr\.io\/shadowsocks\/ssserver-rust:v1\.25\.0/);
     assert.match(manifest, /hostNetwork: true/);
     assert.match(manifest, /dnsPolicy: Default/);
     assert.match(manifest, /"server": "::"/);

@@ -36,7 +36,7 @@ extraDeploy: []
 image:
   registry: docker.io
   repository: cloudflare/cloudflared
-  tag: "2026.7.2"
+  tag: "2026.10.3"
   digest: ""
   pullPolicy: IfNotPresent
   pullSecrets: []

@@ -1,7 +1,7 @@
 # Shadowsocks Helm Chart
 
 This chart deploys
-[`ghcr.io/shadowsocks/ssserver-rust:v1.24.0`](https://github.com/shadowsocks/shadowsocks-rust)
+[`ghcr.io/shadowsocks/ssserver-rust:v1.25.0`](https://github.com/shadowsocks/shadowsocks-rust)
 as a Kubernetes DaemonSet. Every selected node runs one Shadowsocks server.
 
 ## Default behavior

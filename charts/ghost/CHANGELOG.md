@@ -1,3 +1,18 @@
+## 1.1.0 (2026-10-26)
+
+### 🚀 Features
+
+- **ghost:** run ActivityPub as native sidecar ([10f4c2f](https://github.com/community-helm-charts/helm-charts/commit/10f4c2f))
+
+### 🩹 Fixes
+
+- **ghost:** default ActivityPub startup probe ([fb66882](https://github.com/community-helm-charts/helm-charts/commit/fb66882))
+- **ghost:** preserve ActivityPub port compatibility ([4432630](https://github.com/community-helm-charts/helm-charts/commit/4432630))
+
+### ❤️ Thank You
+
+- Xudong Huang @xudongcc
+
 ## 1.0.3 (2026-10-26)
 
 ### 🩹 Fixes

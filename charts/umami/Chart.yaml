@@ -13,7 +13,7 @@ dependencies:
 - condition: postgresql.enabled
   name: postgresql
   repository: file://../postgresql
-  version: 2.0.3
+  version: 2.0.4
 description: A privacy-focused web analytics platform with optional built-in PostgreSQL.
 home: https://github.com/community-helm-charts/helm-charts
 keywords:
@@ -28,4 +28,4 @@ sources:
 - https://github.com/community-helm-charts/helm-charts/tree/main/charts/umami
 - https://github.com/umami-software/umami
 type: application
-version: 1.0.0
+version: 1.0.1

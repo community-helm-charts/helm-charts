@@ -1,3 +1,13 @@
+## 2.0.4 (2026-11-04)
+
+### 🩹 Fixes
+
+- **charts:** enable container security contexts outside Komari ([0388603](https://github.com/community-helm-charts/helm-charts/commit/0388603))
+
+### ❤️ Thank You
+
+- Xudong Huang @xudongcc
+
 ## 2.0.3 (2026-10-26)
 
 ### 🩹 Fixes

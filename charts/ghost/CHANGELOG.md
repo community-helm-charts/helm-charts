@@ -1,3 +1,17 @@
+## 1.1.2 (2026-11-04)
+
+### 🩹 Fixes
+
+- **charts:** enable container security contexts outside Komari ([0388603](https://github.com/community-helm-charts/helm-charts/commit/0388603))
+
+### 🧱 Updated Dependencies
+
+- Updated mysql to 2.0.4
+
+### ❤️ Thank You
+
+- Xudong Huang @xudongcc
+
 ## 1.1.1 (2026-10-26)
 
 ### 🩹 Fixes

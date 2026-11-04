@@ -1,3 +1,9 @@
+## 1.0.1 (2026-11-04)
+
+### 🧱 Updated Dependencies
+
+- Updated postgresql to 2.0.4
+
 # 1.0.0 (2026-11-04)
 
 ### 🚀 Features

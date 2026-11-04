@@ -62,12 +62,9 @@ true
 - /bin/sh
 - -ec
 - |
-  password=""
   if [ -n "${VALKEY_PASSWORD:-}" ]; then
-    password="$VALKEY_PASSWORD"
+    export REDISCLI_AUTH="$VALKEY_PASSWORD"
   fi
-  if [ -n "$password" ]; then
-    exec valkey-cli -h 127.0.0.1 -p {{ .Values.containerPorts.valkey }} -a "$password" ping
-  fi
-  exec valkey-cli -h 127.0.0.1 -p {{ .Values.containerPorts.valkey }} ping
+  response="$(valkey-cli -e -h 127.0.0.1 -p {{ .Values.containerPorts.valkey }} ping)"
+  [ "$response" = "PONG" ]
 {{- end -}}

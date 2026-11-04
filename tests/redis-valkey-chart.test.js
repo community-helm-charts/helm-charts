@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
-import { execFileSync } from "node:child_process";
-import { cpSync, mkdtempSync, mkdirSync, rmSync } from "node:fs";
+import { execFileSync, spawnSync } from "node:child_process";
+import { cpSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import test from "node:test";
@@ -34,6 +34,44 @@ function makeChart(t, name) {
 }
 
 for (const name of ["redis", "valkey"]) {
+  test(name + " probes require a successful PONG reply", (t) => {
+    const { container } = makeChart(t, name).render();
+    const dir = mkdtempSync(join(tmpdir(), name + "-probe-"));
+    t.after(() => rmSync(dir, { recursive: true, force: true }));
+    const capture = join(dir, "invocation.json");
+    writeFileSync(join(dir, name + "-cli"), `#!${process.execPath}
+const fs = require("node:fs");
+fs.writeFileSync(process.env.PROBE_CAPTURE, JSON.stringify({ args: process.argv.slice(2), auth: process.env.REDISCLI_AUTH }));
+process.stdout.write(process.env.PROBE_REPLY);
+process.exit(Number(process.env.PROBE_EXIT_CODE));
+`, { mode: 0o755 });
+    const password = "password with spaces '$()";
+    for (const probe of ["startupProbe", "livenessProbe", "readinessProbe"]) {
+      for (const [reply, exitCode, healthy] of [
+        ["PONG\n", 0, true],
+        ["NOAUTH Authentication required.\n", 0, false],
+        ["WRONGPASS invalid username-password pair\n", 1, false],
+        ["PONG\n", 1, false],
+        ["PONG\nunexpected reply\n", 0, false],
+        ["", 0, false],
+      ]) {
+        for (const auth of [password, ""]) {
+          const [command, ...args] = container[probe].exec.command;
+          const result = spawnSync(command, args, { encoding: "utf8", env: {
+            ...process.env, PATH: dir + ":" + process.env.PATH,
+            [name.toUpperCase() + "_PASSWORD"]: auth, REDISCLI_AUTH: "",
+            PROBE_CAPTURE: capture, PROBE_REPLY: reply, PROBE_EXIT_CODE: String(exitCode),
+          } });
+          assert.ifError(result.error);
+          assert.equal(result.status === 0, healthy, probe + ": " + JSON.stringify({ reply, exitCode }));
+          const invocation = JSON.parse(readFileSync(capture, "utf8"));
+          assert.deepEqual(invocation.args, ["-e", "-h", "127.0.0.1", "-p", "6379", "ping"]);
+          assert.equal(invocation.auth, auth);
+        }
+      }
+    }
+  });
+
   test(name + " starts non-root with group access to a newly provisioned PVC", (t) => {
     const chart = makeChart(t, name);
     const { statefulset, pod, container } = chart.render();

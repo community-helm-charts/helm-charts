@@ -62,12 +62,9 @@ true
 - /bin/sh
 - -ec
 - |
-  password=""
   if [ -n "${REDIS_PASSWORD:-}" ]; then
-    password="$REDIS_PASSWORD"
+    export REDISCLI_AUTH="$REDIS_PASSWORD"
   fi
-  if [ -n "$password" ]; then
-    exec redis-cli -h 127.0.0.1 -p {{ .Values.containerPorts.redis }} -a "$password" ping
-  fi
-  exec redis-cli -h 127.0.0.1 -p {{ .Values.containerPorts.redis }} ping
+  response="$(redis-cli -e -h 127.0.0.1 -p {{ .Values.containerPorts.redis }} ping)"
+  [ "$response" = "PONG" ]
 {{- end -}}

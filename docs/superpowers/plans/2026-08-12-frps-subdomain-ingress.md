@@ -31,7 +31,7 @@
 - `charts/frps/templates/NOTES.txt`: report the enabled wildcard endpoint without claiming DNS or certificate readiness.
 - `charts/frps/README.md`: document wildcard behavior, TLS/DNS-01 prerequisites, and every new value.
 - `tests/frps-chart.test.js`: exercise TOML rendering, opt-in exposure, routing, TLS, validation, coexistence, NOTES, and documentation.
-- `tests/cloudflared-chart.test.js`, `tests/komari-chart.test.js`, `tests/shadowsocks-chart.test.js`: reconcile stale `common` dependency assertions with the already-published 0.2.2 repository baseline so full verification can run.
+- `tests/cloudflared-chart.test.js`, `tests/shadowsocks-chart.test.js`: reconcile stale `common` dependency assertions with the already-published 0.2.2 repository baseline so full verification can run.
 
 ---
 
@@ -230,7 +230,6 @@ git commit -m "feat(frps): add wildcard subdomain ingress"
 - Modify: `charts/frps/README.md`
 - Modify: `tests/frps-chart.test.js`
 - Modify: `tests/cloudflared-chart.test.js`
-- Modify: `tests/komari-chart.test.js`
 - Modify: `tests/shadowsocks-chart.test.js`
 
 **Interfaces:**
@@ -281,7 +280,7 @@ Explain that the annotations/class are user-controlled defaults, the wildcard ma
 
 - [ ] **Step 4: Reconcile already-published dependency assertions**
 
-Update the hard-coded local common dependency expectation from `0.2.1` to the repository's current `0.2.2` in the FRPS, cloudflared, Komari, and Shadowsocks metadata tests. Update the FRPS chart-version assertion from `1.0.0` to the current published source version `1.1.0`. Do not change any Chart version manually.
+Update the hard-coded local common dependency expectation from `0.2.1` to the repository's current `0.2.2` in the FRPS, cloudflared, and Shadowsocks metadata tests. Update the FRPS chart-version assertion from `1.0.0` to the current published source version `1.1.0`. Do not change any Chart version manually.
 
 - [ ] **Step 5: Run focused and full verification**
 
@@ -315,7 +314,7 @@ Expected: lint reports `1 chart(s) linted, 0 chart(s) failed`; representative te
 - [ ] **Step 6: Commit Task 3**
 
 ```bash
-git add charts/frps/README.md tests/frps-chart.test.js tests/cloudflared-chart.test.js tests/komari-chart.test.js tests/shadowsocks-chart.test.js
+git add charts/frps/README.md tests/frps-chart.test.js tests/cloudflared-chart.test.js tests/shadowsocks-chart.test.js
 git commit -m "docs(frps): document wildcard subdomain ingress"
 ```
 

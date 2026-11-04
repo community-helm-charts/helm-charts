@@ -8,7 +8,7 @@ import { parse, parseAllDocuments } from "yaml";
 
 const ROOT = resolve(import.meta.dirname, "..");
 const names = readdirSync(join(ROOT, "charts"));
-const applications = names.filter((name) => name !== "komari" && parse(readFileSync(join(ROOT, "charts", name, "Chart.yaml"), "utf8")).type !== "library");
+const applications = names.filter((name) => parse(readFileSync(join(ROOT, "charts", name, "Chart.yaml"), "utf8")).type !== "library");
 let fixture;
 
 before(() => {

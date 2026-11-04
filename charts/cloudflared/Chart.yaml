@@ -8,7 +8,7 @@ appVersion: "2026.10.3"
 dependencies:
   - name: common
     repository: file://../common
-    version: 0.2.2
+    version: 0.2.3
 description: A remotely managed Cloudflare Tunnel connector.
 home: https://github.com/community-helm-charts/helm-charts
 keywords:
@@ -23,4 +23,4 @@ sources:
   - https://github.com/community-helm-charts/helm-charts/tree/main/charts/cloudflared
   - https://github.com/cloudflare/cloudflared
 type: application
-version: 1.1.2
+version: 1.1.3

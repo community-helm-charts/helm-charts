@@ -1,3 +1,17 @@
+## 2.0.5 (2026-11-04)
+
+### 🩹 Fixes
+
+- **charts:** synchronize database listening ports with containerPorts ([31ed9bf](https://github.com/community-helm-charts/helm-charts/commit/31ed9bf))
+
+### 🧱 Updated Dependencies
+
+- Updated common to 0.2.3
+
+### ❤️ Thank You
+
+- Xudong Huang @xudongcc
+
 ## 2.0.4 (2026-11-04)
 
 ### 🩹 Fixes

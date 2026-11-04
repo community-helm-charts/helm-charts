@@ -9,11 +9,11 @@ kubeVersion: ">=1.23.0-0"
 dependencies:
 - name: common
   repository: file://../common
-  version: 0.2.2
+  version: 0.2.3
 - condition: postgresql.enabled
   name: postgresql
   repository: file://../postgresql
-  version: 2.0.4
+  version: 2.0.5
 description: A privacy-focused web analytics platform with optional built-in PostgreSQL.
 home: https://github.com/community-helm-charts/helm-charts
 keywords:
@@ -28,4 +28,4 @@ sources:
 - https://github.com/community-helm-charts/helm-charts/tree/main/charts/umami
 - https://github.com/umami-software/umami
 type: application
-version: 1.0.1
+version: 1.0.2

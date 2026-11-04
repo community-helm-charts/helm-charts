@@ -187,20 +187,20 @@ sidecars: []
 ## @param containerSecurityContext.runAsNonRoot Require a non-root container
 ## @param containerSecurityContext.allowPrivilegeEscalation Allow privilege escalation
 ## @param containerSecurityContext.capabilities.drop Linux capabilities to drop
+## @param containerSecurityContext.capabilities.add Linux capabilities required by ICMP ping monitors
 ## @param containerSecurityContext.seccompProfile.type Seccomp profile type
 ##
 podLabels: {}
 podAnnotations: {}
-# Preserve the official image's runtime defaults. Enable both contexts for
-# non-root operation and ensure the data volume is writable by UID/GID 1000.
+# Run as the image's node account and grant it group access to new volumes.
 podSecurityContext:
-  enabled: false
-  fsGroupChangePolicy: Always
+  enabled: true
+  fsGroupChangePolicy: OnRootMismatch
   sysctls: []
   supplementalGroups: []
   fsGroup: 1000
 containerSecurityContext:
-  enabled: false
+  enabled: true
   runAsUser: 1000
   runAsGroup: 1000
   runAsNonRoot: true
@@ -208,6 +208,8 @@ containerSecurityContext:
   capabilities:
     drop:
       - ALL
+    add:
+      - NET_RAW
   seccompProfile:
     type: RuntimeDefault
 

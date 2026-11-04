@@ -102,3 +102,9 @@ only use the pod network.
 
 TCP probes are not suitable for a UDP-only configuration. Disable
 `livenessProbe.enabled` and `readinessProbe.enabled` when using UDP-only mode.
+
+## Container security
+
+The container security context is enabled by default, disables privilege
+escalation, drops all capabilities, and uses the runtime default seccomp profile.
+The default user and group match the image's `nobody` service account.

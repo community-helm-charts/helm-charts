@@ -38,6 +38,17 @@ The service DNS name is:
 
 Persistence is enabled by default and mounted at `/data`, which is the data directory used by the official Redis image.
 
+The container runs as UID 999 and GID 1000 from startup, matching the `redis`
+account in the default Alpine image. The pod sets `fsGroup: 1000` and
+`fsGroupChangePolicy: OnRootMismatch` so Kubernetes or the CSI driver can make
+a newly provisioned PVC writable by the service group before the container starts.
+Use a volume type and CSI driver that support `fsGroup` ownership or mount-group
+handling. The chart does not run a root permissions init container.
+
+These defaults target new PVCs; they do not provide a migration for existing data
+volumes. If you change the image, verify its service UID/GID and adjust
+`containerSecurityContext` and `podSecurityContext.fsGroup` together.
+
 For a non-persistent development instance:
 
 ```console
@@ -99,6 +110,13 @@ existingConfigmap: my-redis-config
 | `persistence.enabled` | Enable persistent storage | `true` |
 | `persistence.size` | PVC size | `8Gi` |
 | `persistence.mountPath` | Data volume mount path | `/data` |
+| `podSecurityContext.enabled` | Enable pod security context | `true` |
+| `podSecurityContext.fsGroup` | Data volume access group | `1000` |
+| `podSecurityContext.fsGroupChangePolicy` | Volume permission change policy | `OnRootMismatch` |
+| `containerSecurityContext.enabled` | Enable container security context | `true` |
+| `containerSecurityContext.runAsUser` | Container user ID | `999` |
+| `containerSecurityContext.runAsGroup` | Container group ID | `1000` |
+| `containerSecurityContext.runAsNonRoot` | Require a non-root user | `true` |
 | `configuration` | Inline Redis configuration | `""` |
 | `existingConfigmap` | Existing ConfigMap with `redis.conf` | `""` |
 | `resources` | Container resource requests and limits | `{}` |

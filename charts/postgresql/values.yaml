@@ -204,15 +204,15 @@ sidecars: []
 podLabels: {}
 podAnnotations: {}
 podSecurityContext:
-  enabled: false
-  fsGroupChangePolicy: Always
+  enabled: true
+  fsGroupChangePolicy: OnRootMismatch
   sysctls: []
   supplementalGroups: []
-  fsGroup: 999
+  fsGroup: 70
 containerSecurityContext:
-  enabled: false
-  runAsUser: 999
-  runAsGroup: 999
+  enabled: true
+  runAsUser: 70
+  runAsGroup: 70
   runAsNonRoot: true
   allowPrivilegeEscalation: false
   capabilities:

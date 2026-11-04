@@ -234,3 +234,21 @@ helm uninstall my-ghost
 ```
 
 PersistentVolumeClaims may remain after uninstall depending on your cluster and storage class reclaim policy.
+
+## Container security
+
+Container security contexts are enabled for Ghost, traffic analytics, ActivityPub,
+their migrations, and the chart-owned helper Jobs and initialization containers.
+They disable privilege escalation, drop all capabilities, and use the runtime
+default seccomp profile. Ghost and its helpers run as UID/GID 1000; MySQL uses its
+own subchart defaults (UID/GID 999).
+
+The ActivityPub migration container shares `activitypub.containerSecurityContext`.
+Database wait/init and Tinybird file synchronization containers share
+`ghost.containerSecurityContext`; the Tinybird CLI shares
+`trafficAnalytics.containerSecurityContext`. The Tinybird Job uses
+`ghost.podSecurityContext` for its shared writable volume.
+
+New persistent volumes require storage that supports the configured `fsGroup`
+ownership or CSI mount-group handling. Existing volumes must already have
+compatible permissions; this chart does not migrate their ownership.

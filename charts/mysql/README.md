@@ -64,6 +64,15 @@ helm install my-mysql oci://ghcr.io/community-helm-charts/mysql \
   --set auth.rootPassword='change-me'
 ```
 
+Containers start as the image's `mysql` account (`999:999`) with an enabled
+security context: no privilege escalation, all capabilities dropped, and the runtime
+default seccomp profile. The pod uses `fsGroup: 999` and
+`fsGroupChangePolicy: OnRootMismatch` for group access to newly provisioned volumes.
+Use storage that supports `fsGroup` ownership or CSI mount-group handling.
+Existing data volumes must already have compatible permissions; no root permission
+migration container is included. Custom images may require different user and
+group values.
+
 ## Credentials
 
 By default, the chart creates a Secret named after the release, using the key `mysql-root-password` for the root password. If `auth.username` is set, the same Secret also includes the key `mysql-password` for that user.
@@ -129,8 +138,8 @@ initdb:
 | `initdb.scriptsSecret` | Existing Secret with initialization scripts | `""` |
 | `resources` | Container resource requests and limits | `{}` |
 | `resourcesPreset` | Common resource preset from the shared helper chart | `none` |
-| `podSecurityContext.enabled` | Enable pod security context | `false` |
-| `containerSecurityContext.enabled` | Enable container security context | `false` |
+| `podSecurityContext.enabled` | Enable pod security context | `true` |
+| `containerSecurityContext.enabled` | Enable container security context | `true` |
 | `extraEnvVars` | Extra environment variables for the MySQL container | `[]` |
 | `extraVolumes` | Extra pod volumes | `[]` |
 | `extraVolumeMounts` | Extra MySQL volume mounts | `[]` |

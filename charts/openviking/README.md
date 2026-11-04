@@ -34,3 +34,12 @@ ingress:
   hostname: openviking.example.com
   path: /
 ```
+
+## Security
+
+The pod and container security contexts are enabled by default. OpenViking starts
+as UID/GID 1000, with privilege escalation disabled, all capabilities dropped, and
+the runtime default seccomp profile. New data volumes use `fsGroup: 1000` and
+`fsGroupChangePolicy: OnRootMismatch`. Use storage that supports `fsGroup` ownership
+or CSI mount-group handling; existing volumes must already have compatible
+permissions.

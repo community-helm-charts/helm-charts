@@ -58,6 +58,15 @@ helm install my-postgres oci://ghcr.io/community-helm-charts/postgresql \
   --set auth.password='change-me'
 ```
 
+Containers start with the default Alpine image's service identity (`70:70`)
+and an enabled security context: no privilege escalation, all capabilities dropped,
+and the runtime default seccomp profile. The pod uses `fsGroup: 70` and
+`fsGroupChangePolicy: OnRootMismatch` for group access to newly provisioned volumes.
+Use storage that supports `fsGroup` ownership or CSI mount-group handling.
+Existing data volumes must already have compatible permissions; no root permission
+migration container is included. Custom images may require different user and
+group values.
+
 ## Credentials
 
 By default, the chart creates a Secret named after the release, using the key `postgresql-password`.
@@ -127,8 +136,8 @@ initdb:
 | `initdb.scriptsSecret` | Existing Secret with initialization scripts | `""` |
 | `resources` | Container resource requests and limits | `{}` |
 | `resourcesPreset` | Common resource preset from the shared helper chart | `none` |
-| `podSecurityContext.enabled` | Enable pod security context | `false` |
-| `containerSecurityContext.enabled` | Enable container security context | `false` |
+| `podSecurityContext.enabled` | Enable pod security context | `true` |
+| `containerSecurityContext.enabled` | Enable container security context | `true` |
 | `extraEnvVars` | Extra environment variables for the PostgreSQL container | `[]` |
 | `extraVolumes` | Extra pod volumes | `[]` |
 | `extraVolumeMounts` | Extra PostgreSQL volume mounts | `[]` |

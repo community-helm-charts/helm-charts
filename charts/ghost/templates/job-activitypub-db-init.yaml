@@ -25,6 +25,9 @@ spec:
         - name: activitypub-db-init
           image: {{ include "ghost.mysql.image" . }}
           imagePullPolicy: {{ include "ghost.mysql.imagePullPolicy" . | quote }}
+          {{- if .Values.ghost.containerSecurityContext.enabled }}
+          securityContext: {{- include "common.compatibility.renderSecurityContext" (dict "secContext" .Values.ghost.containerSecurityContext "context" $) | nindent 12 }}
+          {{- end }}
           env:
             - name: DATABASE_HOST
               value: {{ include "ghost.databaseHost" . | quote }}

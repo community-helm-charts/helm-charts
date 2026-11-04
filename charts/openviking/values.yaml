@@ -242,13 +242,13 @@ sidecars: []
 podLabels: {}
 podAnnotations: {}
 podSecurityContext:
-  enabled: false
-  fsGroupChangePolicy: Always
+  enabled: true
+  fsGroupChangePolicy: OnRootMismatch
   sysctls: []
   supplementalGroups: []
   fsGroup: 1000
 containerSecurityContext:
-  enabled: false
+  enabled: true
   runAsUser: 1000
   runAsGroup: 1000
   runAsNonRoot: true

@@ -178,7 +178,7 @@ ghost:
     supplementalGroups: []
     fsGroup: 1000
   containerSecurityContext:
-    enabled: false
+    enabled: true
     runAsUser: 1000
     runAsGroup: 1000
     runAsNonRoot: true
@@ -485,9 +485,11 @@ trafficAnalytics:
   podLabels: {}
   podAnnotations: {}
   podSecurityContext:
-    enabled: false
+    enabled: true
+    fsGroup: 1000
+    fsGroupChangePolicy: OnRootMismatch
   containerSecurityContext:
-    enabled: false
+    enabled: true
     runAsUser: 1000
     runAsGroup: 1000
     runAsNonRoot: true
@@ -607,7 +609,7 @@ activitypub:
   extraVolumes: []
   extraVolumeMounts: []
   containerSecurityContext:
-    enabled: false
+    enabled: true
     runAsUser: 1000
     runAsGroup: 1000
     runAsNonRoot: true

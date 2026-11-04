@@ -168,8 +168,8 @@ rewrites. Configure DNS for `status.example.com` to reach your controller.
 | `readinessProbe.enabled` | `true` | HTTP `/` probe |
 | `resourcesPreset` | `none` | Optional common resource preset |
 | `resources` | `{}` | Explicit requests and limits |
-| `podSecurityContext.enabled` | `false` | Enable configured pod security context |
-| `containerSecurityContext.enabled` | `false` | Enable configured container security context |
+| `podSecurityContext.enabled` | `true` | Enable configured pod security context |
+| `containerSecurityContext.enabled` | `true` | Enable configured container security context |
 | `serviceAccount.create` | `true` | Create a dedicated ServiceAccount |
 | `automountServiceAccountToken` | `false` | Mount Kubernetes API credentials in the pod |
 
@@ -183,10 +183,15 @@ environment variables through `extraEnvVars`, `extraEnvVarsCM`, or
 `extraEnvVarsSecret`. Command and argument overrides must remain consistent with
 these settings and the configured probes.
 
-The default security context preserves the official image's runtime settings.
-For non-root operation, enable the pod and container security contexts (configured
-for UID/GID 1000) and ensure the data volume is writable. Test monitor types that
-need additional permissions, such as ICMP, before dropping capabilities. Docker
+Pod and container security contexts are enabled by default. The application runs
+as the image's `node` account (UID/GID 1000), with privilege escalation disabled
+and the runtime default seccomp profile. Default capabilities are dropped; only
+NET_RAW is added so the official image's ping executable can run for ICMP monitors.
+The pod sets
+`fsGroup: 1000` and `fsGroupChangePolicy: OnRootMismatch`; new PVCs require storage
+that supports `fsGroup` ownership or CSI mount-group handling. Existing volumes
+must already have compatible permissions. Set
+`containerSecurityContext.capabilities.add: []` if ICMP monitors are not used. Docker
 socket access is not enabled; configure extra volumes and mounts explicitly only
 when needed. Set resource requests and limits for your monitor count and use of
 browser-based checks.

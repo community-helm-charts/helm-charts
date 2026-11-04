@@ -64,6 +64,9 @@ spec:
         - name: wait-for-database
           image: {{ include "ghost.mysql.image" . }}
           imagePullPolicy: {{ include "ghost.mysql.imagePullPolicy" . | quote }}
+          {{- if .Values.ghost.containerSecurityContext.enabled }}
+          securityContext: {{- include "common.compatibility.renderSecurityContext" (dict "secContext" .Values.ghost.containerSecurityContext "context" $) | nindent 12 }}
+          {{- end }}
           env:
             - name: DATABASE_HOST
               value: {{ include "ghost.databaseHost" . | quote }}
@@ -97,6 +100,9 @@ spec:
         - name: activitypub-migrate
           image: {{ include "ghost.activitypubMigration.image" . }}
           imagePullPolicy: {{ .Values.activitypub.migration.image.pullPolicy | quote }}
+          {{- if .Values.activitypub.containerSecurityContext.enabled }}
+          securityContext: {{- include "common.compatibility.renderSecurityContext" (dict "secContext" .Values.activitypub.containerSecurityContext "context" $) | nindent 12 }}
+          {{- end }}
           env:
             - name: MYSQL_HOST
               value: {{ include "ghost.databaseHost" . | quote }}

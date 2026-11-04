@@ -174,16 +174,18 @@ sidecars: []
 ##
 podLabels: {}
 podAnnotations: {}
+# Match the valkey account in the default Alpine image. Kubernetes or the CSI
+# driver grants this group access to newly provisioned volumes via fsGroup.
 podSecurityContext:
-  enabled: false
-  fsGroupChangePolicy: Always
+  enabled: true
+  fsGroupChangePolicy: OnRootMismatch
   sysctls: []
   supplementalGroups: []
-  fsGroup: 999
+  fsGroup: 1000
 containerSecurityContext:
-  enabled: false
+  enabled: true
   runAsUser: 999
-  runAsGroup: 999
+  runAsGroup: 1000
   runAsNonRoot: true
   allowPrivilegeEscalation: false
   capabilities:

@@ -121,7 +121,12 @@ service:
 updateStrategy:
   type: RollingUpdate
 command: []
-args: []
+# The container already starts as nobody; do not ask ssserver to switch users.
+args:
+  - ssserver
+  - --log-without-time
+  - -c
+  - /etc/shadowsocks-rust/config.json
 extraEnvVars: []
 extraEnvVarsCM: ""
 extraEnvVarsSecret: ""
@@ -188,9 +193,9 @@ podSecurityContext:
   supplementalGroups: []
   fsGroup: 1000
 containerSecurityContext:
-  enabled: false
-  runAsUser: 1000
-  runAsGroup: 1000
+  enabled: true
+  runAsUser: 65534
+  runAsGroup: 65534
   runAsNonRoot: true
   allowPrivilegeEscalation: false
   readOnlyRootFilesystem: true

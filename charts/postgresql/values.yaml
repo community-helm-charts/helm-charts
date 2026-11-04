@@ -82,7 +82,7 @@ auth:
   existingSecretPasswordKey: postgresql-password
 
 ## @section PostgreSQL container parameters
-## @param containerPorts.postgresql PostgreSQL container port
+## @param containerPorts.postgresql PostgreSQL listening port used by the default startup command, container and probes
 ##
 containerPorts:
   postgresql: 5432

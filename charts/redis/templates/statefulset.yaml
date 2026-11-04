@@ -1,3 +1,4 @@
+{{- include "redis.validateValues" . -}}
 apiVersion: {{ include "common.capabilities.statefulset.apiVersion" . }}
 kind: StatefulSet
 metadata:
@@ -86,6 +87,7 @@ spec:
               if [ -f /etc/redis/redis.conf ]; then
                 set -- "$@" /etc/redis/redis.conf
               fi
+              set -- "$@" --port {{ .Values.containerPorts.redis }}
               password=""
               if [ -n "${REDIS_PASSWORD:-}" ]; then
                 password="$REDIS_PASSWORD"

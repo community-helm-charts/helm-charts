@@ -60,7 +60,7 @@ auth:
   existingSecretPasswordKey: redis-password
 
 ## @section Redis container parameters
-## @param containerPorts.redis Redis container port
+## @param containerPorts.redis Redis listening port used by the default startup command, container and probes
 ##
 containerPorts:
   redis: 6379

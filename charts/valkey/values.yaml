@@ -60,7 +60,7 @@ auth:
   existingSecretPasswordKey: valkey-password
 
 ## @section Valkey container parameters
-## @param containerPorts.valkey Valkey container port
+## @param containerPorts.valkey Valkey listening port used by the default startup command, container and probes
 ##
 containerPorts:
   valkey: 6379

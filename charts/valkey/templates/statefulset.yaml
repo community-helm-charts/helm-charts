@@ -1,3 +1,4 @@
+{{- include "valkey.validateValues" . -}}
 apiVersion: {{ include "common.capabilities.statefulset.apiVersion" . }}
 kind: StatefulSet
 metadata:
@@ -86,6 +87,7 @@ spec:
               if [ -f /etc/valkey/valkey.conf ]; then
                 set -- "$@" /etc/valkey/valkey.conf
               fi
+              set -- "$@" --port {{ .Values.containerPorts.valkey }}
               password=""
               if [ -n "${VALKEY_PASSWORD:-}" ]; then
                 password="$VALKEY_PASSWORD"

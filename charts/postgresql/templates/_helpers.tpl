@@ -83,3 +83,13 @@ true
 - -ec
 - exec pg_isready -U {{ include "postgresql.probeUser" . | quote }} -h 127.0.0.1 -p {{ .Values.containerPorts.postgresql }}
 {{- end -}}
+
+{{- define "postgresql.validateValues" -}}
+{{- $port := printf "%v" .Values.containerPorts.postgresql -}}
+{{- if not (regexMatch "^[0-9]+$" $port) -}}
+{{- fail "containerPorts.postgresql must be an integer from 1 through 65535" -}}
+{{- end -}}
+{{- if or (lt (int $port) 1) (gt (int $port) 65535) -}}
+{{- fail "containerPorts.postgresql must be an integer from 1 through 65535" -}}
+{{- end -}}
+{{- end -}}

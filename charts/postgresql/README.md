@@ -46,6 +46,15 @@ The service DNS name is:
 <release-name>-postgresql.<namespace>.svc.cluster.local
 ```
 
+## Ports
+
+`containerPorts.postgresql` sets the PostgreSQL listening port, container port, and
+default probe target. `service.ports.postgresql` sets the separate client-facing
+Service port and forwards to that listening port.
+
+Explicit `command` or `args` overrides remain under your control; configure
+the server to listen on `containerPorts.postgresql` when overriding startup.
+
 ## Storage
 
 Persistence is enabled by default. The chart mounts the persistent volume at `/var/lib/postgresql`, which matches the official image layout for PostgreSQL 18. The container image manages its own versioned data directory under that mount.

@@ -68,3 +68,13 @@ true
   response="$(redis-cli -e -h 127.0.0.1 -p {{ .Values.containerPorts.redis }} ping)"
   [ "$response" = "PONG" ]
 {{- end -}}
+
+{{- define "redis.validateValues" -}}
+{{- $port := printf "%v" .Values.containerPorts.redis -}}
+{{- if not (regexMatch "^[0-9]+$" $port) -}}
+{{- fail "containerPorts.redis must be an integer from 1 through 65535" -}}
+{{- end -}}
+{{- if or (lt (int $port) 1) (gt (int $port) 65535) -}}
+{{- fail "containerPorts.redis must be an integer from 1 through 65535" -}}
+{{- end -}}
+{{- end -}}

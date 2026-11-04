@@ -34,6 +34,18 @@ The service DNS name is:
 <release-name>.<namespace>.svc.cluster.local
 ```
 
+## Ports
+
+`containerPorts.redis` sets the Redis listening port, container port, and
+default probe target. `service.ports.redis` sets the separate client-facing
+Service port and forwards to that listening port.
+
+The default startup command applies this port after loading the configuration
+file, so it takes precedence over a `port` setting in that file.
+
+Explicit `command` or `args` overrides remain under your control; configure
+the server to listen on `containerPorts.redis` when overriding startup.
+
 ## Storage
 
 Persistence is enabled by default and mounted at `/data`, which is the data directory used by the official Redis image.

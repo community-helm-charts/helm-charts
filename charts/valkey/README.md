@@ -34,6 +34,18 @@ The service DNS name is:
 <release-name>.<namespace>.svc.cluster.local
 ```
 
+## Ports
+
+`containerPorts.valkey` sets the Valkey listening port, container port, and
+default probe target. `service.ports.valkey` sets the separate client-facing
+Service port and forwards to that listening port.
+
+The default startup command applies this port after loading the configuration
+file, so it takes precedence over a `port` setting in that file.
+
+Explicit `command` or `args` overrides remain under your control; configure
+the server to listen on `containerPorts.valkey` when overriding startup.
+
 ## Storage
 
 Persistence is enabled by default and mounted at `/data`, which is the data directory used by the official Valkey image.

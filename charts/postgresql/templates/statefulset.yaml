@@ -1,4 +1,5 @@
 {{- $customUser := include "postgresql.username" . | trim }}
+{{- include "postgresql.validateValues" . -}}
 apiVersion: {{ include "common.capabilities.statefulset.apiVersion" . }}
 kind: StatefulSet
 metadata:
@@ -77,6 +78,10 @@ spec:
           {{- end }}
           {{- if .Values.args }}
           args: {{- include "common.tplvalues.render" (dict "value" .Values.args "context" $) | nindent 12 }}
+          {{- else if not .Values.command }}
+          args:
+            - -p
+            - {{ .Values.containerPorts.postgresql | quote }}
           {{- end }}
           env:
             - name: POSTGRES_USER

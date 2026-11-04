@@ -91,3 +91,13 @@ true
   fi
   exec mysqladmin ping -h 127.0.0.1 -P {{ .Values.containerPorts.mysql }} -uroot --silent
 {{- end -}}
+
+{{- define "mysql.validateValues" -}}
+{{- $port := printf "%v" .Values.containerPorts.mysql -}}
+{{- if not (regexMatch "^[0-9]+$" $port) -}}
+{{- fail "containerPorts.mysql must be an integer from 1 through 65535" -}}
+{{- end -}}
+{{- if or (lt (int $port) 1) (gt (int $port) 65535) -}}
+{{- fail "containerPorts.mysql must be an integer from 1 through 65535" -}}
+{{- end -}}
+{{- end -}}

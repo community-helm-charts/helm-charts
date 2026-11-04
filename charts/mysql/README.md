@@ -52,6 +52,15 @@ my-mysql.<namespace>.svc.cluster.local
 
 The default image is `docker.io/library/mysql:8.4.13`, the current MySQL 8.4 LTS official image tag. The Docker Official MySQL image does not publish an Alpine variant, so this chart does not default to an Alpine tag.
 
+## Ports
+
+`containerPorts.mysql` sets the MySQL listening port, container port, and
+default probe target. `service.ports.mysql` sets the separate client-facing
+Service port and forwards to that listening port.
+
+Explicit `command` or `args` overrides remain under your control; configure
+the server to listen on `containerPorts.mysql` when overriding startup.
+
 ## Storage
 
 Persistence is enabled by default. The chart mounts the persistent volume at `/var/lib/mysql`, which matches the official MySQL image data directory.

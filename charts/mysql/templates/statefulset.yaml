@@ -1,5 +1,6 @@
 {{- $customUser := include "mysql.username" . | trim }}
 {{- $customDatabase := include "mysql.database" . | trim }}
+{{- include "mysql.validateValues" . -}}
 apiVersion: {{ include "common.capabilities.statefulset.apiVersion" . }}
 kind: StatefulSet
 metadata:
@@ -78,6 +79,9 @@ spec:
           {{- end }}
           {{- if .Values.args }}
           args: {{- include "common.tplvalues.render" (dict "value" .Values.args "context" $) | nindent 12 }}
+          {{- else if not .Values.command }}
+          args:
+            - {{ printf "--port=%v" .Values.containerPorts.mysql | quote }}
           {{- end }}
           env:
             - name: MYSQL_ROOT_PASSWORD

@@ -1,0 +1,20 @@
+Umami has been deployed as {{ include "umami.fullname" . }}.
+
+Access Umami locally:
+
+  kubectl port-forward -n {{ include "common.names.namespace" . }} deployment/{{ include "umami.fullname" . }} 3000:{{ .Values.containerPorts.http }}
+
+Open http://localhost:3000 and log in with username admin and password umami.
+Change the administrator password immediately in Settings -> Profile.
+{{- if .Values.ingress.enabled }}
+
+Ingress URL: {{ ternary "https" "http" .Values.ingress.tls }}://{{ tpl .Values.ingress.hostname . }}{{ .Values.ingress.path }}
+{{- end }}
+
+Umami applies database migrations automatically on startup. Back up PostgreSQL
+before upgrading Umami. Keep APP_SECRET stable across replicas and upgrades.
+{{- if and .Values.postgresql.enabled (not .Values.postgresql.persistence.enabled) }}
+
+WARNING: PostgreSQL persistence is disabled. Analytics data will be lost when the
+database pod is removed.
+{{- end }}

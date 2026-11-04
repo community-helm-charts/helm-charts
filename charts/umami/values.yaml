@@ -1,0 +1,312 @@
+## @section Global parameters
+## @param global.imageRegistry Global container image registry
+## @param global.imagePullSecrets Global container registry secret names
+## @param global.defaultStorageClassName Global default StorageClass for Persistent Volumes
+## @param global.storageClassName Global StorageClass override kept for compatibility
+##
+global:
+  imageRegistry: ""
+  imagePullSecrets: []
+  defaultStorageClassName: ""
+  storageClassName: ""
+
+## @section Common parameters
+## @param kubeVersion Override Kubernetes version
+## @param nameOverride Partially override the chart name
+## @param fullnameOverride Fully override the chart name
+## @param namespaceOverride Fully override the release namespace
+## @param clusterDomain Kubernetes cluster domain
+## @param commonLabels Labels added to every resource
+## @param commonAnnotations Annotations added to every resource
+## @param extraDeploy Additional objects to deploy
+##
+kubeVersion: ""
+nameOverride: ""
+fullnameOverride: ""
+namespaceOverride: ""
+clusterDomain: cluster.local
+commonLabels: {}
+commonAnnotations: {}
+extraDeploy: []
+
+## @section Umami image parameters
+## @param image.registry Umami image registry
+## @param image.repository Umami image repository
+## @param image.tag Umami image tag
+## @param image.digest Umami image digest in the form sha256:...
+## @param image.pullPolicy Umami image pull policy
+## @param image.pullSecrets Umami image pull secrets
+##
+image:
+  registry: ghcr.io
+  repository: umami-software/umami
+  tag: "3.4.1"
+  digest: ""
+  pullPolicy: IfNotPresent
+  pullSecrets: []
+
+## @param containerPorts.http Umami HTTP container port
+##
+containerPorts:
+  http: 3000
+
+## @section Umami Service parameters
+## @param service.enabled Create the Umami Service
+## @param service.type Kubernetes Service type
+## @param service.ports.http Umami HTTP Service port
+## @param service.nodePorts.http HTTP node port for NodePort or LoadBalancer
+## @param service.clusterIP Service ClusterIP
+## @param service.annotations Additional Service annotations
+## @param service.labels Additional Service labels
+## @param service.internalTrafficPolicy Service internal traffic policy
+## @param service.externalTrafficPolicy Service external traffic policy
+## @param service.loadBalancerClass Service load balancer class
+## @param service.loadBalancerIP Service load balancer IP
+## @param service.loadBalancerSourceRanges Allowed LoadBalancer source ranges
+## @param service.sessionAffinity Service session affinity
+## @param service.sessionAffinityConfig Additional session affinity settings
+## @param service.ipFamilyPolicy Service IP family policy
+## @param service.ipFamilies Service IP families
+## @param service.extraPorts Additional Service ports
+##
+service:
+  enabled: true
+  type: ClusterIP
+  ports:
+    http: 80
+  nodePorts:
+    http: ""
+  clusterIP: ""
+  annotations: {}
+  labels: {}
+  internalTrafficPolicy: Cluster
+  externalTrafficPolicy: Cluster
+  loadBalancerClass: ""
+  loadBalancerIP: ""
+  loadBalancerSourceRanges: []
+  sessionAffinity: None
+  sessionAffinityConfig: {}
+  ipFamilyPolicy: ""
+  ipFamilies: []
+  extraPorts: []
+
+## @section Umami Ingress parameters
+## @param ingress.enabled Create an Ingress for the Umami
+## @param ingress.pathType Ingress path type
+## @param ingress.apiVersion Force the Ingress API version
+## @param ingress.hostname Default Ingress hostname
+## @param ingress.path Default Ingress path
+## @param ingress.annotations Additional Ingress annotations
+## @param ingress.ingressClassName IngressClass used for the Ingress
+## @param ingress.tls Enable TLS for the default hostname
+## @param ingress.extraHosts Additional hostnames
+## @param ingress.extraPaths Additional paths under the default host
+## @param ingress.extraTls Additional TLS entries
+## @param ingress.extraRules Additional Ingress rules
+## @param ingress.secrets TLS Secrets to create
+##
+ingress:
+  enabled: false
+  pathType: Prefix
+  apiVersion: ""
+  hostname: umami.example.com
+  path: /
+  annotations: {}
+  ingressClassName: ""
+  tls: false
+  extraHosts: []
+  extraPaths: []
+  extraTls: []
+  extraRules: []
+  secrets: []
+
+## @section Umami authentication and database parameters
+## @param appSecret.value Authentication signing secret; randomly generated when empty and reused on upgrades
+## @param appSecret.existingSecret Existing Secret containing the authentication signing secret
+## @param appSecret.key Secret key containing APP_SECRET
+## @param secretAnnotations Annotations for chart-managed application Secrets
+## @param database.url PostgreSQL connection URL; required when postgresql.enabled=false unless database.existingSecret is set
+## @param database.existingSecret Existing Secret containing the external PostgreSQL connection URL
+## @param database.secretKey Secret key containing the external DATABASE_URL
+##
+appSecret:
+  value: ""
+  existingSecret: ""
+  key: app-secret
+secretAnnotations: {}
+database:
+  url: ""
+  existingSecret: ""
+  secretKey: database-url
+
+## @section PostgreSQL subchart parameters
+## @param postgresql.enabled Deploy the bundled PostgreSQL server
+## @param postgresql.auth.username PostgreSQL user created on first startup
+## @param postgresql.auth.password PostgreSQL password; randomly generated when empty
+## @param postgresql.auth.database PostgreSQL database created on first startup
+## @param postgresql.auth.existingSecret Existing Secret containing the PostgreSQL password
+## @param postgresql.auth.existingSecretPasswordKey Key in the existing PostgreSQL Secret
+## @param postgresql.persistence.enabled Persist PostgreSQL data
+## @param postgresql.persistence.size PostgreSQL data volume size
+##
+postgresql:
+  enabled: true
+  auth:
+    username: umami
+    password: ""
+    database: umami
+    existingSecret: ""
+    existingSecretPasswordKey: postgresql-password
+  persistence:
+    enabled: true
+    size: 8Gi
+
+## @section Umami workload parameters
+## @param replicaCount Number of Umami replicas
+## @param updateStrategy Deployment strategy
+## @param command Override the server container command
+## @param args Override the server container arguments
+## @param extraEnvVars Additional server environment variables
+## @param extraEnvVarsCM Existing ConfigMap imported as environment variables
+## @param extraEnvVarsSecret Existing Secret imported as environment variables
+## @param extraVolumes Additional pod volumes
+## @param extraVolumeMounts Additional server volume mounts
+## @param initContainers Additional init containers
+## @param sidecars Additional sidecar containers
+##
+replicaCount: 1
+updateStrategy:
+  type: RollingUpdate
+command: []
+args: []
+extraEnvVars: []
+extraEnvVarsCM: ""
+extraEnvVarsSecret: ""
+extraVolumes: []
+extraVolumeMounts: []
+initContainers: []
+sidecars: []
+
+## @section Umami pod parameters
+## @param podLabels Additional pod labels
+## @param podAnnotations Additional pod annotations
+## @param podSecurityContext.enabled Enable the pod security context
+## @param podSecurityContext.fsGroupChangePolicy Pod filesystem group change policy
+## @param podSecurityContext.sysctls Pod sysctls
+## @param podSecurityContext.supplementalGroups Pod supplemental groups
+## @param podSecurityContext.fsGroup Pod filesystem group
+## @param containerSecurityContext.enabled Enable the container security context
+## @param containerSecurityContext.runAsUser Container user ID
+## @param containerSecurityContext.runAsGroup Container group ID
+## @param containerSecurityContext.runAsNonRoot Require a non-root container
+## @param containerSecurityContext.allowPrivilegeEscalation Allow privilege escalation
+## @param containerSecurityContext.capabilities.drop Linux capabilities to drop
+## @param containerSecurityContext.seccompProfile.type Seccomp profile type
+##
+podLabels: {}
+podAnnotations: {}
+podSecurityContext:
+  enabled: true
+  fsGroupChangePolicy: Always
+  sysctls: []
+  supplementalGroups: []
+  fsGroup: 1001
+containerSecurityContext:
+  enabled: true
+  runAsUser: 1001
+  runAsGroup: 1001
+  runAsNonRoot: true
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  seccompProfile:
+    type: RuntimeDefault
+
+## @section Umami resource parameters
+## @param resourcesPreset Common resource preset
+## @param resources Explicit resource requests and limits
+##
+resourcesPreset: none
+resources: {}
+
+## @section Umami probe parameters
+## @param startupProbe.enabled Enable the startup probe
+## @param startupProbe.httpGet.path Startup probe HTTP path
+## @param startupProbe.httpGet.port Startup probe port name
+## @param livenessProbe.enabled Enable the liveness probe
+## @param livenessProbe.httpGet.path Liveness probe HTTP path
+## @param livenessProbe.httpGet.port Liveness probe port name
+## @param readinessProbe.enabled Enable the readiness probe
+## @param readinessProbe.httpGet.path Readiness probe HTTP path
+## @param readinessProbe.httpGet.port Readiness probe port name
+## @param customStartupProbe Complete startup probe override
+## @param customLivenessProbe Complete liveness probe override
+## @param customReadinessProbe Complete readiness probe override
+##
+startupProbe:
+  enabled: true
+  httpGet:
+    path: /api/heartbeat
+    port: http
+  initialDelaySeconds: 10
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 60
+  successThreshold: 1
+livenessProbe:
+  enabled: true
+  httpGet:
+    path: /api/heartbeat
+    port: http
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 6
+  successThreshold: 1
+readinessProbe:
+  enabled: true
+  httpGet:
+    path: /api/heartbeat
+    port: http
+  initialDelaySeconds: 5
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 6
+  successThreshold: 1
+customStartupProbe: {}
+customLivenessProbe: {}
+customReadinessProbe: {}
+
+## @section Umami scheduling parameters
+## @param priorityClassName Pod priority class
+## @param schedulerName Alternate scheduler
+## @param terminationGracePeriodSeconds Pod termination grace period
+## @param hostAliases Pod host aliases
+## @param affinity Pod affinity rules
+## @param nodeSelector Node selection labels
+## @param tolerations Pod tolerations
+## @param topologySpreadConstraints Pod topology spread constraints
+##
+priorityClassName: ""
+schedulerName: ""
+terminationGracePeriodSeconds: ""
+hostAliases: []
+affinity: {}
+nodeSelector: {}
+tolerations: []
+topologySpreadConstraints: []
+
+## @section Umami ServiceAccount parameters
+## @param serviceAccount.create Create the server ServiceAccount
+## @param serviceAccount.name Server ServiceAccount name
+## @param serviceAccount.automountServiceAccountToken Automount API credentials on the ServiceAccount
+## @param serviceAccount.annotations Additional ServiceAccount annotations
+## @param automountServiceAccountToken Automount API credentials in server pods
+##
+serviceAccount:
+  create: true
+  name: ""
+  automountServiceAccountToken: false
+  annotations: {}
+automountServiceAccountToken: false

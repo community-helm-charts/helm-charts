@@ -1,3 +1,7 @@
+# 2.0.0 (2026-11-20)
+
+This was a version bump only for shadowsocks to align it with other projects, there were no code changes.
+
 ## 1.1.4 (2026-11-04)
 
 ### 🧱 Updated Dependencies

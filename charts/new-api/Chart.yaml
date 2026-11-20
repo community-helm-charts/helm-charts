@@ -32,4 +32,4 @@ sources:
 - https://github.com/community-helm-charts/helm-charts/tree/main/charts/new-api
 - https://github.com/QuantumNous/new-api
 type: application
-version: 0.1.0
+version: 1.0.0

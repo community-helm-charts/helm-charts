@@ -1,0 +1,32 @@
+{{- $context := . -}}
+{{- range $role := list "master" "slave" }}
+{{- with $context }}
+{{- if or (eq $role "master") .Values.slave.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "new-api.headlessServiceName" (dict "role" $role "context" .) }}
+  namespace: {{ include "common.names.namespace" . | quote }}
+  labels: {{- include "common.labels.standard" (dict "customLabels" .Values.commonLabels "context" $) | nindent 4 }}
+    app.kubernetes.io/component: server
+    new-api-role: {{ $role }}
+  {{- if .Values.commonAnnotations }}
+  annotations: {{- include "common.tplvalues.render" (dict "value" .Values.commonAnnotations "context" $) | nindent 4 }}
+  {{- end }}
+spec:
+  type: ClusterIP
+  clusterIP: None
+  publishNotReadyAddresses: true
+  ports:
+    - name: http
+      port: {{ .Values.containerPorts.http }}
+      targetPort: http
+      protocol: TCP
+  {{- $podLabels := include "common.tplvalues.merge" (dict "values" (list .Values.podLabels .Values.commonLabels) "context" .) }}
+  selector: {{- include "common.labels.matchLabels" (dict "customLabels" $podLabels "context" $) | nindent 4 }}
+    app.kubernetes.io/component: server
+    new-api-role: {{ $role }}
+{{- end }}
+{{- end }}
+{{- end }}

@@ -1,0 +1,22 @@
+New API master has been deployed as StatefulSet {{ include "new-api.master.fullname" . }}.
+{{- if .Values.slave.enabled }}
+Slaves: StatefulSet {{ include "new-api.slave.fullname" . }} with {{ .Values.slave.replicaCount }} replicas.
+{{- else }}
+Slave nodes are disabled. Enable them with slave.enabled=true and slave.replicaCount.
+{{- end }}
+
+{{- if .Values.ingress.enabled }}
+Open {{ ternary "https" "http" .Values.ingress.tls }}://{{ .Values.ingress.hostname }}{{ .Values.ingress.path }}
+{{- else }}
+Run:
+  kubectl port-forward --namespace {{ include "common.names.namespace" . }} statefulset/{{ include "new-api.master.fullname" . }} 3000:{{ .Values.containerPorts.http }}
+Then open http://localhost:3000 and complete the setup wizard.
+{{- end }}
+
+Application file logging is disabled by default (--log-dir=).
+View container logs with:
+  kubectl logs --namespace {{ include "common.names.namespace" . }} statefulset/{{ include "new-api.master.fullname" . }} -c new-api
+
+The application uses no PVC. PostgreSQL and Valkey have their own persistence settings.
+Keep SESSION_SECRET and CRYPTO_SECRET stable across upgrades and replicas.
+Update the master and wait for its schema migrations to finish before rolling slaves.

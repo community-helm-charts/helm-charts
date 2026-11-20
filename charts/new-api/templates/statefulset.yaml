@@ -1,0 +1,255 @@
+{{- include "new-api.validateValues" . -}}
+{{- $context := . -}}
+{{- range $role := list "master" "slave" }}
+{{- with $context }}
+{{- if or (eq $role "master") .Values.slave.enabled }}
+---
+apiVersion: {{ include "common.capabilities.statefulset.apiVersion" . }}
+kind: StatefulSet
+metadata:
+  name: {{ include (printf "new-api.%s.fullname" $role) . }}
+  namespace: {{ include "common.names.namespace" . | quote }}
+  labels: {{- include "common.labels.standard" (dict "customLabels" .Values.commonLabels "context" $) | nindent 4 }}
+    app.kubernetes.io/component: server
+    new-api-role: {{ $role }}
+  {{- if .Values.commonAnnotations }}
+  annotations: {{- include "common.tplvalues.render" (dict "value" .Values.commonAnnotations "context" $) | nindent 4 }}
+  {{- end }}
+spec:
+  replicas: {{ ternary 1 .Values.slave.replicaCount (eq $role "master") }}
+  serviceName: {{ include "new-api.headlessServiceName" (dict "role" $role "context" .) }}
+  podManagementPolicy: {{ .Values.podManagementPolicy }}
+  {{- $strategy := deepCopy .Values.updateStrategy }}
+  {{- if eq $role "slave" }}
+  {{- $strategy = mergeOverwrite $strategy .Values.slave.updateStrategy }}
+  {{- end }}
+  updateStrategy: {{- toYaml $strategy | nindent 4 }}
+  {{- $podLabels := include "common.tplvalues.merge" (dict "values" (list .Values.podLabels .Values.commonLabels) "context" .) }}
+  selector:
+    matchLabels: {{- include "common.labels.matchLabels" (dict "customLabels" $podLabels "context" $) | nindent 6 }}
+      app.kubernetes.io/component: server
+      new-api-role: {{ $role }}
+  template:
+    metadata:
+      labels: {{- include "common.labels.standard" (dict "customLabels" $podLabels "context" $) | nindent 8 }}
+        app.kubernetes.io/component: server
+        new-api-role: {{ $role }}
+      annotations:
+        checksum/config: {{ dict "config" .Values.config "externalPostgresql" .Values.externalPostgresql "externalValkey" .Values.externalValkey "postgresql" .Values.postgresql.auth "postgresqlGlobal" (default dict .Values.global.postgresql) "valkey" .Values.valkey.auth | toJson | sha256sum }}
+        {{- if .Values.podAnnotations }}
+        {{- include "common.tplvalues.render" (dict "value" .Values.podAnnotations "context" $) | nindent 8 }}
+        {{- end }}
+    spec:
+      serviceAccountName: {{ include "new-api.serviceAccountName" . }}
+      automountServiceAccountToken: {{ .Values.automountServiceAccountToken }}
+      {{- include "new-api.imagePullSecrets" . | nindent 6 }}
+      {{- if .Values.hostAliases }}
+      hostAliases: {{- include "common.tplvalues.render" (dict "value" .Values.hostAliases "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .Values.affinity }}
+      affinity: {{- include "common.tplvalues.render" (dict "value" .Values.affinity "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .Values.nodeSelector }}
+      nodeSelector: {{- include "common.tplvalues.render" (dict "value" .Values.nodeSelector "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .Values.tolerations }}
+      tolerations: {{- include "common.tplvalues.render" (dict "value" .Values.tolerations "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .Values.topologySpreadConstraints }}
+      topologySpreadConstraints: {{- include "common.tplvalues.render" (dict "value" .Values.topologySpreadConstraints "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .Values.priorityClassName }}
+      priorityClassName: {{ .Values.priorityClassName | quote }}
+      {{- end }}
+      {{- if .Values.schedulerName }}
+      schedulerName: {{ .Values.schedulerName | quote }}
+      {{- end }}
+      {{- if .Values.terminationGracePeriodSeconds }}
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
+      {{- end }}
+      {{- if .Values.podSecurityContext.enabled }}
+      securityContext: {{- include "common.compatibility.renderSecurityContext" (dict "secContext" .Values.podSecurityContext "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if or (eq $role "slave") .Values.initContainers }}
+      initContainers:
+        {{- if eq $role "slave" }}
+        - name: wait-for-master
+          image: {{ include "new-api.image" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy | quote }}
+          {{- if .Values.containerSecurityContext.enabled }}
+          securityContext: {{- include "common.compatibility.renderSecurityContext" (dict "secContext" .Values.containerSecurityContext "context" $) | nindent 12 }}
+          {{- end }}
+          command:
+            - /bin/sh
+            - -ec
+          args:
+            - |
+              until wget --timeout=5 --tries=1 -qO- "$MASTER_URL/api/status" | grep -Eq '"success"[[:space:]]*:[[:space:]]*true'; do
+                echo "Waiting for New API master..." >&2
+                sleep 2
+              done
+          env:
+            - name: MASTER_URL
+              value: {{ printf "http://%s-0.%s.%s.svc.%s:%v" (include "new-api.master.fullname" .) (include "new-api.headlessServiceName" (dict "role" "master" "context" .)) (include "common.names.namespace" .) .Values.clusterDomain .Values.containerPorts.http | quote }}
+        {{- end }}
+        {{- if .Values.initContainers }}
+        {{- include "common.tplvalues.render" (dict "value" .Values.initContainers "context" $) | nindent 8 }}
+        {{- end }}
+      {{- end }}
+      containers:
+        - name: new-api
+          image: {{ include "new-api.image" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy | quote }}
+          {{- if .Values.containerSecurityContext.enabled }}
+          securityContext: {{- include "common.compatibility.renderSecurityContext" (dict "secContext" .Values.containerSecurityContext "context" $) | nindent 12 }}
+          {{- end }}
+          # Build connection URLs from raw Secret credentials without embedding them in manifests.
+          command:
+            - /bin/sh
+            - -ec
+          args:
+            - |
+              {{- include "new-api.startupScript" . | nindent 14 }}
+            - --
+            {{- range (default (list "/new-api") .Values.command) }}
+            - {{ . | quote }}
+            {{- end }}
+            - {{ printf "--port=%v" .Values.containerPorts.http | quote }}
+            {{- range .Values.args }}
+            - {{ . | quote }}
+            {{- end }}
+          env:
+            - name: NODE_TYPE
+              value: {{ $role | quote }}
+            - name: SYNC_FREQUENCY
+              value: {{ .Values.config.syncFrequency | quote }}
+            - name: BATCH_UPDATE_ENABLED
+              value: {{ .Values.config.batchUpdateEnabled | quote }}
+            - name: BATCH_UPDATE_INTERVAL
+              value: {{ .Values.config.batchUpdateInterval | quote }}
+            - name: ERROR_LOG_ENABLED
+              value: {{ .Values.config.errorLogEnabled | quote }}
+            - name: MEMORY_CACHE_ENABLED
+              value: {{ .Values.config.memoryCacheEnabled | quote }}
+            - name: TZ
+              value: {{ .Values.config.timezone | quote }}
+            {{- if and (eq $role "slave") .Values.slave.frontendBaseUrl }}
+            - name: FRONTEND_BASE_URL
+              value: {{ .Values.slave.frontendBaseUrl | quote }}
+            {{- end }}
+            - name: SESSION_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "new-api.config.secretName" . }}
+                  key: {{ .Values.config.sessionSecretKey }}
+            - name: CRYPTO_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "new-api.config.secretName" . }}
+                  key: {{ .Values.config.cryptoSecretKey }}
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            {{- if .Values.postgresql.enabled }}
+            {{- $postgresql := .Subcharts.postgresql }}
+            - name: NEW_API_DB_HOST
+              value: {{ printf "%s.%s.svc.%s" (include "postgresql.fullname" $postgresql) (include "common.names.namespace" $postgresql) .Values.clusterDomain | quote }}
+            - name: NEW_API_DB_PORT
+              value: {{ include "postgresql.service.port" $postgresql | quote }}
+            - name: NEW_API_DB_USER
+              value: {{ include "postgresql.username" $postgresql | quote }}
+            - name: NEW_API_DB_NAME
+              value: {{ include "postgresql.database" $postgresql | quote }}
+            - name: NEW_API_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "new-api.postgresql.secretName" . }}
+                  key: {{ include "new-api.postgresql.secretKey" . }}
+            {{- else }}
+            - name: SQL_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "new-api.postgresql.secretName" . }}
+                  key: {{ include "new-api.postgresql.secretKey" . }}
+            {{- end }}
+            {{- if .Values.valkey.enabled }}
+            {{- $valkey := .Subcharts.valkey }}
+            - name: NEW_API_VALKEY_HOST
+              value: {{ printf "%s.%s.svc.%s" (include "valkey.fullname" $valkey) (include "common.names.namespace" $valkey) .Values.clusterDomain | quote }}
+            - name: NEW_API_VALKEY_PORT
+              value: {{ include "valkey.service.port" $valkey | quote }}
+            {{- if $valkey.Values.auth.enabled }}
+            - name: NEW_API_VALKEY_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "new-api.valkey.secretName" . }}
+                  key: {{ include "new-api.valkey.secretKey" . }}
+            {{- end }}
+            {{- else }}
+            - name: REDIS_CONN_STRING
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "new-api.valkey.secretName" . }}
+                  key: {{ include "new-api.valkey.secretKey" . }}
+            {{- end }}
+            {{- if or .Values.extraEnvVars (and (eq $role "slave") .Values.slave.extraEnvVars) }}
+            {{- include "new-api.extraEnvVars" (dict "role" $role "context" .) | nindent 12 }}
+            {{- end }}
+          {{- if or .Values.extraEnvVarsCM .Values.extraEnvVarsSecret }}
+          envFrom:
+            {{- if .Values.extraEnvVarsCM }}
+            - configMapRef:
+                name: {{ .Values.extraEnvVarsCM }}
+            {{- end }}
+            {{- if .Values.extraEnvVarsSecret }}
+            - secretRef:
+                name: {{ .Values.extraEnvVarsSecret }}
+            {{- end }}
+          {{- end }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.containerPorts.http }}
+              protocol: TCP
+          {{- if .Values.customStartupProbe }}
+          startupProbe: {{- include "common.tplvalues.render" (dict "value" .Values.customStartupProbe "context" $) | nindent 12 }}
+          {{- else if .Values.startupProbe.enabled }}
+          startupProbe: {{- include "common.tplvalues.render" (dict "value" (omit .Values.startupProbe "enabled") "context" $) | nindent 12 }}
+          {{- end }}
+          {{- if .Values.customLivenessProbe }}
+          livenessProbe: {{- include "common.tplvalues.render" (dict "value" .Values.customLivenessProbe "context" $) | nindent 12 }}
+          {{- else if .Values.livenessProbe.enabled }}
+          livenessProbe: {{- include "common.tplvalues.render" (dict "value" (omit .Values.livenessProbe "enabled") "context" $) | nindent 12 }}
+          {{- end }}
+          {{- if .Values.customReadinessProbe }}
+          readinessProbe: {{- include "common.tplvalues.render" (dict "value" .Values.customReadinessProbe "context" $) | nindent 12 }}
+          {{- else if .Values.readinessProbe.enabled }}
+          readinessProbe: {{- include "common.tplvalues.render" (dict "value" (omit .Values.readinessProbe "enabled") "context" $) | nindent 12 }}
+          {{- end }}
+          {{- $resources := .Values.resources }}
+          {{- if and (eq $role "slave") .Values.slave.resources }}
+          {{- $resources = .Values.slave.resources }}
+          {{- end }}
+          {{- if $resources }}
+          resources: {{- toYaml $resources | nindent 12 }}
+          {{- else if ne .Values.resourcesPreset "none" }}
+          resources: {{- include "common.resources.preset" (dict "type" .Values.resourcesPreset) | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+          {{- if .Values.extraVolumeMounts }}
+          {{- include "common.tplvalues.render" (dict "value" .Values.extraVolumeMounts "context" $) | nindent 12 }}
+          {{- end }}
+        {{- if .Values.sidecars }}
+        {{- include "common.tplvalues.render" (dict "value" .Values.sidecars "context" $) | nindent 8 }}
+        {{- end }}
+      volumes:
+        - name: tmp
+          emptyDir: {}
+      {{- if .Values.extraVolumes }}
+      {{- include "common.tplvalues.render" (dict "value" .Values.extraVolumes "context" $) | nindent 8 }}
+      {{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

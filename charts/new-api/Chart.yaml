@@ -1,0 +1,35 @@
+annotations:
+  images: |
+    - name: new-api
+      image: docker.io/calciumion/new-api:v1.0.0-rc.51
+  licenses: AGPL-3.0
+apiVersion: v2
+appVersion: "v1.0.0-rc.51"
+kubeVersion: ">=1.23.0-0"
+dependencies:
+- name: common
+  repository: file://../common
+  version: 0.2.3
+- condition: postgresql.enabled
+  name: postgresql
+  repository: file://../postgresql
+  version: 2.0.5
+- condition: valkey.enabled
+  name: valkey
+  repository: file://../valkey
+  version: 2.0.5
+description: New API LLM gateway with a master, optional slave StatefulSet, PostgreSQL and Valkey.
+home: https://github.com/community-helm-charts/helm-charts
+keywords:
+- new-api
+- llm
+- gateway
+maintainers:
+- name: community-helm-charts
+  url: https://github.com/community-helm-charts/helm-charts
+name: new-api
+sources:
+- https://github.com/community-helm-charts/helm-charts/tree/main/charts/new-api
+- https://github.com/QuantumNous/new-api
+type: application
+version: 0.1.0

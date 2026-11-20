@@ -1,10 +1,11 @@
 import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
-import { cpSync, mkdtempSync, mkdirSync, rmSync } from "node:fs";
+import { randomUUID } from "node:crypto";
+import { cpSync, mkdtempSync, mkdirSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import test from "node:test";
-import { parseAllDocuments } from "yaml";
+import { parse, parseAllDocuments } from "yaml";
 
 const ROOT = resolve(import.meta.dirname, "..");
 
@@ -59,6 +60,7 @@ test("Umami defaults connect to the bundled persistent PostgreSQL with a shared 
   assert.equal(env(docs, "UMAMI_DB_USER").value, "umami");
   assert.equal(env(docs, "UMAMI_DB_NAME").value, "umami");
   const passwordRef = env(docs, "UMAMI_DB_PASSWORD").valueFrom.secretKeyRef;
+  assert.equal(passwordRef.name, "umami-postgresql");
   const dbPassword = db.spec.template.spec.containers[0].env.find((entry) => entry.name === "POSTGRES_PASSWORD");
   assert.deepEqual(passwordRef, dbPassword.valueFrom.secretKeyRef);
   assert.ok(decode(resource(docs, "Secret", passwordRef.name).data[passwordRef.key]));
@@ -124,12 +126,15 @@ test("bundled database startup encodes credentials and preserves command argumen
 
 test("external PostgreSQL URL is kept in a Secret and changes roll the application", (t) => {
   const chart = makeChart(t);
-  const url = "postgresql://user:p%40ss@db.example.com:5432/events?sslmode=require";
-  const values = { postgresql: { enabled: false }, database: { url }, appSecret: { value: "stable-signing-secret" } };
+  const connection = new URL("postgresql://db.example.com:5432/events?sslmode=require");
+  connection.username = "test-user";
+  connection.password = `test-${randomUUID()}@pass`;
+  const url = connection.toString();
+  const values = { postgresql: { enabled: false }, externalPostgresql: { url }, appSecret: { value: "stable-signing-secret" } };
   const docs = chart.render(values);
   assert.equal(resource(docs, "StatefulSet"), undefined);
-  assert.deepEqual(env(docs, "DATABASE_URL").valueFrom.secretKeyRef, { name: "umami-database", key: "database-url" });
-  assert.equal(decode(resource(docs, "Secret", "umami-database").data["database-url"]), url);
+  assert.deepEqual(env(docs, "DATABASE_URL").valueFrom.secretKeyRef, { name: "umami-external-postgresql", key: "postgresql-url" });
+  assert.equal(decode(resource(docs, "Secret", "umami-external-postgresql").data["postgresql-url"]), url);
   assert.equal(decode(resource(docs, "Secret", "umami-app").data["app-secret"]), "stable-signing-secret");
   assert.equal(container(docs).command, undefined);
   assert.equal(container(docs).args, undefined);
@@ -137,18 +142,45 @@ test("external PostgreSQL URL is kept in a Secret and changes roll the applicati
   const checksum = (rendered) => deployment(rendered).spec.template.metadata.annotations["checksum/config"];
   assert.equal(checksum(docs), checksum(chart.render(values)));
   assert.notEqual(checksum(docs), checksum(chart.render({ ...values, appSecret: { value: "rotated-signing-secret" } })));
-  assert.notEqual(checksum(docs), checksum(chart.render({ ...values, database: { url: url + "&connection_limit=10" } })));
+  assert.notEqual(checksum(docs), checksum(chart.render({ ...values, externalPostgresql: { url: url + "&connection_limit=10" } })));
 });
 
 test("external Secret references create no database or application credentials", (t) => {
   const docs = makeChart(t).render({
     postgresql: { enabled: false },
-    database: { existingSecret: "external-db", secretKey: "url" },
+    externalPostgresql: { existingSecret: "external-db", secretKey: "url" },
     appSecret: { existingSecret: "external-app", key: "signing" },
   });
   assert.deepEqual(env(docs, "DATABASE_URL").valueFrom.secretKeyRef, { name: "external-db", key: "url" });
   assert.deepEqual(env(docs, "APP_SECRET").valueFrom.secretKeyRef, { name: "external-app", key: "signing" });
   assert.equal(docs.filter((doc) => ["Secret", "StatefulSet", "PersistentVolumeClaim"].includes(doc.kind)).length, 0);
+});
+
+test("external PostgreSQL Secret naming preserves suffixes and supports existing Secret keys", (t) => {
+  const chart = makeChart(t);
+  for (const fullname of ["analytics", "a".repeat(63)]) {
+    const docs = chart.render({
+      fullnameOverride: fullname, postgresql: { enabled: false },
+      externalPostgresql: { url: "postgresql://db/events" },
+    });
+    const name = `${fullname.slice(0, 43)}-external-postgresql`;
+    assert.deepEqual(env(docs, "DATABASE_URL").valueFrom.secretKeyRef, { name, key: "postgresql-url" });
+    assert.equal(decode(resource(docs, "Secret", name).data["postgresql-url"]), "postgresql://db/events");
+    assert.ok(name.length <= 63);
+  }
+  const docs = chart.render({
+    postgresql: { enabled: false },
+    externalPostgresql: { existingSecret: "legacy-postgresql", secretKey: "database-url" },
+  });
+  assert.deepEqual(env(docs, "DATABASE_URL").valueFrom.secretKeyRef, { name: "legacy-postgresql", key: "database-url" });
+});
+
+test("every Umami README values example renders with the PostgreSQL naming convention", (t) => {
+  const chart = makeChart(t);
+  const readme = readFileSync(join(ROOT, "charts/umami/README.md"), "utf8");
+  const examples = [...readme.matchAll(/```yaml\n([\s\S]*?)```/g)];
+  assert.ok(examples.length >= 4);
+  for (const [, values] of examples) chart.render(parse(values));
 });
 
 test("Ingress TLS, custom HTTP ports and service selectors route to Umami", (t) => {
@@ -204,10 +236,10 @@ test("image, resources, scheduling and environment customizations reach the pod"
 test("invalid database, port, ingress and environment combinations fail clearly", (t) => {
   const chart = makeChart(t);
   for (const [values, message] of [
-    [{ postgresql: { enabled: false } }, /database.url.*required/],
-    [{ database: { url: "postgresql://user:pass@db/events" } }, /require postgresql.enabled=false/],
-    [{ postgresql: { enabled: false }, database: { url: "mysql:\/\/db/events" } }, /PostgreSQL connection URL/],
-    [{ postgresql: { enabled: false }, database: { url: "postgresql://db/events", existingSecret: "db" } }, /set only one/],
+    [{ postgresql: { enabled: false } }, /externalPostgresql.url.*required/],
+    [{ externalPostgresql: { url: "postgresql://db/events" } }, /require postgresql.enabled=false/],
+    [{ postgresql: { enabled: false }, externalPostgresql: { url: "mysql:\/\/db/events" } }, /PostgreSQL connection URL/],
+    [{ postgresql: { enabled: false }, externalPostgresql: { url: "postgresql://db/events", existingSecret: "db" } }, /set only one/],
     [{ postgresql: { service: { enabled: false } } }, /postgresql.service.enabled must be true/],
     [{ postgresql: { auth: { trustAuthentication: true } } }, /trustAuthentication is not supported/],
     [{ postgresql: { namespaceOverride: "other" } }, /must match the Umami namespace/],

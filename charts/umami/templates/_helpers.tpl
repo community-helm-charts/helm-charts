@@ -44,8 +44,8 @@
 {{- fail "ingress.hostname must not be empty when ingress.tls is true; use ingress.extraTls for additional TLS entries" -}}
 {{- end -}}
 {{- if .Values.postgresql.enabled -}}
-{{- if or .Values.database.url .Values.database.existingSecret -}}
-{{- fail "database.url and database.existingSecret require postgresql.enabled=false" -}}
+{{- if or .Values.externalPostgresql.url .Values.externalPostgresql.existingSecret -}}
+{{- fail "externalPostgresql.url and externalPostgresql.existingSecret require postgresql.enabled=false" -}}
 {{- end -}}
 {{- $postgresql := .Subcharts.postgresql -}}
 {{- if not $postgresql.Values.service.enabled -}}
@@ -61,21 +61,21 @@
 {{- fail "postgresql.namespaceOverride must match the Umami namespace so the password Secret can be shared" -}}
 {{- end -}}
 {{- else -}}
-{{- if not (or .Values.database.url .Values.database.existingSecret) -}}
-{{- fail "database.url or database.existingSecret is required when postgresql.enabled=false" -}}
+{{- if not (or .Values.externalPostgresql.url .Values.externalPostgresql.existingSecret) -}}
+{{- fail "externalPostgresql.url or externalPostgresql.existingSecret is required when postgresql.enabled=false" -}}
 {{- end -}}
-{{- if and .Values.database.url .Values.database.existingSecret -}}
-{{- fail "set only one of database.url and database.existingSecret" -}}
+{{- if and .Values.externalPostgresql.url .Values.externalPostgresql.existingSecret -}}
+{{- fail "set only one of externalPostgresql.url and externalPostgresql.existingSecret" -}}
 {{- end -}}
-{{- if and .Values.database.url (not (regexMatch "^postgres(ql)?://" .Values.database.url)) -}}
-{{- fail "database.url must be a PostgreSQL connection URL" -}}
+{{- if and .Values.externalPostgresql.url (not (regexMatch "^postgres(ql)?://" .Values.externalPostgresql.url)) -}}
+{{- fail "externalPostgresql.url must be a PostgreSQL connection URL" -}}
 {{- end -}}
 {{- end -}}
 {{- if and .Values.appSecret.value .Values.appSecret.existingSecret -}}
 {{- fail "set only one of appSecret.value and appSecret.existingSecret" -}}
 {{- end -}}
-{{- if or (empty .Values.appSecret.key) (empty .Values.database.secretKey) -}}
-{{- fail "appSecret.key and database.secretKey must not be empty" -}}
+{{- if or (empty .Values.appSecret.key) (empty .Values.externalPostgresql.secretKey) -}}
+{{- fail "appSecret.key and externalPostgresql.secretKey must not be empty" -}}
 {{- end -}}
 {{- range .Values.extraEnvVars -}}
 {{- if or (has .name (list "PORT" "HOSTNAME" "DATABASE_URL" "APP_SECRET")) (hasPrefix "UMAMI_DB_" .name) -}}
@@ -88,6 +88,19 @@
 {{- default (printf "%s-app" (include "umami.fullname" . | trunc 59 | trimSuffix "-")) .Values.appSecret.existingSecret -}}
 {{- end -}}
 
-{{- define "umami.databaseSecretName" -}}
-{{- default (printf "%s-database" (include "umami.fullname" . | trunc 54 | trimSuffix "-")) .Values.database.existingSecret -}}
+{{- define "umami.postgresql.secretName" -}}
+{{- if .Values.postgresql.enabled -}}
+{{- include "postgresql.secretName" .Subcharts.postgresql -}}
+{{- else -}}
+{{- default (printf "%s-external-postgresql" (include "umami.fullname" . | trunc 43 | trimSuffix "-")) .Values.externalPostgresql.existingSecret -}}
+{{- end -}}
+{{- end -}}
+
+{{/* The bundled Secret contains a raw password; the external Secret contains DATABASE_URL. */}}
+{{- define "umami.postgresql.secretKey" -}}
+{{- if .Values.postgresql.enabled -}}
+{{- include "postgresql.passwordKey" .Subcharts.postgresql -}}
+{{- else -}}
+{{- .Values.externalPostgresql.secretKey -}}
+{{- end -}}
 {{- end -}}

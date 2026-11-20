@@ -64,32 +64,37 @@ Prefer an existing Secret in the release namespace:
 ```yaml
 postgresql:
   enabled: false
-database:
-  existingSecret: umami-database
-  secretKey: database-url
+externalPostgresql:
+  existingSecret: umami-external-postgresql
+  secretKey: postgresql-url
 appSecret:
   existingSecret: umami-authentication
   key: app-secret
 ```
 
 The database Secret must contain the full URL, for example
-`postgresql://umami:URL_ENCODED_PASSWORD@postgres.example.com:5432/umami?sslmode=require`.
+`postgresql://umami:<URL_ENCODED_PASSWORD>@postgres.example.com:5432/umami?sslmode=require`.
 The database and user must already exist, and the user must be able to apply
 Umami's schema migrations. External connection URLs are passed through unchanged;
 encode reserved characters in the username, password, and database name.
 
-Alternatively, set `database.url` in a private values file; the chart stores it
+Alternatively, set `externalPostgresql.url` in a private values file; the chart stores it
 in a Kubernetes Secret:
 
 ```yaml
 postgresql:
   enabled: false
-database:
-  url: postgresql://umami:password@postgres.example.com:5432/umami?sslmode=require
+externalPostgresql:
+  url: postgresql://umami:<URL_ENCODED_PASSWORD>@postgres.example.com:5432/umami?sslmode=require
 ```
 
-Use only one of `database.url` and `database.existingSecret`. Neither can be set
+Use only one of `externalPostgresql.url` and `externalPostgresql.existingSecret`. Neither can be set
 while the bundled database is enabled. MySQL is not supported by Umami 3.
+
+When the chart manages the external connection Secret, its name is
+`<fullname>-external-postgresql`, with the default key `postgresql-url`.
+An existing Secret overrides that name. The bundled PostgreSQL password Secret
+continues to use the PostgreSQL subchart's name and `postgresql-password` key.
 
 ## Authentication and upgrades
 
@@ -98,7 +103,7 @@ secret and reuses it on upgrades through Helm's Secret lookup. For reproducible
 offline rendering and GitOps, supply `appSecret.value` or `appSecret.existingSecret`
 instead. Keep APP_SECRET stable and shared across replicas.
 
-Changes to `appSecret.value` or `database.url` update a pod checksum and trigger
+Changes to `appSecret.value` or `externalPostgresql.url` update a pod checksum and trigger
 a rollout. Restart the Deployment after changing credentials in an externally
 managed Secret. Changing a PostgreSQL password Secret does not change the
 password stored in an existing database; coordinate password rotation with

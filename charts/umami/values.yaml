@@ -125,19 +125,19 @@ ingress:
 ## @param appSecret.existingSecret Existing Secret containing the authentication signing secret
 ## @param appSecret.key Secret key containing APP_SECRET
 ## @param secretAnnotations Annotations for chart-managed application Secrets
-## @param database.url PostgreSQL connection URL; required when postgresql.enabled=false unless database.existingSecret is set
-## @param database.existingSecret Existing Secret containing the external PostgreSQL connection URL
-## @param database.secretKey Secret key containing the external DATABASE_URL
+## @param externalPostgresql.url PostgreSQL connection URL; required when postgresql.enabled=false unless externalPostgresql.existingSecret is set
+## @param externalPostgresql.existingSecret Existing Secret containing the external PostgreSQL connection URL
+## @param externalPostgresql.secretKey Secret key containing the external DATABASE_URL
 ##
 appSecret:
   value: ""
   existingSecret: ""
   key: app-secret
 secretAnnotations: {}
-database:
+externalPostgresql:
   url: ""
   existingSecret: ""
-  secretKey: database-url
+  secretKey: postgresql-url
 
 ## @section PostgreSQL subchart parameters
 ## @param postgresql.enabled Deploy the bundled PostgreSQL server

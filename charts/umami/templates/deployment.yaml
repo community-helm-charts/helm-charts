@@ -21,7 +21,7 @@ spec:
       labels: {{- include "common.labels.standard" (dict "customLabels" $podLabels "context" $) | nindent 8 }}
         app.kubernetes.io/component: server
       annotations:
-        checksum/config: {{ dict "appSecret" .Values.appSecret.value "databaseUrl" .Values.database.url | toJson | sha256sum }}
+        checksum/config: {{ dict "appSecret" .Values.appSecret.value "externalPostgresql" .Values.externalPostgresql | toJson | sha256sum }}
         {{- if .Values.podAnnotations }}
         {{- include "common.tplvalues.render" (dict "value" .Values.podAnnotations "context" $) | nindent 8 }}
         {{- end }}
@@ -114,14 +114,14 @@ spec:
             - name: UMAMI_DB_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "postgresql.secretName" $postgresql }}
-                  key: {{ include "postgresql.passwordKey" $postgresql }}
+                  name: {{ include "umami.postgresql.secretName" . }}
+                  key: {{ include "umami.postgresql.secretKey" . }}
             {{- else }}
             - name: DATABASE_URL
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "umami.databaseSecretName" . }}
-                  key: {{ .Values.database.secretKey }}
+                  name: {{ include "umami.postgresql.secretName" . }}
+                  key: {{ include "umami.postgresql.secretKey" . }}
             {{- end }}
             {{- if .Values.extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .Values.extraEnvVars "context" $) | nindent 12 }}

@@ -6,7 +6,7 @@ OpenViking stores its default local data in `/app/data`, so the chart uses a
 `ReadWriteOnce` persistent volume by default and always renders one StatefulSet
 replica. The chart does not expose a `replicaCount` value.
 
-The rendered `ov.conf` is stored in a Kubernetes Secret rather than a ConfigMap.
+The rendered `ov.conf` is stored in a Kubernetes Secret named `<fullname>` (`openviking` for release `openviking`), using the `ov.conf` key.
 Use `config.existingSecret` and `config.existingSecretKey` to provide the config
 Secret yourself.
 
@@ -21,7 +21,7 @@ For production, prefer supplying an externally managed Secret:
 
 ```yaml
 config:
-  existingSecret: openviking-config
+  existingSecret: openviking-credentials
   existingSecretKey: ov.conf
 ```
 

@@ -64,7 +64,7 @@ test("default render stores ov.conf in a Secret and mounts it into a StatefulSet
 
     assert.deepEqual(resourceNames(manifest, "ConfigMap"), []);
     assert.deepEqual(resourceNames(manifest, "ServiceAccount"), ["openviking"]);
-    assert.deepEqual(resourceNames(manifest, "Secret"), ["openviking-config"]);
+    assert.deepEqual(resourceNames(manifest, "Secret"), ["openviking"]);
     assert.deepEqual(resourceNames(manifest, "StatefulSet"), ["openviking"]);
     assert.match(manifest, /image: ghcr\.io\/volcengine\/openviking:v0\.3\.17/);
     assert.match(manifest, /stringData:\n\s+ov\.conf: \|/);
@@ -77,7 +77,7 @@ test("default render stores ov.conf in a Secret and mounts it into a StatefulSet
     assert.doesNotMatch(manifest, /"max_retries"/);
     assert.doesNotMatch(manifest, /"thinking"/);
     assert.match(manifest, /serviceAccountName: openviking/);
-    assert.match(manifest, /secret:\n\s+secretName: openviking-config/);
+    assert.match(manifest, /secret:\n\s+secretName: openviking\n/);
     assert.match(manifest, /mountPath: \/app\/\.openviking\/ov\.conf/);
     assert.match(manifest, /subPath: ov\.conf/);
     assert.doesNotMatch(manifest, /OPENVIKING_CONFIG_FILE/);

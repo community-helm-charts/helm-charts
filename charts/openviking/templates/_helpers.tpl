@@ -30,7 +30,7 @@
 {{- if .Values.config.existingSecret -}}
 {{- tpl .Values.config.existingSecret $ -}}
 {{- else -}}
-{{- printf "%s-config" (include "openviking.fullname" .) | trunc 63 | trimSuffix "-" -}}
+{{- include "openviking.fullname" . -}}
 {{- end -}}
 {{- end -}}
 

@@ -51,7 +51,7 @@ If you do not use the chart's Ingress, configure the same root-path routing in y
 
 ## Ghost Configuration
 
-Ghost runtime configuration lives under `ghost.config`. The chart flattens nested keys into Ghost environment variables and stores them in a generated Secret. For example, `ghost.config.database.connection.host` becomes `database__connection__host`.
+Ghost runtime configuration lives under `ghost.config`. The chart flattens nested keys into Ghost environment variables and stores them in a generated Secret. For example, `ghost.config.mail.options.host` becomes `mail__options__host`. MySQL connection settings are managed separately through `mysql.auth` and `externalMysql`.
 
 ```yaml
 ghost:
@@ -72,7 +72,11 @@ privacy__useStructuredData=false
 
 The chart includes the `mysql` subchart by default. It creates the Ghost database through the official MySQL image environment variables. When self-hosted ActivityPub is enabled, the chart adds a small SQL init ConfigMap that is mounted by the MySQL subchart to create the `activitypub` database and grant access to the Ghost database user.
 
-For the built-in database, set MySQL credentials under `mysql.auth`. Ghost reads the generated MySQL Secret unless `ghost.config.database.connection.password` is explicitly set.
+For the built-in database, set MySQL credentials under `mysql.auth`. The default
+password Secret is `<release>-mysql`, such as `ghost-mysql`, with the keys
+`mysql-password` and `mysql-root-password`. `mysql.fullnameOverride` changes the
+default name; `mysql.auth.existingSecret` selects an existing Secret. The chart
+resolves the host, Service port, username and database from the MySQL subchart.
 
 ```yaml
 mysql:
@@ -88,16 +92,41 @@ Use an external MySQL database:
 mysql:
   enabled: false
 
-ghost:
-  config:
-    database:
-      connection:
-        host: mysql.example.svc.cluster.local
-        port: 3306
-        user: ghost
-        password: change-me
-        database: ghost
+externalMysql:
+  host: mysql.example.svc.cluster.local
+  port: 3306
+  username: ghost
+  password: <MYSQL_PASSWORD>
+  database: ghost
 ```
+
+The chart stores the raw password in `<fullname>-external-mysql`, using the
+default key `mysql-password`. The database and user must already exist. Prefer
+an existing Secret in the release namespace when managing credentials externally:
+
+```yaml
+mysql:
+  enabled: false
+externalMysql:
+  host: mysql.example.svc.cluster.local
+  username: ghost
+  database: ghost
+  existingSecret: ghost-external-mysql-credentials
+  secretKey: mysql-password
+```
+
+Set only one of `externalMysql.password` and `externalMysql.existingSecret`.
+Ghost, the MySQL wait container and ActivityPub read the same password Secret.
+The application still uses Ghost's native `database__connection__*` environment
+variables. Additional driver options, such as TLS, can be passed through
+`ghost.config.database.connection.ssl`; host, port, user, database and password
+are chart-managed and must be configured through `mysql` or `externalMysql`.
+When using external MySQL with ActivityPub, also provision the
+`activitypub.database` database and grant the configured user access to it.
+
+Changes to credentials in chart values roll the Ghost Pod. Restart the Pod after
+updating an externally managed Secret. Changing a password Secret does not change
+the password stored by MySQL; coordinate database password changes first.
 
 ## Analytics
 
@@ -191,11 +220,6 @@ ghost:
 | `ghost.config` | Ghost runtime configuration, flattened into environment variables in a Secret | See `values.yaml` |
 | `ghost.config.url` | Public Ghost URL | `http://localhost:2368` |
 | `ghost.config.admin.url` | Optional separate Ghost Admin URL | `""` |
-| `ghost.config.database.connection.host` | Database host; defaults to built-in MySQL service when empty | `""` |
-| `ghost.config.database.connection.port` | Database port | `3306` |
-| `ghost.config.database.connection.user` | Database user | `ghost` |
-| `ghost.config.database.connection.password` | External database password, or an explicit override for Ghost's database password env var | `""` |
-| `ghost.config.database.connection.database` | Database name | `ghost` |
 | `ghost.service.type` | Ghost Service type | `ClusterIP` |
 | `ghost.service.ports.http` | Ghost Service HTTP port | `80` |
 | `ingress.enabled` | Create an Ingress | `true` |
@@ -216,6 +240,13 @@ ghost:
 | `mysql.initdb.scriptsConfigMap` | Initdb ConfigMap mounted by the MySQL subchart | `{{ .Release.Name }}-mysql-initdb` |
 | `mysql.resourcesPreset` | MySQL resource preset | `small` |
 | `mysql.resources` | MySQL resource requests and limits | `{}` |
+| `externalMysql.host` | External MySQL host; required when `mysql.enabled=false` | `""` |
+| `externalMysql.port` | External MySQL Service port | `3306` |
+| `externalMysql.username` | External MySQL user for Ghost and ActivityPub | `ghost` |
+| `externalMysql.database` | External MySQL database for Ghost | `ghost` |
+| `externalMysql.password` | Raw password stored in the generated external MySQL Secret | `""` |
+| `externalMysql.existingSecret` | Existing Secret containing the external MySQL password | `""` |
+| `externalMysql.secretKey` | Password key in the external MySQL Secret | `mysql-password` |
 | `trafficAnalytics.enabled` | Enable Tinybird traffic analytics | `false` |
 | `trafficAnalytics.tinybird.apiUrl` | Tinybird API URL | `https://api.tinybird.co` |
 | `trafficAnalytics.tinybird.existingSecret` | Secret containing Tinybird tokens | `""` |

@@ -21,6 +21,7 @@ spec:
         app.kubernetes.io/component: ghost
       annotations:
         checksum/config-secret: {{ include "common.utils.checksumTemplate" (dict "path" "/config-secret.yaml" "context" $) }}
+        checksum/mysql: {{ dict "auth" .Values.mysql.auth "externalMysql" .Values.externalMysql | toJson | sha256sum }}
         {{- if (include "ghost.trafficAnalytics.createSecret" .) }}
         checksum/traffic-analytics-secret: {{ include "common.utils.checksumTemplate" (dict "path" "/traffic-analytics-secret.yaml" "context" $) }}
         {{- end }}
@@ -69,20 +70,16 @@ spec:
           {{- end }}
           env:
             - name: DATABASE_HOST
-              value: {{ include "ghost.databaseHost" . | quote }}
+              value: {{ include "ghost.mysql.host" . | quote }}
             - name: DATABASE_PORT
-              value: {{ include "ghost.databasePort" . | quote }}
+              value: {{ include "ghost.mysql.port" . | quote }}
             - name: DATABASE_USER
-              value: {{ include "ghost.databaseUser" . | quote }}
+              value: {{ include "ghost.mysql.username" . | quote }}
             - name: MYSQL_PWD
               valueFrom:
                 secretKeyRef:
-                  {{- if .Values.mysql.enabled }}
-                  name: {{ include "ghost.databaseSecretName" . }}
-                  {{- else }}
-                  name: {{ include "ghost.config.secretName" . }}
-                  {{- end }}
-                  key: {{ include "ghost.databasePasswordKey" . }}
+                  name: {{ include "ghost.mysql.secretName" . }}
+                  key: {{ include "ghost.mysql.secretKey" . }}
           command:
             - /bin/sh
             - -ec
@@ -105,16 +102,16 @@ spec:
           {{- end }}
           env:
             - name: MYSQL_HOST
-              value: {{ include "ghost.databaseHost" . | quote }}
+              value: {{ include "ghost.mysql.host" . | quote }}
             - name: MYSQL_PORT
-              value: {{ include "ghost.databasePort" . | quote }}
+              value: {{ include "ghost.mysql.port" . | quote }}
             - name: MYSQL_USER
-              value: {{ include "ghost.databaseUser" . | quote }}
+              value: {{ include "ghost.mysql.username" . | quote }}
             - name: MYSQL_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "ghost.databaseSecretName" . }}
-                  key: {{ include "ghost.databasePasswordKey" . }}
+                  name: {{ include "ghost.mysql.secretName" . }}
+                  key: {{ include "ghost.mysql.secretKey" . }}
             - name: MYSQL_DATABASE
               value: {{ .Values.activitypub.database | quote }}
             - name: MYSQL_DB
@@ -133,16 +130,16 @@ spec:
             - name: NODE_ENV
               value: production
             - name: MYSQL_HOST
-              value: {{ include "ghost.databaseHost" . | quote }}
+              value: {{ include "ghost.mysql.host" . | quote }}
             - name: MYSQL_PORT
-              value: {{ include "ghost.databasePort" . | quote }}
+              value: {{ include "ghost.mysql.port" . | quote }}
             - name: MYSQL_USER
-              value: {{ include "ghost.databaseUser" . | quote }}
+              value: {{ include "ghost.mysql.username" . | quote }}
             - name: MYSQL_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "ghost.databaseSecretName" . }}
-                  key: {{ include "ghost.databasePasswordKey" . }}
+                  name: {{ include "ghost.mysql.secretName" . }}
+                  key: {{ include "ghost.mysql.secretKey" . }}
             - name: MYSQL_DATABASE
               value: {{ .Values.activitypub.database | quote }}
             - name: LOCAL_STORAGE_PATH
@@ -214,13 +211,11 @@ spec:
           env:
             - name: NODE_ENV
               value: production
-            {{- if and .Values.mysql.enabled (not (include "ghost.config.databasePassword" .)) }}
             - name: database__connection__password
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "ghost.databaseSecretName" . }}
-                  key: {{ include "ghost.databasePasswordKey" . }}
-            {{- end }}
+                  name: {{ include "ghost.mysql.secretName" . }}
+                  key: {{ include "ghost.mysql.secretKey" . }}
             {{- if and .Values.trafficAnalytics.enabled (not (include "ghost.config.tinybirdAdminToken" .)) }}
             - name: tinybird__adminToken
               valueFrom:

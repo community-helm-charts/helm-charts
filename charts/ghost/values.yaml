@@ -67,11 +67,6 @@ persistence:
 ## @param ghost.config.url Public Ghost site URL
 ## @param ghost.config.admin.url Public Ghost Admin URL
 ## @param ghost.config.database.client Ghost database client
-## @param ghost.config.database.connection.host External database host; defaults to the built-in MySQL service when mysql.enabled=true
-## @param ghost.config.database.connection.port External database port
-## @param ghost.config.database.connection.user Database user for Ghost
-## @param ghost.config.database.connection.password External database password; required when mysql.enabled=false
-## @param ghost.config.database.connection.database Database name for Ghost
 ## @param ghost.containerPorts.http Ghost HTTP container port
 ##
 ghost:
@@ -89,12 +84,6 @@ ghost:
       url: ""
     database:
       client: mysql
-      connection:
-        host: ""
-        port: 3306
-        user: ghost
-        password: ""
-        database: ghost
   containerPorts:
     http: 2368
 
@@ -289,6 +278,24 @@ ingress:
   extraTls: []
   secrets: []
   extraRules: []
+
+## @section External MySQL parameters
+## @param externalMysql.host MySQL host; required when mysql.enabled=false
+## @param externalMysql.port External MySQL service port
+## @param externalMysql.username External MySQL user for Ghost and ActivityPub
+## @param externalMysql.password Raw external MySQL password; use password or existingSecret
+## @param externalMysql.database External MySQL database for Ghost
+## @param externalMysql.existingSecret Existing Secret containing the external MySQL password
+## @param externalMysql.secretKey Secret key containing the external MySQL password
+##
+externalMysql:
+  host: ""
+  port: 3306
+  username: ghost
+  password: ""
+  database: ghost
+  existingSecret: ""
+  secretKey: mysql-password
 
 ## @section MySQL subchart parameters
 ## @param mysql.enabled Deploy a MySQL server to satisfy Ghost database requirements

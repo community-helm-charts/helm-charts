@@ -13,7 +13,7 @@ metadata:
 data:
   01-activitypub-database.sql: |
     CREATE DATABASE IF NOT EXISTS `{{ .Values.activitypub.database }}`;
-    GRANT ALL ON `{{ .Values.activitypub.database }}`.* TO '{{ include "ghost.databaseUser" . }}'@'%';
+    GRANT ALL ON `{{ .Values.activitypub.database }}`.* TO '{{ include "ghost.mysql.username" . }}'@'%';
 {{- else }}
 data: {}
 {{- end }}

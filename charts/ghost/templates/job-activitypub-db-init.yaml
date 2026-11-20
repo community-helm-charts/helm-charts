@@ -30,14 +30,14 @@ spec:
           {{- end }}
           env:
             - name: DATABASE_HOST
-              value: {{ include "ghost.databaseHost" . | quote }}
+              value: {{ include "ghost.mysql.host" . | quote }}
             - name: DATABASE_PORT
-              value: {{ include "ghost.databasePort" . | quote }}
+              value: {{ include "ghost.mysql.port" . | quote }}
             - name: MYSQL_PWD
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "ghost.databaseSecretName" . }}
-                  key: {{ include "ghost.databaseRootPasswordKey" . }}
+                  name: {{ include "ghost.mysql.secretName" . }}
+                  key: {{ include "ghost.mysql.rootPasswordKey" . }}
           command:
             - /bin/sh
             - -ec
@@ -53,7 +53,7 @@ spec:
 
               mysql -h "$DATABASE_HOST" -P "$DATABASE_PORT" -uroot <<'SQL'
               CREATE DATABASE IF NOT EXISTS `{{ .Values.activitypub.database }}`;
-              GRANT ALL ON `{{ .Values.activitypub.database }}`.* TO '{{ include "ghost.databaseUser" . }}'@'%';
+              GRANT ALL ON `{{ .Values.activitypub.database }}`.* TO '{{ include "ghost.mysql.username" . }}'@'%';
               FLUSH PRIVILEGES;
               SQL
 {{- end }}

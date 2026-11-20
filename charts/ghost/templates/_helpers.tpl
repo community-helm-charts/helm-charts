@@ -76,7 +76,7 @@
 {{- end -}}
 
 {{- define "ghost.mysql.fullname" -}}
-{{- include "common.names.dependency.fullname" (dict "chartName" "mysql" "chartValues" .Values.mysql "context" $) -}}
+{{- include "mysql.fullname" .Subcharts.mysql -}}
 {{- end -}}
 
 {{- define "ghost.trafficAnalytics.fullname" -}}
@@ -152,68 +152,99 @@ true
 {{- end -}}
 {{- end -}}
 
-{{- define "ghost.databaseSecretName" -}}
+{{- define "ghost.mysql.secretName" -}}
 {{- if .Values.mysql.enabled -}}
-  {{- $auth := default dict .Values.mysql.auth -}}
-  {{- if $auth.existingSecret -}}
-    {{- tpl $auth.existingSecret $ -}}
-  {{- else -}}
-    {{- include "ghost.mysql.fullname" . -}}
-  {{- end -}}
+{{- include "mysql.secretName" .Subcharts.mysql -}}
 {{- else -}}
-{{- include "ghost.config.secretName" . -}}
+{{- default (printf "%s-external-mysql" (include "ghost.fullname" . | trunc 48 | trimSuffix "-")) .Values.externalMysql.existingSecret -}}
 {{- end -}}
 {{- end -}}
 
-{{- define "ghost.databaseRootPasswordKey" -}}
-{{- $auth := default dict .Values.mysql.auth -}}
-{{- if $auth.existingSecret -}}
-{{- default "mysql-root-password" $auth.existingSecretRootPasswordKey -}}
-{{- else -}}
-mysql-root-password
-{{- end -}}
+{{- define "ghost.mysql.rootPasswordKey" -}}
+{{- include "mysql.rootPasswordKey" .Subcharts.mysql -}}
 {{- end -}}
 
-{{- define "ghost.databasePasswordKey" -}}
+{{- define "ghost.mysql.secretKey" -}}
 {{- if .Values.mysql.enabled -}}
-{{- $auth := default dict .Values.mysql.auth -}}
-{{- if $auth.existingSecret -}}
-{{- default "mysql-password" $auth.existingSecretPasswordKey -}}
+{{- include "mysql.passwordKey" .Subcharts.mysql -}}
 {{- else -}}
-mysql-password
-{{- end -}}
-{{- else -}}
-database__connection__password
+{{- .Values.externalMysql.secretKey -}}
 {{- end -}}
 {{- end -}}
 
-{{- define "ghost.databaseHost" -}}
-{{- $config := default dict .Values.ghost.config -}}
-{{- $host := dig "database" "connection" "host" "" $config -}}
-{{- if $host -}}
-{{- $host -}}
-{{- else if .Values.mysql.enabled -}}
+{{- define "ghost.mysql.host" -}}
+{{- if .Values.mysql.enabled -}}
 {{- include "ghost.mysql.fullname" . -}}
 {{- else -}}
-{{- required "ghost.config.database.connection.host is required when mysql.enabled=false" $host -}}
+{{- required "externalMysql.host is required when mysql.enabled=false" .Values.externalMysql.host -}}
 {{- end -}}
 {{- end -}}
 
-{{- define "ghost.databasePort" -}}
-{{- $config := default dict .Values.ghost.config -}}
-{{- default 3306 (dig "database" "connection" "port" "" $config) -}}
+{{- define "ghost.mysql.port" -}}
+{{- if .Values.mysql.enabled -}}
+{{- include "mysql.service.port" .Subcharts.mysql -}}
+{{- else -}}
+{{- .Values.externalMysql.port -}}
+{{- end -}}
 {{- end -}}
 
-{{- define "ghost.databaseUser" -}}
-{{- $config := default dict .Values.ghost.config -}}
-{{- $auth := default dict .Values.mysql.auth -}}
-{{- default (default "ghost" $auth.username) (dig "database" "connection" "user" "" $config) -}}
+{{- define "ghost.mysql.username" -}}
+{{- if .Values.mysql.enabled -}}
+{{- include "mysql.username" .Subcharts.mysql -}}
+{{- else -}}
+{{- .Values.externalMysql.username -}}
+{{- end -}}
 {{- end -}}
 
-{{- define "ghost.databaseName" -}}
-{{- $config := default dict .Values.ghost.config -}}
-{{- $auth := default dict .Values.mysql.auth -}}
-{{- default (default "ghost" $auth.database) (dig "database" "connection" "database" "" $config) -}}
+{{- define "ghost.mysql.database" -}}
+{{- if .Values.mysql.enabled -}}
+{{- include "mysql.database" .Subcharts.mysql -}}
+{{- else -}}
+{{- .Values.externalMysql.database -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "ghost.mysql.validateValues" -}}
+{{- if .Values.mysql.enabled -}}
+{{- if or .Values.externalMysql.host .Values.externalMysql.password .Values.externalMysql.existingSecret -}}
+{{- fail "externalMysql connection settings require mysql.enabled=false" -}}
+{{- end -}}
+{{- if not .Subcharts.mysql.Values.service.enabled -}}
+{{- fail "mysql.service.enabled must be true for the bundled MySQL server" -}}
+{{- end -}}
+{{- if ne (include "common.names.namespace" .Subcharts.mysql) (include "common.names.namespace" .) -}}
+{{- fail "mysql.namespaceOverride must match the Ghost namespace so password Secrets can be shared" -}}
+{{- end -}}
+{{- else -}}
+{{- if empty .Values.externalMysql.host -}}
+{{- fail "externalMysql.host is required when mysql.enabled=false" -}}
+{{- end -}}
+{{- if not (or .Values.externalMysql.password .Values.externalMysql.existingSecret) -}}
+{{- fail "externalMysql.password or externalMysql.existingSecret is required when mysql.enabled=false" -}}
+{{- end -}}
+{{- if and .Values.externalMysql.password .Values.externalMysql.existingSecret -}}
+{{- fail "set only one of externalMysql.password and externalMysql.existingSecret" -}}
+{{- end -}}
+{{- if empty .Values.externalMysql.secretKey -}}
+{{- fail "externalMysql.secretKey must not be empty" -}}
+{{- end -}}
+{{- end -}}
+{{- if or (empty (include "ghost.mysql.username" .)) (empty (include "ghost.mysql.database" .)) -}}
+{{- fail "configure a MySQL username and database under mysql.auth or externalMysql" -}}
+{{- end -}}
+{{- $port := include "ghost.mysql.port" . -}}
+{{- if not (regexMatch "^[0-9]+$" $port) -}}
+{{- fail "the MySQL service port must be an integer from 1 through 65535" -}}
+{{- end -}}
+{{- if or (lt (int $port) 1) (gt (int $port) 65535) -}}
+{{- fail "the MySQL service port must be an integer from 1 through 65535" -}}
+{{- end -}}
+{{- $connection := default dict (dig "database" "connection" dict (default dict .Values.ghost.config)) -}}
+{{- range $key := list "host" "port" "user" "password" "database" -}}
+{{- if hasKey $connection $key -}}
+{{- fail (printf "ghost.config.database.connection.%s is chart-managed; use mysql.auth or externalMysql" $key) -}}
+{{- end -}}
+{{- end -}}
 {{- end -}}
 
 {{- define "ghost.mysql.initdbConfigMapName" -}}
@@ -227,11 +258,6 @@ database__connection__password
 
 {{- define "ghost.config.secretName" -}}
 {{- printf "%s-config" (include "ghost.fullname" .) | trunc 63 | trimSuffix "-" -}}
-{{- end -}}
-
-{{- define "ghost.config.databasePassword" -}}
-{{- $config := default dict .Values.ghost.config -}}
-{{- dig "database" "connection" "password" "" $config -}}
 {{- end -}}
 
 {{- define "ghost.config.tinybirdAdminToken" -}}

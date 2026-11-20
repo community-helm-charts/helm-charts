@@ -37,6 +37,8 @@ helm install frps oci://ghcr.io/community-helm-charts/frps \
   --set auth.existingSecretKey=credential
 ```
 
+The chart-managed authentication Secret is named `<fullname>` (`frps` for release `frps`) and contains the `token` key.
+
 When `auth.existingSecret` is set, it takes precedence over `auth.token` and the chart does not create an authentication Secret.
 
 ## Server configuration

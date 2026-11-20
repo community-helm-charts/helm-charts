@@ -127,7 +127,7 @@ test("default config becomes TOML with a file-backed token and no token plaintex
   try {
     const manifest = chart.render();
     assert.deepEqual(resourceNames(manifest, "ConfigMap"), ["frps-config"]);
-    assert.deepEqual(resourceNames(manifest, "Secret"), ["frps-auth"]);
+    assert.deepEqual(resourceNames(manifest, "Secret"), ["frps"]);
     assert.match(manifest, /frps\.toml: \|/);
     assert.match(manifest, /bindPort = 7000/);
     assert.match(manifest, /vhostHTTPPort = 8080/);
@@ -246,7 +246,7 @@ test("single-instance Deployment renders safe default server behavior", () => {
     const authVolume = deploymentResource.spec.template.spec.volumes.find(({ name }) => name === "auth");
     assert.deepEqual(authVolume?.secret, {
       items: [{ key: "token", path: "token" }],
-      secretName: "frps-auth",
+      secretName: "frps",
     });
     assert.match(deployment, /checksum\/configmap: [a-f0-9]+/);
     assert.match(deployment, /checksum\/secret: [a-f0-9]+/);

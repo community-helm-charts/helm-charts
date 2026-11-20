@@ -73,7 +73,7 @@ app.kubernetes.io/component: "frps"
 {{- if .Values.auth.existingSecret -}}
 {{- tpl .Values.auth.existingSecret $ -}}
 {{- else -}}
-{{- printf "%s-auth" (include "frps.fullname" .) | trunc 63 | trimSuffix "-" -}}
+{{- include "frps.fullname" . -}}
 {{- end -}}
 {{- end -}}
 

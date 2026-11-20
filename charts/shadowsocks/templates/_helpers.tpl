@@ -26,7 +26,7 @@
 {{- if .Values.auth.existingSecret -}}
 {{- tpl .Values.auth.existingSecret $ -}}
 {{- else -}}
-{{- printf "%s-secret" (include "shadowsocks.fullname" .) | trunc 63 | trimSuffix "-" -}}
+{{- include "shadowsocks.fullname" . -}}
 {{- end -}}
 {{- end -}}
 

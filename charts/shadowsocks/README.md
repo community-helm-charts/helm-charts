@@ -53,7 +53,7 @@ helm upgrade --install shadowsocks ./charts/shadowsocks \
   --set-string config.password='replace-with-a-strong-password'
 ```
 
-The password value is written to the chart-managed `shadowsocks-secret` Secret.
+The password value is written to the chart-managed `<fullname>` Secret (`shadowsocks` for release `shadowsocks`), using the `password` key.
 Changing `config.password` updates the DaemonSet checksum and rolls its pods.
 
 Helm stores values supplied through `config.password` in release metadata. Use
@@ -80,7 +80,7 @@ helm upgrade --install shadowsocks ./charts/shadowsocks \
 ```
 
 When `auth.existingSecret` is set, it takes priority and `config.password` is
-ignored. The chart does not create `shadowsocks-secret` in this mode.
+ignored. The chart does not create its own password Secret in this mode.
 
 Kubernetes does not update an existing container environment variable when a
 Secret changes. Restart the DaemonSet after rotating an externally managed

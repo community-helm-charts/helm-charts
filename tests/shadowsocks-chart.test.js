@@ -73,7 +73,7 @@ test("default render creates a host-networked Shadowsocks DaemonSet and TCP/UDP 
     const manifest = chart.render();
 
     assert.deepEqual(resourceNames(manifest, "ConfigMap"), ["shadowsocks-config"]);
-    assert.deepEqual(resourceNames(manifest, "Secret"), ["shadowsocks-secret"]);
+    assert.deepEqual(resourceNames(manifest, "Secret"), ["shadowsocks"]);
     assert.deepEqual(resourceNames(manifest, "ServiceAccount"), ["shadowsocks"]);
     assert.deepEqual(resourceNames(manifest, "DaemonSet"), ["shadowsocks"]);
     assert.deepEqual(resourceNames(manifest, "Service"), ["shadowsocks"]);
@@ -89,7 +89,7 @@ test("default render creates a host-networked Shadowsocks DaemonSet and TCP/UDP 
     assert.match(manifest, /stringData:\n\s+password: "changeme"/);
     assert.match(
       manifest,
-      /name: SHADOWSOCKS_PASSWORD[\s\S]*?secretKeyRef:[\s\S]*?name: shadowsocks-secret[\s\S]*?key: password/,
+      /name: SHADOWSOCKS_PASSWORD[\s\S]*?secretKeyRef:[\s\S]*?name: shadowsocks[\s\S]*?key: password/,
     );
     assert.match(manifest, /mountPath: \/etc\/shadowsocks-rust\/config\.json/);
     assert.match(manifest, /- name: tcp\n\s+containerPort: 8388\n\s+protocol: TCP/);
@@ -158,10 +158,10 @@ test("chart-managed Secret always uses its password key", () => {
   try {
     const manifest = chart.render("--set", "auth.existingSecretPasswordKey=credential");
 
-    assert.deepEqual(resourceNames(manifest, "Secret"), ["shadowsocks-secret"]);
+    assert.deepEqual(resourceNames(manifest, "Secret"), ["shadowsocks"]);
     assert.match(
       manifest,
-      /name: SHADOWSOCKS_PASSWORD[\s\S]*?secretKeyRef:[\s\S]*?name: shadowsocks-secret[\s\S]*?key: password/,
+      /name: SHADOWSOCKS_PASSWORD[\s\S]*?secretKeyRef:[\s\S]*?name: shadowsocks[\s\S]*?key: password/,
     );
     assert.doesNotMatch(manifest, /key: credential/);
   } finally {
@@ -174,10 +174,10 @@ test("config.password creates the managed Secret but is replaced in config.json"
   try {
     const manifest = chart.render("--set-string", "config.password=strong-password");
 
-    assert.deepEqual(resourceNames(manifest, "Secret"), ["shadowsocks-secret"]);
+    assert.deepEqual(resourceNames(manifest, "Secret"), ["shadowsocks"]);
     assert.match(manifest, /stringData:\n\s+password: "strong-password"/);
     assert.match(manifest, /"password": "\$\{SHADOWSOCKS_PASSWORD\}"/);
-    assert.match(manifest, /name: shadowsocks-secret[\s\S]*?key: password/);
+    assert.match(manifest, /name: shadowsocks[\s\S]*?key: password/);
     assert.doesNotMatch(manifest, /"password": "strong-password"/);
   } finally {
     chart.cleanup();
@@ -235,7 +235,7 @@ test("README documents password handling, networking, and external Secret rotati
 
   assert.match(readme, /changeme/);
   assert.match(readme, /config\.password/);
-  assert.match(readme, /shadowsocks-secret/);
+  assert.match(readme, /`<fullname>`/);
   assert.match(readme, /auth\.existingSecret/);
   assert.match(readme, /SHADOWSOCKS_PASSWORD/);
   assert.match(readme, /config\.\*/);

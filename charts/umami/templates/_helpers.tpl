@@ -85,7 +85,7 @@
 {{- end -}}
 
 {{- define "umami.appSecretName" -}}
-{{- default (printf "%s-app" (include "umami.fullname" . | trunc 59 | trimSuffix "-")) .Values.appSecret.existingSecret -}}
+{{- default (include "umami.fullname" .) .Values.appSecret.existingSecret -}}
 {{- end -}}
 
 {{- define "umami.postgresql.secretName" -}}

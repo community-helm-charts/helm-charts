@@ -98,6 +98,10 @@ continues to use the PostgreSQL subchart's name and `postgresql-password` key.
 
 ## Authentication and upgrades
 
+The application Secret is named `<fullname>` (`umami` for release `umami`),
+with the default key `app-secret`. `appSecret.existingSecret` selects an existing
+Secret instead of creating one.
+
 `appSecret.value` sets APP_SECRET. When empty, the chart generates a 64-character
 secret and reuses it on upgrades through Helm's Secret lookup. For reproducible
 offline rendering and GitOps, supply `appSecret.value` or `appSecret.existingSecret`

@@ -65,7 +65,7 @@ test("Umami defaults connect to the bundled persistent PostgreSQL with a shared 
   assert.deepEqual(passwordRef, dbPassword.valueFrom.secretKeyRef);
   assert.ok(decode(resource(docs, "Secret", passwordRef.name).data[passwordRef.key]));
   assert.equal(db.spec.volumeClaimTemplates[0].spec.resources.requests.storage, "8Gi");
-  assert.equal(decode(resource(docs, "Secret", "umami-app").data["app-secret"]).length, 64);
+  assert.equal(decode(resource(docs, "Secret", "umami").data["app-secret"]).length, 64);
   assert.equal(app.spec.template.spec.automountServiceAccountToken, false);
   assert.equal(container(docs).securityContext.runAsNonRoot, true);
   assert.equal(resource(docs, "Ingress"), undefined);
@@ -135,7 +135,7 @@ test("external PostgreSQL URL is kept in a Secret and changes roll the applicati
   assert.equal(resource(docs, "StatefulSet"), undefined);
   assert.deepEqual(env(docs, "DATABASE_URL").valueFrom.secretKeyRef, { name: "umami-external-postgresql", key: "postgresql-url" });
   assert.equal(decode(resource(docs, "Secret", "umami-external-postgresql").data["postgresql-url"]), url);
-  assert.equal(decode(resource(docs, "Secret", "umami-app").data["app-secret"]), "stable-signing-secret");
+  assert.equal(decode(resource(docs, "Secret", "umami").data["app-secret"]), "stable-signing-secret");
   assert.equal(container(docs).command, undefined);
   assert.equal(container(docs).args, undefined);
   assert.ok(!JSON.stringify(deployment(docs)).includes(url));

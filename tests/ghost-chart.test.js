@@ -247,7 +247,7 @@ test("Ghost and ActivityPub share the bundled MySQL credentials and configured S
     fullnameOverride: "blog-mysql", service: { ports: { mysql: 33306 } },
     auth: { username: "publisher", database: "blog", existingSecret: "mysql-credentials", existingSecretPasswordKey: "user-password", existingSecretRootPasswordKey: "root-password" },
   } });
-  const config = resource(docs, "Secret", "ghost-config").stringData;
+  const config = resource(docs, "Secret", "ghost").stringData;
   assert.equal(config.database__connection__host, "blog-mysql");
   assert.equal(config.database__connection__port, "33306");
   assert.equal(config.database__connection__user, "publisher");
@@ -291,7 +291,7 @@ test("external MySQL creates one shared password Secret and preserves its suffix
     for (const consumer of mysqlConsumers(pod)) {
       assert.deepEqual(passwordEnv(consumer).valueFrom.secretKeyRef, { name: secretName, key: "raw-password" });
     }
-    const config = resource(docs, "Secret", `${name}-config`.slice(0, 63)).stringData;
+    const config = resource(docs, "Secret", name).stringData;
     assert.equal(config.database__connection__host, "mysql.example.com");
     assert.equal(config.database__connection__port, "33306");
     assert.equal(config.database__connection__user, "publisher");
@@ -314,7 +314,7 @@ test("external MySQL existing Secrets, TLS options and password rollouts work to
     assert.deepEqual(passwordEnv(consumer).valueFrom.secretKeyRef, { name: "external-mysql", key: "password" });
   }
   assert.equal(resource(docs, "Secret", "ghost-external-mysql"), undefined);
-  assert.equal(resource(docs, "Secret", "ghost-config").stringData.database__connection__ssl__rejectUnauthorized, "true");
+  assert.equal(resource(docs, "Secret", "ghost").stringData.database__connection__ssl__rejectUnauthorized, "true");
   const checksum = (documents) => resource(documents, "StatefulSet", "ghost").spec.template.metadata.annotations["checksum/mysql"];
   const initial = chart.documents({ mysql: { enabled: false }, externalMysql: { host: "mysql.example.com", password: "test-initial-password" } });
   const rotated = chart.documents({ mysql: { enabled: false }, externalMysql: { host: "mysql.example.com", password: "test-rotated-password" } });

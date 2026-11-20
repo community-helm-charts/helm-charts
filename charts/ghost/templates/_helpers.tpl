@@ -257,7 +257,7 @@ true
 {{- end -}}
 
 {{- define "ghost.config.secretName" -}}
-{{- printf "%s-config" (include "ghost.fullname" .) | trunc 63 | trimSuffix "-" -}}
+{{- include "ghost.fullname" . -}}
 {{- end -}}
 
 {{- define "ghost.config.tinybirdAdminToken" -}}

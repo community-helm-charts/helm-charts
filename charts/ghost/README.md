@@ -51,7 +51,7 @@ If you do not use the chart's Ingress, configure the same root-path routing in y
 
 ## Ghost Configuration
 
-Ghost runtime configuration lives under `ghost.config`. The chart flattens nested keys into Ghost environment variables and stores them in a generated Secret. For example, `ghost.config.mail.options.host` becomes `mail__options__host`. MySQL connection settings are managed separately through `mysql.auth` and `externalMysql`.
+Ghost runtime configuration lives under `ghost.config`. The chart flattens nested keys into Ghost environment variables and stores them in a generated Secret named `<fullname>` (`ghost` for release `ghost`). For example, `ghost.config.mail.options.host` becomes `mail__options__host`. MySQL connection settings are managed separately through `mysql.auth` and `externalMysql`.
 
 ```yaml
 ghost:
